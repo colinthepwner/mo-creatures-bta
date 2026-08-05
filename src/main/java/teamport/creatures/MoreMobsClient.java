@@ -3,6 +3,7 @@ package teamport.creatures;
 import net.fabricmc.api.ClientModInitializer;
 import net.minecraft.client.sound.SoundRepository;
 import teamport.creatures.client.render.entity.MMEntityRenderers;
+import teamport.creatures.core.MMAssetBridge;
 import turniplabs.halplibe.event.defs.ClientEvents;
 import turniplabs.halplibe.util.dependency.Key;
 
@@ -16,5 +17,8 @@ public class MoreMobsClient implements ClientModInitializer {
 
 	public void afterClientStart() {
 		SoundRepository.namespaceAdded(MoreMobs.MOD_ID);
+		// Restores the original mob textures from a copy of Mo' Creatures the player supplies.
+		// No-op when they have not provided one; this mod ships none of that art itself.
+		MMAssetBridge.run();
 	}
 }

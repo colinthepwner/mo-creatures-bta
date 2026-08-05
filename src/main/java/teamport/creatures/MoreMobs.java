@@ -3,6 +3,7 @@ package teamport.creatures;
 import net.fabricmc.api.ModInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import teamport.creatures.core.MMAudit;
 import teamport.creatures.core.MMRecipes;
 import teamport.creatures.core.block.MMBlocks;
 import teamport.creatures.core.entity.MMEntities;
@@ -40,5 +41,6 @@ public class MoreMobs implements ModInitializer {
 
 	public void afterItemInit() {
 		MMItems.addItemsToTags();
+		MMAudit.run();
 	}
 }
