@@ -6,15 +6,14 @@ import net.minecraft.core.entity.Entity;
 import net.minecraft.core.entity.EntityItem;
 import net.minecraft.core.entity.animal.MobAnimal;
 import net.minecraft.core.entity.player.Player;
-import net.minecraft.core.item.Item;
-import net.minecraft.core.item.Items;
 import net.minecraft.core.item.ItemStack;
+import net.minecraft.core.item.Items;
 import net.minecraft.core.sound.SoundCategory;
 import net.minecraft.core.util.helper.DamageType;
 import net.minecraft.core.util.helper.MathHelper;
-import net.minecraft.core.util.phys.AABB;
-import net.minecraft.core.world.IVehicle;
 import net.minecraft.core.world.World;
+import org.jetbrains.annotations.NotNull;
+import teamport.creatures.core.MMUtils;
 import teamport.creatures.core.block.LitterboxEntity;
 
 import java.util.List;
@@ -69,28 +68,29 @@ public class MobKitty extends MobAnimal {
 					motionX,
 					motionY,
 					motionZ,
-					0
+					0,
+					false
 				);
 		}
 	}
 
 	@Override
-	public boolean interact(Player player) {
+	public boolean interact(@NotNull Player player) {
 		if (!world.isClientSide) {
 			ItemStack heldItem = player.getHeldItem();
 
-			if (heldItem != null && heldItem.itemID == Item.foodFishRaw.id) {
+			if (heldItem != null && heldItem.itemID == Items.FOOD_FISH_RAW.id) {
 				if (!isTamed) {
 					world.playSoundEffect(player,
 						SoundCategory.ENTITY_SOUNDS,
 						x,
 						y,
 						z,
-						"creatures.kittyeating",
+						"creatures:mob.kitty.eating",
 						1.0F,
 						soundPitch);
 
-					faceEntity(player, 30.0F, 30.0F);
+					lookAt(player, 30.0F, 30.0F);
 					heldItem.consumeItem(player);
 
 					if (random.nextInt(3) == 0) {
@@ -101,10 +101,8 @@ public class MobKitty extends MobAnimal {
 						showHeartsOrSmokeFX(false);
 					}
 				} else {
-					if (!world.isClientSide) {
-						heal(2);
-						heldItem.consumeItem(player);
-					}
+					heal(2);
+					heldItem.consumeItem(player);
 				}
 			}
 
@@ -127,21 +125,21 @@ public class MobKitty extends MobAnimal {
 
 	@Override
 	protected String getDeathSound() {
-		return "creatures.kittydying";
+		return "creatures:mob.kitty.death";
 	}
 
 	@Override
 	protected String getHurtSound() {
-		return "creatures.kittyhurt";
+		return "creatures:mob.kitty.hurt";
 	}
 
 	@Override
 	public String getLivingSound() {
-		return isTamed && random.nextInt(3) == 0 ? "creatures.kittypurr" : "creatures.kittygrunt";
+		return isTamed && random.nextInt(3) == 0 ? "creatures:mob.kitty.purr" : "creatures:mob.kitty";
 	}
 
 	@Override
-	protected void attackEntity(Entity entity, float distance) {
+	protected void attackEntity(@NotNull Entity entity, float distance) {
 		if (!(entity instanceof EntityItem)) {
 			if (!(distance > 2.0F) || !(distance < 6.0F) || this.random.nextInt(10) != 0) {
 				if ((double) distance < 1.5 && entity.bb.maxY > this.bb.minY && entity.bb.minY < this.bb.maxY) {
@@ -168,20 +166,12 @@ public class MobKitty extends MobAnimal {
 		// If it isn't null and the item is string, start 'playing' with it.
 		// Once the boredom reaches -400 it will reset.
 		if (target == null && boredom-- <= 0) {
-			List<Entity> nearbyEntities = world
-				.getEntitiesWithinAABB(EntityItem.class, AABB.getBoundingBoxFromPool(bb.minX,
-						bb.minY,
-						bb.minZ,
-						bb.maxX,
-						bb.maxY,
-						bb.maxZ)
-					.expand(16.0, 4.0, 16.0)
-				);
+			List<EntityItem> nearbyEntities = world.getEntitiesWithinAABB(EntityItem.class, MMUtils.grow(bb, 16.0, 4.0, 16.0));
 
 			if (!nearbyEntities.isEmpty()) {
-				for (Entity entity : nearbyEntities) {
-					if (entity instanceof EntityItem && ((EntityItem) entity).item.itemID == Item.string.id) {
-						setTarget(entity);
+				for (EntityItem entityItem : nearbyEntities) {
+					if (entityItem.item != null && entityItem.item.itemID == Items.STRING.id) {
+						setTarget(entityItem);
 					}
 				}
 			}
@@ -191,23 +181,15 @@ public class MobKitty extends MobAnimal {
 			boredom = random.nextInt(400) + 800;
 		}
 
-		if (getTarget() != null && getTarget() instanceof EntityItem) {
-			if (bb.expand(0.5, 2.0, 0.5).intersectsWith(getTarget().bb)) {
+		if (getTarget() instanceof EntityItem) {
+			if (MMUtils.grow(bb, 0.5, 2.0, 0.5).intersectsAABB(getTarget().bb)) {
 				getTarget().move(xd * (random.nextInt(3) + 1), yd + 0.1, zd * (random.nextInt(3) + 1));
 			}
 		}
 
 		// Same AI as above, just with birds instead.
 		if (target == null && boredom-- <= 0) {
-			List<Entity> nearbyBirds = world
-				.getEntitiesWithinAABB(MobBird.class, AABB.getBoundingBoxFromPool(bb.minX,
-						bb.minY,
-						bb.minZ,
-						bb.maxX,
-						bb.maxY,
-						bb.maxZ)
-					.expand(16.0, 4.0, 16.0)
-				);
+			List<MobBird> nearbyBirds = world.getEntitiesWithinAABB(MobBird.class, MMUtils.grow(bb, 16.0, 4.0, 16.0));
 
 			if (!nearbyBirds.isEmpty()) {
 				setTarget(nearbyBirds.get(world.rand.nextInt(nearbyBirds.size())));
@@ -224,22 +206,24 @@ public class MobKitty extends MobAnimal {
 
 			// Potty system - use a litter box once? a day.
 			if (potty-- <= 0) {
-				List<TileEntity> tileEntities = world.loadedTileEntityList;
+				List<TileEntity> tileEntities = world.getLoadedTileEntityList();
 
 				if (!tileEntities.isEmpty()) {
 					for (TileEntity tileEntity : tileEntities) {
 						if (tileEntity instanceof LitterboxEntity) {
-							if (!((LitterboxEntity) tileEntity).isFilthy && potty <= 0) {
-								pathToEntity = world.getEntityPathToXYZ(this, tileEntity.x, tileEntity.y, tileEntity.z, 16.0F);
-								if (distanceToSqr(tileEntity.x, tileEntity.y, tileEntity.z) < 4.0 && !isPassenger()) {
-									setPos(tileEntity.x, tileEntity.y, tileEntity.z);
-									startRiding((IVehicle) tileEntity);
+							LitterboxEntity litterbox = (LitterboxEntity) tileEntity;
+
+							if (!litterbox.isFilthy && potty <= 0) {
+								pathToEntity = world.getEntityPathToXYZ(this, litterbox.tilePos.x, litterbox.tilePos.y, litterbox.tilePos.z, 16.0F);
+								if (distanceToSqr(litterbox.tilePos.x, litterbox.tilePos.y, litterbox.tilePos.z) < 4.0 && !isPassenger()) {
+									setPos(litterbox.tilePos.x, litterbox.tilePos.y, litterbox.tilePos.z);
+									startRiding(litterbox);
 								}
 							}
 
 							if (isPassenger() && usingPottyTime-- <= -200) {
-								((LitterboxEntity) tileEntity).ejectRider();
-								((LitterboxEntity) tileEntity).isFilthy = true;
+								litterbox.ejectRider();
+								litterbox.isFilthy = true;
 								usingPottyTime = 0;
 								potty = random.nextInt(6000) + 6000;
 							}
@@ -254,8 +238,8 @@ public class MobKitty extends MobAnimal {
 		Player player = world.getClosestPlayerToEntity(this, 16.0);
 		if (player != null && player.distanceToSqr(x, y, z) > 4.0) {
 			ItemStack heldStack = player.getCurrentEquippedItem();
-			if (heldStack != null && !isSitting && heldStack.itemID == Item.foodFishRaw.id) {
-				faceEntity(player, 30.0F, 30.0F);
+			if (heldStack != null && !isSitting && heldStack.itemID == Items.FOOD_FISH_RAW.id) {
+				lookAt(player, 30.0F, 30.0F);
 				moveForward = 1.0F;
 
 				if (player.distanceToSqr(this) <= 12.0)
@@ -265,7 +249,7 @@ public class MobKitty extends MobAnimal {
 	}
 
 	@Override
-	public void addAdditionalSaveData(CompoundTag tag) {
+	public void addAdditionalSaveData(@NotNull CompoundTag tag) {
 		super.addAdditionalSaveData(tag);
 		tag.putBoolean("IsTamed", isTamed);
 		tag.putBoolean("IsSitting", isSitting);
@@ -275,7 +259,7 @@ public class MobKitty extends MobAnimal {
 	}
 
 	@Override
-	public void readAdditionalSaveData(CompoundTag tag) {
+	public void readAdditionalSaveData(@NotNull CompoundTag tag) {
 		super.readAdditionalSaveData(tag);
 		isTamed = tag.getBoolean("IsTamed");
 		isSitting = tag.getBoolean("IsSitting");

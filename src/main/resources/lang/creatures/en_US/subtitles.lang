@@ -22,3 +22,10 @@ creatures.subtitles.mob.bunny.land=Bunny land
 creatures.subtitles.mob.bunny.lift=Bunny jump
 creatures.subtitles.mob.bunny.death=Bunny death
 creatures.subtitles.mob.bunny.hurt=Bunny hurt
+
+# Kitties
+creatures.subtitles.mob.kitty=Kitty meow
+creatures.subtitles.mob.kitty.purr=Kitty purr
+creatures.subtitles.mob.kitty.eating=Kitty eats
+creatures.subtitles.mob.kitty.death=Kitty death
+creatures.subtitles.mob.kitty.hurt=Kitty hurt

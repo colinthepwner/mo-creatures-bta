@@ -13,6 +13,7 @@ import teamport.creatures.core.entity.mob.MobFox;
 import teamport.creatures.core.entity.mob.MobHorse;
 import teamport.creatures.core.entity.mob.MobHorsePegasus;
 import teamport.creatures.core.entity.mob.MobHorseUnicorn;
+import teamport.creatures.core.entity.mob.MobKitty;
 
 import static teamport.creatures.MoreMobs.MOD_ID;
 
@@ -58,5 +59,6 @@ public final class MMEntities {
 		register(MobHorse.class, "horse", MobHorse::new);
 		register(MobHorseUnicorn.class, "horse_unicorn", "unicorn", MobHorseUnicorn::new);
 		register(MobHorsePegasus.class, "horse_pegasus", "pegasus", MobHorsePegasus::new);
+		register(MobKitty.class, "kitty", MobKitty::new);
 	}
 }

@@ -2,6 +2,7 @@ package teamport.creatures;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.minecraft.client.sound.SoundRepository;
+import teamport.creatures.client.render.block.MMBlockRenderers;
 import teamport.creatures.client.render.entity.MMEntityRenderers;
 import teamport.creatures.core.MMAssetBridge;
 import turniplabs.halplibe.event.defs.ClientEvents;
@@ -13,6 +14,7 @@ public class MoreMobsClient implements ClientModInitializer {
 	public void onInitializeClient() {
 		ClientEvents.AFTER_CLIENT_START.listen(Key.of(MoreMobs.MOD_ID), this::afterClientStart);
 		ClientEvents.ENTITY_RENDERER_RELOAD.listen(Key.of(MoreMobs.MOD_ID), MMEntityRenderers::registerRenderers);
+		ClientEvents.TILE_ENTITY_RENDERER_RELOAD.listen(Key.of(MoreMobs.MOD_ID), MMBlockRenderers::registerRenderers);
 	}
 
 	public void afterClientStart() {

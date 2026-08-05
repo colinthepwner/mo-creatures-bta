@@ -12,6 +12,7 @@ import teamport.creatures.core.entity.mob.MobFox;
 import teamport.creatures.core.entity.mob.MobHorse;
 import teamport.creatures.core.entity.mob.MobHorsePegasus;
 import teamport.creatures.core.entity.mob.MobHorseUnicorn;
+import teamport.creatures.core.entity.mob.MobKitty;
 
 /**
  * Renderer registration for BTA 8.0.
@@ -34,5 +35,6 @@ public final class MMEntityRenderers {
 		dispatcher.assignRenderer(MobHorse.class, new MobRendererHorse());
 		dispatcher.assignRenderer(MobHorseUnicorn.class, new MobRendererHorseUnicorn());
 		dispatcher.assignRenderer(MobHorsePegasus.class, new MobRendererHorsePegasus());
+		dispatcher.assignRenderer(MobKitty.class, new MobRendererKitty());
 	}
 }

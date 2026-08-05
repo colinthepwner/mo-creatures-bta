@@ -6,9 +6,6 @@
   "mixins": [
     "BiomeMixin"
   ],
-  "client": [
-    "client.SoundRepositoryMixin"
-  ],
   "injectors": {
     "defaultRequire": 1
   }
