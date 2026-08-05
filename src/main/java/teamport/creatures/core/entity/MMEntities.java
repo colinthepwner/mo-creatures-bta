@@ -6,8 +6,13 @@ import net.minecraft.core.entity.factories.EntityFactory;
 import net.minecraft.core.util.collection.NamespaceID;
 import teamport.creatures.core.entity.mob.MobBear;
 import teamport.creatures.core.entity.mob.MobBird;
+import teamport.creatures.core.entity.mob.MobBoar;
 import teamport.creatures.core.entity.mob.MobBunny;
+import teamport.creatures.core.entity.mob.MobDuck;
 import teamport.creatures.core.entity.mob.MobFox;
+import teamport.creatures.core.entity.mob.MobHorse;
+import teamport.creatures.core.entity.mob.MobHorsePegasus;
+import teamport.creatures.core.entity.mob.MobHorseUnicorn;
 
 import static teamport.creatures.MoreMobs.MOD_ID;
 
@@ -42,9 +47,16 @@ public final class MMEntities {
 	}
 
 	public static void initEntities() {
+		// Append-only: reordering these silently swaps mobs in worlds saved before the change.
+		// MMAudit's fingerprint exists to catch exactly that.
 		register(MobBear.class, "bear", MobBear::new);
 		register(MobBird.class, "bird", MobBird::new);
 		register(MobFox.class, "fox", MobFox::new);
 		register(MobBunny.class, "bunny", MobBunny::new);
+		register(MobBoar.class, "boar", MobBoar::new);
+		register(MobDuck.class, "duck", MobDuck::new);
+		register(MobHorse.class, "horse", MobHorse::new);
+		register(MobHorseUnicorn.class, "horse_unicorn", "unicorn", MobHorseUnicorn::new);
+		register(MobHorsePegasus.class, "horse_pegasus", "pegasus", MobHorsePegasus::new);
 	}
 }

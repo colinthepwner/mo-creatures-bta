@@ -5,8 +5,13 @@ import net.fabricmc.api.Environment;
 import net.minecraft.client.render.EntityRendererDispatcher;
 import teamport.creatures.core.entity.mob.MobBear;
 import teamport.creatures.core.entity.mob.MobBird;
+import teamport.creatures.core.entity.mob.MobBoar;
 import teamport.creatures.core.entity.mob.MobBunny;
+import teamport.creatures.core.entity.mob.MobDuck;
 import teamport.creatures.core.entity.mob.MobFox;
+import teamport.creatures.core.entity.mob.MobHorse;
+import teamport.creatures.core.entity.mob.MobHorsePegasus;
+import teamport.creatures.core.entity.mob.MobHorseUnicorn;
 
 /**
  * Renderer registration for BTA 8.0.
@@ -24,5 +29,10 @@ public final class MMEntityRenderers {
 		dispatcher.assignRenderer(MobBird.class, new MobRendererBird());
 		dispatcher.assignRenderer(MobFox.class, new MobRendererFox());
 		dispatcher.assignRenderer(MobBunny.class, new MobRendererBunny());
+		dispatcher.assignRenderer(MobBoar.class, new MobRendererBoar());
+		dispatcher.assignRenderer(MobDuck.class, new MobRendererDuck());
+		dispatcher.assignRenderer(MobHorse.class, new MobRendererHorse());
+		dispatcher.assignRenderer(MobHorseUnicorn.class, new MobRendererHorseUnicorn());
+		dispatcher.assignRenderer(MobHorsePegasus.class, new MobRendererHorsePegasus());
 	}
 }
