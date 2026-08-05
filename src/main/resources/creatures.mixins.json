@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "teamport.creatures.extra.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+    "BiomeMixin"
+  ],
+  "client": [
+    "client.SoundRepositoryMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

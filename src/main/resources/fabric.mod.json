@@ -1,0 +1,42 @@
+{
+	"schemaVersion": 1,
+	"id": "creatures",
+	"version": "${version}",
+
+	"name": "Mo Creatures",
+	"description": "A remake of the classic version of Mo Creatures.",
+	"authors": [
+		"DrZhark (original mod)",
+		"Team Port"
+	],
+	"contact": {
+		"homepage": "",
+		"issues": "",
+		"sources": ""
+	},
+
+	"license": "CC0-1.0",
+
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"teamport.creatures.MoreMobs"
+		],
+		"client": [
+			"teamport.creatures.MoreMobsClient"
+		]
+	},
+	"mixins": [
+		"creatures.mixins.json"
+	],
+
+	"depends": {
+		"fabricloader": ">=${fabricloader}",
+		"minecraft": "*",
+		"java": ">=${java}",
+		"halplibe": ">=${halplibe}"
+	},
+	"suggests": {
+		"modmenu": ">=${modmenu}"
+	}
+}

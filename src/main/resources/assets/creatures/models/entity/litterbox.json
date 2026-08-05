@@ -1,0 +1,29 @@
+{
+	"format_version": "1.12.0",
+	"minecraft:geometry": [
+		{
+			"description": {
+				"identifier": "geometry.litterbox",
+				"texture_width": 64,
+				"texture_height": 64,
+				"visible_bounds_width": 2,
+				"visible_bounds_height": 1.5,
+				"visible_bounds_offset": [0, 0.25, 0]
+			},
+			"bones": [
+				{
+					"name": "box",
+					"pivot": [0, 0, 0],
+					"cubes": [
+						{"origin": [-6, 0, -7], "size": [12, 1, 14], "uv": [0, 0]},
+						{"origin": [-6, 1, -7], "size": [1, 7, 14], "uv": [34, 15]},
+						{"origin": [5, 1, -7], "size": [1, 7, 14], "uv": [34, 15]},
+						{"origin": [-5, 1, 6], "size": [10, 7, 1], "uv": [38, 6]},
+						{"origin": [-5, 1, -7], "size": [10, 2, 1], "uv": [38, 6]},
+						{"origin": [-5, 1, -6], "size": [10, 1, 12], "uv": [3, 2]}
+					]
+				}
+			]
+		}
+	]
+}
