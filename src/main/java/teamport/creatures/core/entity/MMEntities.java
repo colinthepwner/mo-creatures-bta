@@ -13,6 +13,13 @@ import teamport.creatures.core.entity.mob.MobShark;
 import teamport.creatures.core.entity.mob.MobFishy;
 import teamport.creatures.core.entity.mob.MobSharkEgg;
 import teamport.creatures.core.entity.mob.MobFishyEgg;
+import teamport.creatures.core.entity.mob.MobOgre;
+import teamport.creatures.core.entity.mob.MobOgreFire;
+import teamport.creatures.core.entity.mob.MobOgreCave;
+import teamport.creatures.core.entity.mob.MobWerewolf;
+import teamport.creatures.core.entity.mob.MobWerewolfWolf;
+import teamport.creatures.core.entity.mob.MobWraith;
+import teamport.creatures.core.entity.mob.MobWraithFlame;
 import teamport.creatures.core.entity.mob.MobBear;
 import teamport.creatures.core.entity.mob.MobBird;
 import teamport.creatures.core.entity.mob.MobBoar;
@@ -80,5 +87,12 @@ public final class MMEntities {
 		register(MobFishy.class, "fishy", MobFishy::new);
 		register(MobSharkEgg.class, "shark_egg", "shark_egg", MobSharkEgg::new);
 		register(MobFishyEgg.class, "fishy_egg", "fishy_egg", MobFishyEgg::new);
+		register(MobOgre.class, "ogre", MobOgre::new);
+		register(MobOgreFire.class, "ogre_fire", "ogre_fire", MobOgreFire::new);
+		register(MobOgreCave.class, "ogre_cave", "ogre_cave", MobOgreCave::new);
+		register(MobWerewolf.class, "werewolf", MobWerewolf::new);
+		register(MobWerewolfWolf.class, "werewolf_wolf", "werewolf_wolf", MobWerewolfWolf::new);
+		register(MobWraith.class, "wraith", MobWraith::new);
+		register(MobWraithFlame.class, "wraith_flame", "wraith_flame", MobWraithFlame::new);
 	}
 }

@@ -12,6 +12,13 @@ import teamport.creatures.core.entity.mob.MobShark;
 import teamport.creatures.core.entity.mob.MobFishy;
 import teamport.creatures.core.entity.mob.MobSharkEgg;
 import teamport.creatures.core.entity.mob.MobFishyEgg;
+import teamport.creatures.core.entity.mob.MobOgre;
+import teamport.creatures.core.entity.mob.MobOgreFire;
+import teamport.creatures.core.entity.mob.MobOgreCave;
+import teamport.creatures.core.entity.mob.MobWerewolf;
+import teamport.creatures.core.entity.mob.MobWerewolfWolf;
+import teamport.creatures.core.entity.mob.MobWraith;
+import teamport.creatures.core.entity.mob.MobWraithFlame;
 import teamport.creatures.core.entity.mob.MobBear;
 import teamport.creatures.core.entity.mob.MobBird;
 import teamport.creatures.core.entity.mob.MobBoar;
@@ -56,5 +63,12 @@ public final class MMEntityRenderers {
 		dispatcher.assignRenderer(MobFishy.class, new MobRendererFishy());
 		dispatcher.assignRenderer(MobSharkEgg.class, new MobRendererSharkEgg());
 		dispatcher.assignRenderer(MobFishyEgg.class, new MobRendererFishyEgg());
+		dispatcher.assignRenderer(MobOgre.class, new MobRendererOgre());
+		dispatcher.assignRenderer(MobOgreFire.class, new MobRendererOgreFire());
+		dispatcher.assignRenderer(MobOgreCave.class, new MobRendererOgreCave());
+		dispatcher.assignRenderer(MobWerewolf.class, new MobRendererWerewolf());
+		dispatcher.assignRenderer(MobWerewolfWolf.class, new MobRendererWerewolfWolf());
+		dispatcher.assignRenderer(MobWraith.class, new MobRendererWraith());
+		dispatcher.assignRenderer(MobWraithFlame.class, new MobRendererWraithFlame());
 	}
 }
