@@ -10,6 +10,20 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import teamport.creatures.MMConfig;
+import teamport.creatures.core.entity.mob.MobBigCat;
+import teamport.creatures.core.entity.mob.MobDolphin;
+import teamport.creatures.core.entity.mob.MobFishy;
+import teamport.creatures.core.entity.mob.MobMouse;
+import teamport.creatures.core.entity.mob.MobOgre;
+import teamport.creatures.core.entity.mob.MobOgreCave;
+import teamport.creatures.core.entity.mob.MobOgreFire;
+import teamport.creatures.core.entity.mob.MobRat;
+import teamport.creatures.core.entity.mob.MobRatHell;
+import teamport.creatures.core.entity.mob.MobShark;
+import teamport.creatures.core.entity.mob.MobWerewolf;
+import teamport.creatures.core.entity.mob.MobWerewolfWolf;
+import teamport.creatures.core.entity.mob.MobWraith;
+import teamport.creatures.core.entity.mob.MobWraithFlame;
 import teamport.creatures.core.entity.mob.MobBear;
 import teamport.creatures.core.entity.mob.MobBird;
 import teamport.creatures.core.entity.mob.MobBoar;
@@ -30,6 +44,12 @@ public abstract class BiomeMixin {
 	@Shadow
 	protected List<SpawnListEntry> spawnableCreatureList;
 
+	@Shadow
+	protected List<SpawnListEntry> spawnableMonsterList;
+
+	@Shadow
+	protected List<SpawnListEntry> spawnableWaterCreatureList;
+
 	@Unique
 	private int creatures_getFreq(String entity) {
 		return MMConfig.cfg.getInt("SpawnFrequencies." + entity);
@@ -47,6 +67,24 @@ public abstract class BiomeMixin {
 		spawnableCreatureList.add(new SpawnListEntry(MobHorse.class, creatures_getFreq("horse")));
 		spawnableCreatureList.add(new SpawnListEntry(MobHorseUnicorn.class, creatures_getFreq("unicorn")));
 		spawnableCreatureList.add(new SpawnListEntry(MobHorsePegasus.class, creatures_getFreq("pegasus")));
+		spawnableCreatureList.add(new SpawnListEntry(MobBigCat.class, creatures_getFreq("bigcat")));
+		spawnableCreatureList.add(new SpawnListEntry(MobMouse.class, creatures_getFreq("mouse")));
+
+		// Aquatic mobs use the dedicated water list; the creature list only spawns on land.
+		spawnableWaterCreatureList.add(new SpawnListEntry(MobDolphin.class, creatures_getFreq("dolphin")));
+		spawnableWaterCreatureList.add(new SpawnListEntry(MobShark.class, creatures_getFreq("shark")));
+		spawnableWaterCreatureList.add(new SpawnListEntry(MobFishy.class, creatures_getFreq("fishy")));
+
+		// Hostiles belong on the monster list so they obey the difficulty/light spawn rules.
+		spawnableMonsterList.add(new SpawnListEntry(MobRat.class, creatures_getFreq("rat")));
+		spawnableMonsterList.add(new SpawnListEntry(MobRatHell.class, creatures_getFreq("rat_hell")));
+		spawnableMonsterList.add(new SpawnListEntry(MobOgre.class, creatures_getFreq("ogre")));
+		spawnableMonsterList.add(new SpawnListEntry(MobOgreFire.class, creatures_getFreq("ogre_fire")));
+		spawnableMonsterList.add(new SpawnListEntry(MobOgreCave.class, creatures_getFreq("ogre_cave")));
+		spawnableMonsterList.add(new SpawnListEntry(MobWerewolf.class, creatures_getFreq("werewolf")));
+		spawnableMonsterList.add(new SpawnListEntry(MobWerewolfWolf.class, creatures_getFreq("werewolf_wolf")));
+		spawnableMonsterList.add(new SpawnListEntry(MobWraith.class, creatures_getFreq("wraith")));
+		spawnableMonsterList.add(new SpawnListEntry(MobWraithFlame.class, creatures_getFreq("wraith_flame")));
 
 		// BTA 8.0.1 ships its own deer, added to every biome by Biome.initSpawnables() — which the
 		// base constructor calls, so it has already run by the time this TAIL injection fires and

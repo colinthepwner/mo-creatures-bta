@@ -26,7 +26,21 @@ public class MMConfig {
 			.addEntry("horse", 51)
 			.addEntry("unicorn", 1)
 			.addEntry("pegasus", 1)
-			.addEntry("kitty", 2);
+			.addEntry("kitty", 2)
+			.addEntry("bigcat", 8)
+			.addEntry("mouse", 30)
+			.addEntry("rat", 20)
+			.addEntry("rat_hell", 8)
+			.addEntry("dolphin", 12)
+			.addEntry("shark", 6)
+			.addEntry("fishy", 25)
+			.addEntry("ogre", 8)
+			.addEntry("ogre_fire", 3)
+			.addEntry("ogre_cave", 5)
+			.addEntry("werewolf", 4)
+			.addEntry("werewolf_wolf", 8)
+			.addEntry("wraith", 6)
+			.addEntry("wraith_flame", 2);
 
 		TOML.addCategory("Replacements")
 			.addEntry("replaceVanillaDeer",
