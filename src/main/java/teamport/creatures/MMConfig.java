@@ -26,6 +26,12 @@ public class MMConfig {
 			.addEntry("pegasus", 1)
 			.addEntry("kitty", 2);
 
+		TOML.addCategory("Replacements")
+			.addEntry("replaceVanillaDeer",
+				"Swap BTA's built-in deer out of every biome's spawn list for the Mo' Creatures deer. " +
+					"Set to false to keep the vanilla deer and leave ours unspawned.",
+				true);
+
 		cfg = new TomlConfigHandler(MOD_ID, TOML);
 	}
 }

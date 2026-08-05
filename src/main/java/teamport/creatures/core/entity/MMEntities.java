@@ -8,6 +8,7 @@ import teamport.creatures.core.entity.mob.MobBear;
 import teamport.creatures.core.entity.mob.MobBird;
 import teamport.creatures.core.entity.mob.MobBoar;
 import teamport.creatures.core.entity.mob.MobBunny;
+import teamport.creatures.core.entity.mob.MobDeerMoC;
 import teamport.creatures.core.entity.mob.MobDuck;
 import teamport.creatures.core.entity.mob.MobFox;
 import teamport.creatures.core.entity.mob.MobHorse;
@@ -60,5 +61,6 @@ public final class MMEntities {
 		register(MobHorseUnicorn.class, "horse_unicorn", "unicorn", MobHorseUnicorn::new);
 		register(MobHorsePegasus.class, "horse_pegasus", "pegasus", MobHorsePegasus::new);
 		register(MobKitty.class, "kitty", MobKitty::new);
+		register(MobDeerMoC.class, "deer", MobDeerMoC::new);
 	}
 }

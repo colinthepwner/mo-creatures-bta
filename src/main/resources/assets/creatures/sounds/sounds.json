@@ -50,6 +50,24 @@
       "mob/bear/hurt2.ogg"
     ]
   },
+  "mob.deer": {
+    "subtitle": "creatures.subtitles.mob.deer",
+    "sounds": [
+      "deerfgrunt.ogg"
+    ]
+  },
+  "mob.deer.death": {
+    "subtitle": "creatures.subtitles.mob.deer.death",
+    "sounds": [
+      "deerdying.ogg"
+    ]
+  },
+  "mob.deer.hurt": {
+    "subtitle": "creatures.subtitles.mob.deer.hurt",
+    "sounds": [
+      "deerhurt.ogg"
+    ]
+  },
   "mob.bird.black": {
     "subtitle": "creatures.subtitles.mob.bird.black",
     "sounds": [

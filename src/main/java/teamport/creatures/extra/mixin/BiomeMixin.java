@@ -1,6 +1,7 @@
 package teamport.creatures.extra.mixin;
 
 import net.minecraft.core.entity.SpawnListEntry;
+import net.minecraft.core.entity.animal.MobDeer;
 import net.minecraft.core.world.biome.Biome;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -11,8 +12,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import teamport.creatures.MMConfig;
 import teamport.creatures.core.entity.mob.MobBear;
 import teamport.creatures.core.entity.mob.MobBird;
+import teamport.creatures.core.entity.mob.MobDeerMoC;
 import teamport.creatures.core.entity.mob.MobFox;
 
+import java.util.Iterator;
 import java.util.List;
 
 @Mixin(value = Biome.class, remap = false)
@@ -30,5 +33,19 @@ public abstract class BiomeMixin {
 		spawnableCreatureList.add(new SpawnListEntry(MobBear.class, creatures_getFreq("bear")));
 		spawnableCreatureList.add(new SpawnListEntry(MobBird.class, creatures_getFreq("bird")));
 		spawnableCreatureList.add(new SpawnListEntry(MobFox.class, creatures_getFreq("fox")));
+
+		// BTA 8.0.1 ships its own deer, added to every biome by Biome.initSpawnables() — which the
+		// base constructor calls, so it has already run by the time this TAIL injection fires and
+		// the entry is here to be pulled back out. Drop it and put ours in its place, otherwise the
+		// two deer would spawn side by side.
+		if (MMConfig.cfg.getBoolean("Replacements.replaceVanillaDeer")) {
+			Iterator<SpawnListEntry> entries = spawnableCreatureList.iterator();
+			while (entries.hasNext()) {
+				if (entries.next().entityClass == MobDeer.class) {
+					entries.remove();
+				}
+			}
+			spawnableCreatureList.add(new SpawnListEntry(MobDeerMoC.class, creatures_getFreq("deer")));
+		}
 	}
 }

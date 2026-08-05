@@ -6,3 +6,7 @@ build/
 out/
 run/
 run-server/
+
+# Claude Code / agent artefacts -- never ship these
+.claude/
+*.orig

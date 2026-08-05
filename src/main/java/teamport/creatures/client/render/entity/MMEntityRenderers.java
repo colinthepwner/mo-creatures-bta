@@ -7,6 +7,7 @@ import teamport.creatures.core.entity.mob.MobBear;
 import teamport.creatures.core.entity.mob.MobBird;
 import teamport.creatures.core.entity.mob.MobBoar;
 import teamport.creatures.core.entity.mob.MobBunny;
+import teamport.creatures.core.entity.mob.MobDeerMoC;
 import teamport.creatures.core.entity.mob.MobDuck;
 import teamport.creatures.core.entity.mob.MobFox;
 import teamport.creatures.core.entity.mob.MobHorse;
@@ -36,5 +37,6 @@ public final class MMEntityRenderers {
 		dispatcher.assignRenderer(MobHorseUnicorn.class, new MobRendererHorseUnicorn());
 		dispatcher.assignRenderer(MobHorsePegasus.class, new MobRendererHorsePegasus());
 		dispatcher.assignRenderer(MobKitty.class, new MobRendererKitty());
+		dispatcher.assignRenderer(MobDeerMoC.class, new MobRendererDeerMoC());
 	}
 }
