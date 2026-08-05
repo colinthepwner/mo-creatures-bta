@@ -1,25 +1,32 @@
 package teamport.creatures.core;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.render.texturepack.TexturePack;
+import net.minecraft.client.render.texturepack.TexturePackList;
 import teamport.creatures.MoreMobs;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 
 /**
- * Bridges entity textures out of a copy of the original Mo' Creatures that the <em>player</em>
- * supplies.
+ * Bridges entity art out of a copy of the original Mo' Creatures that the <em>player</em> supplies.
  * <p>
  * This mod ships no art from the original. Mo' Creatures is DrZhark's work and its licence does not
  * permit redistribution, so the textures cannot live in this repository. Instead, if the player drops
@@ -27,21 +34,38 @@ import java.util.zip.ZipFile;
  * writes a generated texture pack that BTA then loads like any other pack. Nothing is downloaded and
  * nothing is redistributed — the file has to already be on the player's disk.
  * <p>
+ * {@link MMGeometryBridge} rides along on the same archive walk and converts the original's
+ * <em>models</em> the same way, because the original textures are painted against the original box
+ * layout and only look right on it.
+ * <p>
  * Mapping is driven by {@code /assets/creatures/asset-bridge.properties} rather than hardcoded, so
  * adding a mob is a one-line manifest edit. Original archives differ in internal layout between
  * versions, so entries are matched on the file's <em>base name</em> and the directory structure
- * inside the archive is ignored.
+ * inside the archive is ignored — including the zip-inside-a-zip that the original's own installer
+ * download ships, whose class and image files all live one level down in {@code mods/}.
  */
 public final class MMAssetBridge {
 	private MMAssetBridge() {}
 
 	public static final String PACK_NAME = "MoCreaturesAssets";
 	private static final String MANIFEST = "/assets/creatures/asset-bridge.properties";
+	private static final String STAMP = "bridge-source.txt";
+
+	/**
+	 * Bumped whenever a manifest or the converter changes shape, so an existing pack is rebuilt even
+	 * though the player's archive has not moved.
+	 */
+	private static final int BRIDGE_REVISION = 2;
+
+	/** How deep to follow zips inside zips. The original's download nests exactly one level. */
+	private static final int MAX_NESTING = 3;
 
 	/** Set once the bridge has run, so the audit can report on it. */
 	public static int bridgedCount = -1;
 	public static int missingCount = -1;
 	public static String sourceArchive = null;
+	public static boolean packAutoEnabled = false;
+	public static boolean usedCache = false;
 
 	public static void run() {
 		File gameDir;
@@ -65,48 +89,46 @@ public final class MMAssetBridge {
 			missingCount = manifest.size();
 			MoreMobs.LOGGER.info("Asset bridge: no Mo' Creatures archive found — mobs will use built-in textures "
 				+ "where they exist. Drop the original mod jar/zip in '{}' to restore the original look.",
-				new File(gameDir, "mocreatures-assets").getPath());
+				new File(gameDir, "mods").getPath());
 			return;
 		}
 		sourceArchive = archive.getName();
 
 		File packDir = new File(gameDir, "texturepacks/" + PACK_NAME);
-		List<String> missing = new ArrayList<>();
-		int written = 0;
+		if (isUpToDate(packDir, archive)) {
+			usedCache = true;
+			MoreMobs.LOGGER.info("Asset bridge: '{}' is already built from '{}', skipping extraction",
+				PACK_NAME, archive.getName());
+			enablePack(packDir);
+			return;
+		}
 
-		try (ZipFile zip = new ZipFile(archive)) {
-			// Index the archive by base name so layout differences between versions do not matter.
-			Map<String, ZipEntry> byBaseName = new HashMap<>();
-			for (java.util.Enumeration<? extends ZipEntry> e = zip.entries(); e.hasMoreElements(); ) {
-				ZipEntry entry = e.nextElement();
-				if (entry.isDirectory()) continue;
-				String name = entry.getName();
-				if (!name.toLowerCase(Locale.ROOT).endsWith(".png")) continue;
-				byBaseName.putIfAbsent(baseName(name), entry);
-			}
-
-			for (Map.Entry<String, String> mapping : manifest.entrySet()) {
-				ZipEntry entry = byBaseName.get(mapping.getKey().toLowerCase(Locale.ROOT));
-				if (entry == null) {
-					missing.add(mapping.getKey());
-					continue;
-				}
-				File target = new File(packDir, mapping.getValue());
-				if (!target.getParentFile().isDirectory() && !target.getParentFile().mkdirs()) {
-					missing.add(mapping.getKey());
-					continue;
-				}
-				try (InputStream in = zip.getInputStream(entry); OutputStream out = new FileOutputStream(target)) {
-					byte[] buffer = new byte[8192];
-					int read;
-					while ((read = in.read(buffer)) > 0) out.write(buffer, 0, read);
-				}
-				written++;
-			}
-
-			writePackMeta(packDir);
+		// One walk of the archive serves both halves, so a nested zip is only unpacked once.
+		Set<String> wanted = new LinkedHashSet<>(manifest.keySet());
+		wanted.addAll(MMGeometryBridge.wantedEntries());
+		Map<String, byte[]> entries;
+		try {
+			entries = collect(archive, wanted);
 		} catch (IOException e) {
 			MoreMobs.LOGGER.warn("Asset bridge: could not read '{}': {}", archive.getName(), e.toString());
+			return;
+		}
+
+		List<String> missing = new ArrayList<>();
+		int written = 0;
+		try {
+			for (Map.Entry<String, String> mapping : manifest.entrySet()) {
+				byte[] bytes = entries.get(mapping.getKey());
+				if (bytes == null) {
+					missing.add(mapping.getKey());
+					continue;
+				}
+				write(new File(packDir, mapping.getValue()), bytes);
+				written++;
+			}
+			writePackMeta(packDir);
+		} catch (IOException e) {
+			MoreMobs.LOGGER.warn("Asset bridge: could not write into '{}': {}", packDir.getPath(), e.toString());
 			return;
 		}
 
@@ -119,8 +141,70 @@ public final class MMAssetBridge {
 			MoreMobs.LOGGER.warn("Asset bridge: {} textures not found in the archive: {}",
 				missing.size(), String.join(", ", missing));
 		}
-		if (written > 0) {
-			MoreMobs.LOGGER.info("Asset bridge: enable the '{}' texture pack in Options to use them", PACK_NAME);
+
+		runGeometryBridge(entries, packDir);
+		stamp(packDir, archive);
+		enablePack(packDir);
+	}
+
+	private static void runGeometryBridge(Map<String, byte[]> entries, File packDir) {
+		MMGeometryBridge.Result result;
+		try {
+			result = MMGeometryBridge.run(entries, packDir);
+		} catch (Throwable t) {
+			MoreMobs.LOGGER.warn("Geometry bridge: failed, textures are unaffected: {}", t.toString());
+			return;
+		}
+		int total = result.converted.size() + result.composed.size();
+		if (total > 0) {
+			MoreMobs.LOGGER.info("Geometry bridge: {} models converted ({})", total,
+				String.join(", ", concat(result.converted, result.composed)));
+		}
+		if (!result.composed.isEmpty()) {
+			MoreMobs.LOGGER.info("Geometry bridge: {} of those extend one of Minecraft's own model classes and "
+				+ "were completed with vanilla geometry: {}", result.composed.size(),
+				String.join(", ", result.composed));
+		}
+		for (String problem : result.problems) {
+			MoreMobs.LOGGER.warn("Geometry bridge: {}", problem);
+		}
+	}
+
+	private static List<String> concat(List<String> first, List<String> second) {
+		List<String> all = new ArrayList<>(first);
+		all.addAll(second);
+		return all;
+	}
+
+	// ----------------------------------------------------------------------------------------------
+	// Archive walk
+	// ----------------------------------------------------------------------------------------------
+
+	/**
+	 * Flattens the archive to the entries the manifests asked for, keyed by lower-case base name.
+	 * Zips nested inside the archive are walked too: the original's own download is a zip whose
+	 * payload is {@code mods/MoCreatures.zip}, and reading only the outer layer finds nothing at all.
+	 */
+	private static Map<String, byte[]> collect(File archive, Set<String> wanted) throws IOException {
+		Map<String, byte[]> found = new HashMap<>();
+		try (InputStream in = new BufferedInputStream(new FileInputStream(archive))) {
+			collect(in, wanted, found, 0);
+		}
+		return found;
+	}
+
+	private static void collect(InputStream in, Set<String> wanted, Map<String, byte[]> found, int depth)
+		throws IOException {
+		ZipInputStream zip = new ZipInputStream(in);
+		ZipEntry entry;
+		while ((entry = zip.getNextEntry()) != null) {
+			if (entry.isDirectory()) continue;
+			String name = baseName(entry.getName());
+			if (wanted.contains(name)) {
+				found.putIfAbsent(name, MMGeometryBridge.readFully(zip));
+			} else if (depth < MAX_NESTING && (name.endsWith(".zip") || name.endsWith(".jar"))) {
+				collect(zip, wanted, found, depth + 1);
+			}
 		}
 	}
 
@@ -149,13 +233,86 @@ public final class MMAssetBridge {
 		return null;
 	}
 
+	// ----------------------------------------------------------------------------------------------
+	// Cache
+	// ----------------------------------------------------------------------------------------------
+
+	/** What the pack was last built from, so a second launch does not pay for the extraction again. */
+	private static String stampFor(File archive) {
+		return BRIDGE_REVISION + " " + archive.getName() + " " + archive.length() + " " + archive.lastModified();
+	}
+
+	private static boolean isUpToDate(File packDir, File archive) {
+		File stamp = new File(packDir, STAMP);
+		if (!stamp.isFile()) return false;
+		try {
+			return stampFor(archive).equals(new String(Files.readAllBytes(stamp.toPath()), StandardCharsets.UTF_8).trim());
+		} catch (IOException e) {
+			return false;
+		}
+	}
+
+	private static void stamp(File packDir, File archive) {
+		try {
+			write(new File(packDir, STAMP), stampFor(archive).getBytes(StandardCharsets.UTF_8));
+		} catch (IOException e) {
+			MoreMobs.LOGGER.warn("Asset bridge: could not record what the pack was built from: {}", e.toString());
+		}
+	}
+
+	// ----------------------------------------------------------------------------------------------
+	// Turning the pack on
+	// ----------------------------------------------------------------------------------------------
+
+	/**
+	 * Selects the generated pack so the player has nothing to do in Options. BTA treats a directory
+	 * holding a {@code pack.txt} as a texture pack, so it only has to be rescanned and selected.
+	 * <p>
+	 * Guarded rather than assumed: if any of this throws, the pack is still on disk and can be
+	 * enabled by hand, which is what the log then says.
+	 */
+	private static void enablePack(File packDir) {
+		if (!packDir.isDirectory()) return;
+		try {
+			TexturePackList packs = Minecraft.getMinecraft().texturePackList;
+			packs.updateAvailableTexturePacks();
+			for (TexturePack pack : packs.availableTexturePacks()) {
+				if (!PACK_NAME.equals(pack.fileName)) continue;
+				if (packs.selectedPacks.contains(pack)) {
+					packAutoEnabled = true;
+					return;
+				}
+				packs.setTexturePack(pack);
+				packs.refreshIfReady();
+				packAutoEnabled = true;
+				MoreMobs.LOGGER.info("Asset bridge: texture pack '{}' enabled automatically", PACK_NAME);
+				return;
+			}
+			MoreMobs.LOGGER.info("Asset bridge: texture pack '{}' was written but BTA did not list it; "
+				+ "enable it in Options to use it", PACK_NAME);
+		} catch (Throwable t) {
+			MoreMobs.LOGGER.warn("Asset bridge: could not enable texture pack '{}' automatically ({}); "
+				+ "enable it in Options to use it", PACK_NAME, t.toString());
+		}
+	}
+
+	// ----------------------------------------------------------------------------------------------
+	// Plumbing
+	// ----------------------------------------------------------------------------------------------
+
+	private static void write(File target, byte[] bytes) throws IOException {
+		File parent = target.getParentFile();
+		if (!parent.isDirectory() && !parent.mkdirs()) throw new IOException("could not create " + parent);
+		try (OutputStream out = new FileOutputStream(target)) {
+			out.write(bytes);
+		}
+	}
+
 	private static void writePackMeta(File packDir) throws IOException {
 		File info = new File(packDir, "pack.txt");
 		if (info.isFile()) return;
-		try (OutputStream out = new FileOutputStream(info)) {
-			out.write(("Generated by Mo' Creatures for BTA from a locally supplied copy of the original mod.\n"
-				+ "Not redistributable. Delete this folder to remove it.\n").getBytes("UTF-8"));
-		}
+		write(info, ("Generated by Mo' Creatures for BTA from a locally supplied copy of the original mod.\n"
+			+ "Not redistributable. Delete this folder to remove it.\n").getBytes(StandardCharsets.UTF_8));
 	}
 
 	private static String baseName(String path) {

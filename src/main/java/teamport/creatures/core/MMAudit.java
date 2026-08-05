@@ -90,6 +90,43 @@ public final class MMAudit {
 	}
 
 	/**
+	 * Reports what the asset and geometry bridges did. Called from the client after they run rather
+	 * than from {@link #run()}, which happens first and on the server too.
+	 * <p>
+	 * Worth its own lines because the bridges' failure mode is quiet and confusing: a mob drawn with
+	 * the original's box layout on this repo's own art, or the reverse, looks like a broken model
+	 * rather than a missing file.
+	 */
+	public static void reportBridges() {
+		if (MMAssetBridge.sourceArchive == null) {
+			MoreMobs.LOGGER.info("Creatures audit: no original Mo' Creatures archive supplied, "
+				+ "so built-in art and models are in use");
+			return;
+		}
+		if (MMAssetBridge.usedCache) {
+			MoreMobs.LOGGER.info("Creatures audit: texture pack '{}' was already built from '{}' and was reused; "
+				+ "delete it to force a rebuild. Pack auto-enabled: {}", MMAssetBridge.PACK_NAME,
+				MMAssetBridge.sourceArchive, MMAssetBridge.packAutoEnabled);
+			return;
+		}
+		MoreMobs.LOGGER.info("Creatures audit: asset bridge read '{}' — {} textures bridged, {} not found, "
+			+ "pack auto-enabled: {}", MMAssetBridge.sourceArchive, MMAssetBridge.bridgedCount,
+			MMAssetBridge.missingCount, MMAssetBridge.packAutoEnabled);
+
+		if (MMGeometryBridge.convertedCount < 0) {
+			MoreMobs.LOGGER.warn("Creatures audit problem: geometry bridge did not run");
+			return;
+		}
+		MoreMobs.LOGGER.info("Creatures audit: geometry bridge converted {} models "
+			+ "({} self-contained, {} completed with vanilla base geometry), {} left alone",
+			MMGeometryBridge.convertedCount + MMGeometryBridge.composedCount,
+			MMGeometryBridge.convertedCount, MMGeometryBridge.composedCount, MMGeometryBridge.skippedCount);
+		for (String problem : MMGeometryBridge.problems) {
+			MoreMobs.LOGGER.warn("Creatures audit problem: geometry bridge: {}", problem);
+		}
+	}
+
+	/**
 	 * Order-sensitive on purpose. Entity ids are written into saved chunks, so the mapping is
 	 * effectively append-only; if the count holds steady but the hash moves, an id was reordered
 	 * and existing worlds will load the wrong mob.

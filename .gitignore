@@ -10,3 +10,10 @@ run-server/
 # Claude Code / agent artefacts -- never ship these
 .claude/
 *.orig
+
+# Asset/geometry bridge -- output is generated from a copy of the original mod that the player
+# supplies, and neither the copy nor anything extracted from it is redistributable.
+texturepacks/
+**/MoCreaturesAssets/
+mocreatures-assets.zip
+mocreatures-assets.jar
