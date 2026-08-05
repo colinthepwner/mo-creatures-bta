@@ -1,4 +1,104 @@
 {
+  "mob.bigcat": {
+    "subtitle": "creatures.subtitles.mob.bigcat",
+    "sounds": [
+      "liongrunt1.ogg",
+      "liongrunt2.ogg",
+      "liongrunt3.ogg",
+      "liongrunt4.ogg"
+    ]
+  },
+  "mob.bigcat.hurt": {
+    "subtitle": "creatures.subtitles.mob.bigcat.hurt",
+    "sounds": [
+      "lionhurt1.ogg",
+      "lionhurt2.ogg",
+      "lionhurt3.ogg",
+      "lionhurt4.ogg"
+    ]
+  },
+  "mob.bigcat.death": {
+    "subtitle": "creatures.subtitles.mob.bigcat.death",
+    "sounds": [
+      "liondeath.ogg"
+    ]
+  },
+  "mob.bigcat.cub": {
+    "subtitle": "creatures.subtitles.mob.bigcat.cub",
+    "sounds": [
+      "cub1.ogg",
+      "cubgrunt.ogg",
+      "cubgrunt1.ogg",
+      "cubgrunt2.ogg",
+      "cubgrunt3.ogg",
+      "cubgrunt4.ogg"
+    ]
+  },
+  "mob.bigcat.cub.hurt": {
+    "subtitle": "creatures.subtitles.mob.bigcat.cub.hurt",
+    "sounds": [
+      "cubhurt.ogg",
+      "cubhurt1.ogg",
+      "cubhurt2.ogg"
+    ]
+  },
+  "mob.bigcat.cub.death": {
+    "subtitle": "creatures.subtitles.mob.bigcat.cub.death",
+    "sounds": [
+      "cubdying.ogg"
+    ]
+  },
+  "mob.bigcat.eat": {
+    "subtitle": "creatures.subtitles.mob.bigcat.eat",
+    "sounds": [
+      "eating.ogg"
+    ]
+  },
+  "mob.rat": {
+    "subtitle": "creatures.subtitles.mob.rat",
+    "sounds": [
+      "ratgrunt1.ogg",
+      "ratgrunt2.ogg",
+      "ratgrunt3.ogg",
+      "ratgrunt4.ogg"
+    ]
+  },
+  "mob.rat.hurt": {
+    "subtitle": "creatures.subtitles.mob.rat.hurt",
+    "sounds": [
+      "rathurt1.ogg",
+      "rathurt2.ogg"
+    ]
+  },
+  "mob.rat.death": {
+    "subtitle": "creatures.subtitles.mob.rat.death",
+    "sounds": [
+      "ratdying1.ogg"
+    ]
+  },
+  "mob.mouse": {
+    "subtitle": "creatures.subtitles.mob.mouse",
+    "sounds": [
+      "micegrunt1.ogg",
+      "micegrunt2.ogg",
+      "micegrunt3.ogg"
+    ]
+  },
+  "mob.mouse.hurt": {
+    "subtitle": "creatures.subtitles.mob.mouse.hurt",
+    "sounds": [
+      "micehurt1.ogg",
+      "micehurt2.ogg",
+      "micehurt3.ogg"
+    ]
+  },
+  "mob.mouse.death": {
+    "subtitle": "creatures.subtitles.mob.mouse.death",
+    "sounds": [
+      "micedying1.ogg",
+      "micedying2.ogg"
+    ]
+  },
   "mob.fox": {
     "subtitle": "creatures.subtitles.mob.fox",
     "sounds": [

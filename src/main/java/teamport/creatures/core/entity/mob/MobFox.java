@@ -31,7 +31,7 @@ public class MobFox extends MobAnimal {
 
 	public MobFox(World world) {
 		super(world);
-		textureIdentifier = new NamespaceID(MoreMobs.MOD_ID, "fox");
+		setTextureIdentifier(MoreMobs.MOD_ID, "fox");
 		scoreValue = 125;
 		moveSpeed = 1.1f;
 		entityCheck = 1800 + random.nextInt(1800);

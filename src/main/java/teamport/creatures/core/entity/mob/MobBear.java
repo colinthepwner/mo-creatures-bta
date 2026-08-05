@@ -30,7 +30,7 @@ public class MobBear extends MobAnimal {
 
 	public MobBear(World world) {
 		super(world);
-		textureIdentifier = new NamespaceID(MoreMobs.MOD_ID, "bear");
+		setTextureIdentifier(MoreMobs.MOD_ID, "bear");
 		scoreValue = 250;
 		moveSpeed = 0.9f;
 		heartsHalvesLife = 40;

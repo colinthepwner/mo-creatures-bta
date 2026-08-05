@@ -31,7 +31,7 @@ public class MobBird extends MobAnimal {
 
 		heartsHalvesLife = 4;
 		scoreValue = 50;
-		textureIdentifier = new NamespaceID(MoreMobs.MOD_ID, "bird");
+		setTextureIdentifier(MoreMobs.MOD_ID, "bird");
 
 		setSize(0.25f, 0.25f);
 	}

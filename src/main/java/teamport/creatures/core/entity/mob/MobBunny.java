@@ -26,7 +26,7 @@ public class MobBunny extends MobAnimal {
 
 	public MobBunny(World world) {
 		super(world);
-		textureIdentifier = new NamespaceID(MoreMobs.MOD_ID, "bunny");
+		setTextureIdentifier(MoreMobs.MOD_ID, "bunny");
 		scoreValue = -10;
 		bunnyJumpTimer = 10 + random.nextInt(10);
 		timesBunnyShouldJump = random.nextInt(8) + 1;
@@ -48,7 +48,7 @@ public class MobBunny extends MobAnimal {
 	}
 
 	public boolean isBunnyTamed() {
-		return entityData.getByte((DATA_GENERIC_FLAGS) & MASK_TAMED) != 0;
+		return (entityData.getByte(DATA_GENERIC_FLAGS) & MASK_TAMED) != 0;
 	}
 
 	public UUID getBunnyOwner() {

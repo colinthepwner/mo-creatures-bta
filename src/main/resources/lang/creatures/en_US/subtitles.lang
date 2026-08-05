@@ -27,3 +27,22 @@ creatures.subtitles.mob.bunny.hurt=Bunny hurt
 creatures.subtitles.mob.deer=Deer grunt
 creatures.subtitles.mob.deer.death=Deer death
 creatures.subtitles.mob.deer.hurt=Deer hurt
+
+# Big cats
+creatures.subtitles.mob.bigcat=Big cat roars
+creatures.subtitles.mob.bigcat.death=Big cat death
+creatures.subtitles.mob.bigcat.hurt=Big cat hurt
+creatures.subtitles.mob.bigcat.cub=Cub mewls
+creatures.subtitles.mob.bigcat.cub.death=Cub death
+creatures.subtitles.mob.bigcat.cub.hurt=Cub hurt
+creatures.subtitles.mob.bigcat.eat=Big cat eats
+
+# Rats
+creatures.subtitles.mob.rat=Rat squeaks
+creatures.subtitles.mob.rat.death=Rat death
+creatures.subtitles.mob.rat.hurt=Rat hurt
+
+# Mice
+creatures.subtitles.mob.mouse=Mouse squeaks
+creatures.subtitles.mob.mouse.death=Mouse death
+creatures.subtitles.mob.mouse.hurt=Mouse hurt

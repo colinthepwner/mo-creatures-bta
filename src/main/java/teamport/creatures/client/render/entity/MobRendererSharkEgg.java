@@ -1,0 +1,28 @@
+package teamport.creatures.client.render.entity;
+
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.minecraft.client.render.entity.MobRenderer;
+import org.useless.dragonfly.models.entity.StaticEntityModel;
+import teamport.creatures.core.entity.mob.MobSharkEgg;
+
+/**
+ * An egg case does not move, so there is nothing to pose — the entity pins its own rotation and
+ * this just draws the geometry where it lies.
+ */
+@Environment(EnvType.CLIENT)
+public class MobRendererSharkEgg extends MobRenderer<MobSharkEgg> {
+	private static final String MODEL_KEY = "main";
+
+	public MobRendererSharkEgg() {
+		super(0.2F);
+		setModel(MODEL_KEY, "/assets/creatures/models/entity/shark_egg.json", 0.0D);
+	}
+
+	@Override
+	protected StaticEntityModel getAndSetupModelForLayer(MobSharkEgg entity, float partialTick, float unused, int layer) {
+		StaticEntityModel model = getModel(MODEL_KEY);
+		model.resetBones();
+		return model;
+	}
+}

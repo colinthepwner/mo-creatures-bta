@@ -4,6 +4,15 @@ import net.minecraft.core.entity.Entity;
 import net.minecraft.core.entity.EntityDispatcher;
 import net.minecraft.core.entity.factories.EntityFactory;
 import net.minecraft.core.util.collection.NamespaceID;
+import teamport.creatures.core.entity.mob.MobBigCat;
+import teamport.creatures.core.entity.mob.MobRat;
+import teamport.creatures.core.entity.mob.MobRatHell;
+import teamport.creatures.core.entity.mob.MobMouse;
+import teamport.creatures.core.entity.mob.MobDolphin;
+import teamport.creatures.core.entity.mob.MobShark;
+import teamport.creatures.core.entity.mob.MobFishy;
+import teamport.creatures.core.entity.mob.MobSharkEgg;
+import teamport.creatures.core.entity.mob.MobFishyEgg;
 import teamport.creatures.core.entity.mob.MobBear;
 import teamport.creatures.core.entity.mob.MobBird;
 import teamport.creatures.core.entity.mob.MobBoar;
@@ -62,5 +71,14 @@ public final class MMEntities {
 		register(MobHorsePegasus.class, "horse_pegasus", "pegasus", MobHorsePegasus::new);
 		register(MobKitty.class, "kitty", MobKitty::new);
 		register(MobDeerMoC.class, "deer", MobDeerMoC::new);
+		register(MobBigCat.class, "bigcat", MobBigCat::new);
+		register(MobRat.class, "rat", MobRat::new);
+		register(MobRatHell.class, "rat_hell", "rat_hell", MobRatHell::new);
+		register(MobMouse.class, "mouse", MobMouse::new);
+		register(MobDolphin.class, "dolphin", MobDolphin::new);
+		register(MobShark.class, "shark", MobShark::new);
+		register(MobFishy.class, "fishy", MobFishy::new);
+		register(MobSharkEgg.class, "shark_egg", "shark_egg", MobSharkEgg::new);
+		register(MobFishyEgg.class, "fishy_egg", "fishy_egg", MobFishyEgg::new);
 	}
 }
