@@ -12,7 +12,7 @@ public class MMConfig {
 	static {
 		TOML.addCategory("IDs")
 			.addEntry("startingItemID", 17000)
-			.addEntry("startingBlockID", 1100)
+			.addEntry("startingBlockID", 2800)
 			.addEntry("startingEntityID", 100);
 
 		TOML.addCategory("SpawnFrequencies")
