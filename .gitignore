@@ -8,7 +8,6 @@ run/
 run-server/
 
 # Editor, IDE and tooling artefacts -- never ship these
-.claude/
 *.orig
 
 # Asset/geometry bridge -- output is generated from a copy of the original mod that the player
