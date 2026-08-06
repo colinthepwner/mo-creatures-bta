@@ -7,7 +7,7 @@ out/
 run/
 run-server/
 
-# Claude Code / agent artefacts -- never ship these
+# Editor, IDE and tooling artefacts -- never ship these
 .claude/
 *.orig
 
