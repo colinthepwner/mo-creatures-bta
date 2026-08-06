@@ -35,16 +35,22 @@ public final class MMAudit {
 	private static final String MODEL_DIR = "/assets/creatures/models/entity/";
 	private static final String TEXTURE_DIR = "/assets/creatures/textures/entity/";
 	private static final String LANG_FILE = "/lang/creatures/en_US/guidebook.lang";
+	private static final String MODEL_BRIDGE_MANIFEST = "/assets/creatures/model-bridge.properties";
 
 	public static void run() {
 		List<String> ids = MMEntities.REGISTERED_IDS;
 		List<String> problems = new ArrayList<>();
 
 		Set<String> langKeys = readLangKeys();
+		// Mobs the bridge builds from the player's own copy of the original deliberately ship no
+		// built-in art. Counting those as failures makes a correct install read as a broken one, so
+		// they are tracked separately and only become problems if the bridge cannot supply them either.
+		Set<String> bridgeSupplied = readBridgeSuppliedIds();
 
 		int withModel = 0;
 		int withTexture = 0;
 		int withLang = 0;
+		int viaBridge = 0;
 
 		for (String id : ids) {
 			// Registration actually landed in the dispatcher?
@@ -53,16 +59,21 @@ public final class MMAudit {
 				problems.add("entity '" + id + "' is not in the dispatcher after registration");
 			}
 
+			boolean bridged = bridgeSupplied.contains(id);
+			if (bridged) viaBridge++;
+
 			if (resourceExists(MODEL_DIR + id + ".json")) {
 				withModel++;
-			} else {
-				problems.add("entity '" + id + "' has no model at " + MODEL_DIR + id + ".json");
+			} else if (!bridged) {
+				problems.add("entity '" + id + "' has no model at " + MODEL_DIR + id + ".json"
+					+ " and is not listed in " + MODEL_BRIDGE_MANIFEST);
 			}
 
 			if (resourceExists(TEXTURE_DIR + id + "/")) {
 				withTexture++;
-			} else {
-				problems.add("entity '" + id + "' has no texture directory at " + TEXTURE_DIR + id + "/");
+			} else if (!bridged) {
+				problems.add("entity '" + id + "' has no texture directory at " + TEXTURE_DIR + id + "/"
+					+ " and is not listed in " + MODEL_BRIDGE_MANIFEST);
 			}
 
 			// The lang name is not always the entity id, so accept either.
@@ -76,11 +87,14 @@ public final class MMAudit {
 		}
 
 		if (problems.isEmpty()) {
-			MoreMobs.LOGGER.info("Creatures audit: {} entities registered, all with lang key, model and texture",
-				ids.size());
+			MoreMobs.LOGGER.info("Creatures audit: {} entities registered, all accounted for "
+					+ "({} with built-in models, {} with built-in textures, {} supplied by the asset bridge, "
+					+ "{} with lang key)",
+				ids.size(), withModel, withTexture, viaBridge, withLang);
 		} else {
-			MoreMobs.LOGGER.warn("Creatures audit: {} entities registered, {} with model, {} with texture, {} with lang key",
-				ids.size(), withModel, withTexture, withLang);
+			MoreMobs.LOGGER.warn("Creatures audit: {} entities registered, {} with model, {} with texture, "
+					+ "{} via asset bridge, {} with lang key",
+				ids.size(), withModel, withTexture, viaBridge, withLang);
 			for (String problem : problems) {
 				MoreMobs.LOGGER.warn("Creatures audit problem: {}", problem);
 			}
@@ -142,6 +156,26 @@ public final class MMAudit {
 
 	private static boolean resourceExists(String path) {
 		return MMAudit.class.getResource(path) != null;
+	}
+
+	/**
+	 * Entity ids the geometry bridge knows how to build. Keys in that manifest are {@code <id>.<field>},
+	 * so the id is whatever precedes the first dot.
+	 */
+	private static Set<String> readBridgeSuppliedIds() {
+		Set<String> ids = new HashSet<>();
+		try (InputStream in = MMAudit.class.getResourceAsStream(MODEL_BRIDGE_MANIFEST)) {
+			if (in == null) return ids;
+			java.util.Properties props = new java.util.Properties();
+			props.load(in);
+			for (String key : props.stringPropertyNames()) {
+				int dot = key.indexOf('.');
+				ids.add(dot > 0 ? key.substring(0, dot) : key);
+			}
+		} catch (IOException e) {
+			MoreMobs.LOGGER.warn("Creatures audit problem: could not read {}: {}", MODEL_BRIDGE_MANIFEST, e.toString());
+		}
+		return ids;
 	}
 
 	private static Set<String> readLangKeys() {
