@@ -12,6 +12,9 @@ import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TypeInsnNode;
 import org.objectweb.asm.tree.VarInsnNode;
 
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.Arrays;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -397,9 +400,57 @@ public final class MMGeometryBridge {
 			}
 		}
 
+		writeModelManifest(result, packDir);
+
 		publish(result);
 		return result;
 	}
+
+	/**
+	 * Declares the converted geometry to Dragonfly.
+	 * <p>
+	 * Writing the model files is not enough on its own, and the failure is silent. Dragonfly's
+	 * {@code getGeometry} only ever reads its in-memory cache — it does no file I/O and never loads a
+	 * path on demand — and that cache is filled exclusively by {@code Cache.reload}, which walks the
+	 * selected packs reading {@code /assets/<namespace>/models/entity/models.json} and loading the
+	 * paths listed under {@code model_paths}. Anything not named there is simply never read, and
+	 * {@code getModel} hands back the fallback cube instead. This mirrors what BTA ships for its own
+	 * namespace.
+	 * <p>
+	 * The built-in models are listed too. This pack shadows the namespace, and a pack that named only
+	 * the converted models would leave every un-converted mob with nothing to load.
+	 */
+	private static void writeModelManifest(Result result, File packDir) {
+		List<String> ids = new ArrayList<>(result.converted);
+		ids.addAll(result.composed);
+		ids.addAll(BUILTIN_MODEL_IDS);
+
+		Set<String> paths = new TreeSet<>();
+		for (String id : ids) {
+			paths.add("/assets/creatures/models/entity/" + id + ".json");
+		}
+
+		StringBuilder json = new StringBuilder("{\n    \"model_paths\": [\n");
+		int i = 0;
+		for (String path : paths) {
+			json.append("        \"").append(path).append('"');
+			if (++i < paths.size()) json.append(',');
+			json.append('\n');
+		}
+		json.append("    ]\n}\n");
+
+		try {
+			write(new File(packDir, "assets/creatures/models/entity/models.json"),
+				json.toString().getBytes(StandardCharsets.UTF_8));
+		} catch (IOException e) {
+			result.problems.add("could not write the model manifest, so no converted model will load (" + e + ")");
+		}
+	}
+
+	/** Models shipped in the mod's own jar, which the generated pack's manifest must not drop. */
+	private static final List<String> BUILTIN_MODEL_IDS = Arrays.asList(
+		"bear", "bird", "boar", "bunny", "deer", "fox",
+		"horse", "horse_pegasus", "horse_unicorn", "kitty", "litterbox");
 
 	private static void publish(Result result) {
 		convertedCount = result.converted.size();

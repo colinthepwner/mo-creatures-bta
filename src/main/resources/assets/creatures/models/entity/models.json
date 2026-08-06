@@ -1,0 +1,15 @@
+{
+    "model_paths": [
+        "/assets/creatures/models/entity/bear.json",
+        "/assets/creatures/models/entity/bird.json",
+        "/assets/creatures/models/entity/boar.json",
+        "/assets/creatures/models/entity/bunny.json",
+        "/assets/creatures/models/entity/deer.json",
+        "/assets/creatures/models/entity/fox.json",
+        "/assets/creatures/models/entity/horse.json",
+        "/assets/creatures/models/entity/horse_pegasus.json",
+        "/assets/creatures/models/entity/horse_unicorn.json",
+        "/assets/creatures/models/entity/kitty.json",
+        "/assets/creatures/models/entity/litterbox.json"
+    ]
+}
