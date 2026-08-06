@@ -15,8 +15,8 @@ public class MobRendererFishyEgg extends MobRenderer<MobFishyEgg> {
 	private static final String MODEL_KEY = "main";
 
 	public MobRendererFishyEgg() {
-		super(0.15F);
-		setModel(MODEL_KEY, "/assets/creatures/models/entity/fishy_egg.json", 0.0D);
+		super(0.1F);
+		setModel(MODEL_KEY, "geometry.fishy_egg", 0.0D);
 	}
 
 	@Override

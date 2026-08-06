@@ -34,7 +34,7 @@ public class LitterboxRenderer extends TileEntityRenderer<LitterboxEntity> {
 	private static final String TEXTURE_FILTHY = "/assets/creatures/textures/entity/litterbox/1.png";
 
 	public LitterboxRenderer() {
-		setModel(MODEL_KEY, "/assets/creatures/models/entity/litterbox.json", 0.0D);
+		setModel(MODEL_KEY, "geometry.litterbox", 0.0D);
 	}
 
 	@Override

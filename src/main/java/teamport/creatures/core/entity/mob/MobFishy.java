@@ -46,7 +46,7 @@ public class MobFishy extends MobAquaticBase {
 		scoreValue = 10;
 		heartsHalvesLife = 10;
 
-		setSize(0.4F, 0.3F);
+		setSize(0.3F, 0.3F);
 		setVariety(random.nextInt(VARIETIES));
 		setGrowth(0.6F + random.nextFloat() * (ADULT_GROWTH - 0.6F));
 

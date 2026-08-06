@@ -10,6 +10,8 @@ import net.fabricmc.api.Environment;
 @Environment(EnvType.CLIENT)
 public class MobRendererRatHell extends MobRendererRat {
 	public MobRendererRatHell() {
-		super("/assets/creatures/models/entity/rat_hell.json", 0.4F);
+		// Same boxes as the common rat, drawn half again as large: that is the whole difference in
+		// build between the two, and the original made it here rather than in the model.
+		super("geometry.rat_hell", 0.4F, 1.3F);
 	}
 }

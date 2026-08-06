@@ -14,7 +14,7 @@ public class MobRendererBunny extends MobRenderer<MobBunny> {
 
 	public MobRendererBunny() {
 		super(0.3F);
-		setModel(MODEL_KEY, "/assets/creatures/models/entity/bunny.json", 0.0D);
+		setModel(MODEL_KEY, "geometry.bunny", 0.0D);
 	}
 
 	@Override

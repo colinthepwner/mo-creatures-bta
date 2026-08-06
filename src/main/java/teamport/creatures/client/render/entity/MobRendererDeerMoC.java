@@ -2,6 +2,7 @@ package teamport.creatures.client.render.entity;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.minecraft.client.render.renderer.GLRenderer;
 import net.minecraft.core.util.helper.MathHelper;
 import org.useless.dragonfly.models.entity.BoneTransform;
 import org.useless.dragonfly.models.entity.StaticEntityModel;
@@ -23,8 +24,30 @@ import teamport.creatures.core.entity.mob.MobDeerMoC;
 public class MobRendererDeerMoC extends MobRendererQuadrupedBase<MobDeerMoC> {
 	private static final String[] LEGS = {"legLeftFront", "legRightFront", "legLeftBack", "legRightBack"};
 
+	/**
+	 * How much bigger than its boxes a deer is drawn.
+	 * <p>
+	 * {@code ModelDeer} is built at roughly a large dog's size and the original scaled it up at draw
+	 * time, by species: 1.7 for the antlered deer and 1.3 for the doe. Nothing here did that, which is
+	 * why a deer used to stand shorter than a pig.
+	 */
+	private static final float BUCK_SCALE = 1.7F;
+	private static final float DOE_SCALE = 1.3F;
+
 	public MobRendererDeerMoC() {
-		super("/assets/creatures/models/entity/deer.json", 0.0D, 0.75F);
+		super("geometry.deer", 0.0D, 0.5F);
+	}
+
+	@Override
+	protected void preRenderTransform(MobDeerMoC entity, double x, double y, double z, float rot, float partialTick) {
+		super.preRenderTransform(entity, x, y, z, rot, partialTick);
+		float scale = entity.isBuck() ? BUCK_SCALE : DOE_SCALE;
+		GLRenderer.modelM4f().scale(scale, scale, scale);
+	}
+
+	@Override
+	public float getShadowSize(MobDeerMoC entity) {
+		return super.getShadowSize(entity) * (entity.isBuck() ? BUCK_SCALE : DOE_SCALE);
 	}
 
 	@Override

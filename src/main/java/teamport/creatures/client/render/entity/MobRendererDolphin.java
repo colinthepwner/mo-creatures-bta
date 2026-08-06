@@ -18,7 +18,7 @@ public class MobRendererDolphin extends MobRendererAquaticBase<MobDolphin> {
 	private static final String[] DORSAL = {"finUpper", "UpperFin", "upperFin"};
 
 	public MobRendererDolphin() {
-		super("/assets/creatures/models/entity/dolphin.json", 0.0D, 0.7F);
+		super("geometry.dolphin", 0.0D, 0.6F);
 	}
 
 	@Override

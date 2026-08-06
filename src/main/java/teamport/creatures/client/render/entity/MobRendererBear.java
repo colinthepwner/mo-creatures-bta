@@ -9,7 +9,7 @@ public class MobRendererBear extends MobRendererQuadrupedBase<MobBear> {
 	private static final String[] LEGS = {"legLeftFront", "legRightFront", "legLeftBack", "legRightBack"};
 
 	public MobRendererBear() {
-		super("/assets/creatures/models/entity/bear.json", 0.0D, 1.0F);
+		super("geometry.bear", 0.0D, 0.7F);
 	}
 
 	@Override

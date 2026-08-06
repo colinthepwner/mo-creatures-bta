@@ -23,7 +23,7 @@ public class MobRendererKitty extends MobRendererQuadrupedBase<MobKitty> {
 	private static final float SIT_BACK_LEG_PITCH = (float) Math.toRadians(-90.0);
 
 	public MobRendererKitty() {
-		super("/assets/creatures/models/entity/kitty.json", 0.0D, 0.25F);
+		super("geometry.kitty", 0.0D, 0.4F);
 	}
 
 	@Override

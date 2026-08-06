@@ -21,9 +21,14 @@ public class MobRendererMouse extends MobRendererQuadrupedBase<MobMouse> {
 	private static final String[] LEGS = {"legLeftFront", "legRightFront", "legLeftBack", "legRightBack"};
 
 	private static final float CARRIED_ROLL = (float) Math.PI;
+	/**
+	 * The mouse is modelled at rat scale and drawn down to mouse scale, which is where the original
+	 * put the difference. Without it a mouse is the size of a rat.
+	 */
+	private static final float RENDER_SCALE = 0.6F;
 
 	public MobRendererMouse() {
-		super("/assets/creatures/models/entity/mouse.json", 0.0D, 0.2F);
+		super("geometry.mouse", 0.0D, 0.1F);
 	}
 
 	@Override
@@ -40,6 +45,7 @@ public class MobRendererMouse extends MobRendererQuadrupedBase<MobMouse> {
 	@Override
 	protected void preRenderTransform(MobMouse entity, double x, double y, double z, float rot, float partialTick) {
 		super.preRenderTransform(entity, x, y, z, rot, partialTick);
+		GLRenderer.modelM4f().scale(RENDER_SCALE, RENDER_SCALE, RENDER_SCALE);
 		if (entity.isCarried()) {
 			GLRenderer.modelM4f().rotateZ(CARRIED_ROLL);
 		}

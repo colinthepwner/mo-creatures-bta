@@ -33,7 +33,7 @@ public class MobBird extends MobAnimal {
 		scoreValue = 50;
 		setTextureIdentifier(MoreMobs.MOD_ID, "bird");
 
-		setSize(0.25f, 0.25f);
+		setSize(0.4F, 0.3F);
 	}
 
 	@Override

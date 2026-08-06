@@ -12,7 +12,7 @@ public class MobRendererFox extends MobRendererQuadrupedBase<MobFox> {
 	private static final String[] LEGS = {"legFrontLeft", "legFrontRight", "legBackLeft", "legBackRight"};
 
 	public MobRendererFox() {
-		super("/assets/creatures/models/entity/fox.json", 0.0D, 0.5F);
+		super("geometry.fox", 0.0D, 0.5F);
 	}
 
 	@Override

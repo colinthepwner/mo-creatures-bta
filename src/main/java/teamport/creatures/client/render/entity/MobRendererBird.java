@@ -13,8 +13,8 @@ public class MobRendererBird extends MobRenderer<MobBird> {
 	private static final String MODEL_KEY = "main";
 
 	public MobRendererBird() {
-		super(0.25F);
-		setModel(MODEL_KEY, "/assets/creatures/models/entity/bird.json", 0.0D);
+		super(0.3F);
+		setModel(MODEL_KEY, "geometry.bird", 0.0D);
 	}
 
 	@Override

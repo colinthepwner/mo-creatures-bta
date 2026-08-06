@@ -37,7 +37,9 @@ public class MobDeerMoC extends MobAnimal {
 
 	public MobDeerMoC(World world) {
 		super(world);
-		setSize(0.3f, 2.0f);
+		// The original's own box. What was here before was 0.3 wide and 2.0 tall -- a deer that
+		// could walk through its own antlers and stood in a column narrower than one leg.
+		setSize(0.9F, 1.3F);
 
 		if (random.nextInt(2) == 0) setBuck(true);
 

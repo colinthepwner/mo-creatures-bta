@@ -47,7 +47,8 @@ public class MobHorse extends MobAnimal {
 		textureIdentifier = new NamespaceID(MoreMobs.MOD_ID, "horse");
 		setSkinVariant(random.nextInt(3));
 
-		setSize(0.8F, 2.0F);
+		// The original's own box: a horse is wider than it is tall in plan, not a 2-block pillar.
+		setSize(1.4F, 1.6F);
 	}
 
 	@Override

@@ -2,6 +2,7 @@ package teamport.creatures.client.render.entity;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.minecraft.client.render.renderer.GLRenderer;
 import net.minecraft.core.util.helper.MathHelper;
 import org.useless.dragonfly.models.entity.BoneTransform;
 import org.useless.dragonfly.models.entity.StaticEntityModel;
@@ -21,11 +22,25 @@ public class MobRendererRat extends MobRendererQuadrupedBase<MobRat> {
 	private static final float CLIMB_PITCH = (float) Math.toRadians(-45.0);
 
 	public MobRendererRat() {
-		this("/assets/creatures/models/entity/rat.json", 0.3F);
+		this("geometry.rat", 0.2F, 0.8F);
 	}
 
-	protected MobRendererRat(String modelPath, float shadowSize) {
-		super(modelPath, 0.0D, shadowSize);
+	protected MobRendererRat(String modelId, float shadowSize, float renderScale) {
+		super(modelId, 0.0D, shadowSize);
+		this.renderScale = renderScale;
+	}
+
+	/**
+	 * How much of its modelled size a rat is actually drawn at. The geometry is a shared sheet the
+	 * original scaled per mob at draw time — a rat at 0.8 and a hell rat at 1.3 off the same boxes —
+	 * so without this every rat comes out at the hell rat's size.
+	 */
+	private final float renderScale;
+
+	@Override
+	protected void preRenderTransform(MobRat entity, double x, double y, double z, float rot, float partialTick) {
+		super.preRenderTransform(entity, x, y, z, rot, partialTick);
+		GLRenderer.modelM4f().scale(renderScale, renderScale, renderScale);
 	}
 
 	@Override

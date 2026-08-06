@@ -6,7 +6,7 @@ The original never loads as a mod — it is b1.7.3 code and BTA ignores it — i
 
 Status: **implemented** in `MMGeometryBridge`, driven by `assets/creatures/model-bridge.properties`.
 Measured against DrZhark's v2.12.2 for b1.7.3: all 27 model classes are read without a single
-extraction failure, and **31 geometries are written**, from 20 of those classes plus two of
+extraction failure, and **34 geometries are written**, from 21 of those classes plus two of
 Minecraft's own. Nothing this port draws is held back for want of a source; the two mobs it does not
 bridge are named at the end of this file and both are deliberate.
 
@@ -91,6 +91,19 @@ derived from the pivot. The rest pose is then bit-identical to the original's an
 follows its parent when posed. This is why the horse's ears and horn can hang off `head` at all, and
 it fixed a rat whose front torso was being drawn at 90 degrees to the rest of it.
 
+A model's constructor is not the whole shape, either. Minecraft's own models routinely build a box in
+one place and move it somewhere else in `setRotationAngles`, every frame, before drawing it —
+`ModelQuadruped` lays its body along the spine that way, and `ModelBiped` re-hangs its legs from
+`rotationPointY = 12`. So the pose methods are read too, with every animation argument at zero: that
+is what "rest pose" means, and it makes the constant beside an animation term readable rather than
+unknown. A rotation the constructor already declared wins, because angles accumulate across a frame;
+a rotation point does not, because it is assigned outright immediately before the box is drawn, so
+there the pose method's value is the one the original renders with. This is what the original's
+`ModelOgre2` needs — it builds its feet about `y = 0` and moves them to `y = 12` when it poses, so a
+converter that reads only constructors hangs an ogre's feet at knee height — and it is most of what
+the transformed werewolf needs, whose `ModelWerewolf` re-places its head, torso, arms, shins and tail
+on every frame.
+
 ## Output
 
 Geometry is written into the same generated `MoCreaturesAssets` pack the textures go to, at the paths
@@ -113,8 +126,14 @@ Checked against a real copy rather than assumed, because several assumptions wer
   `ModelBigCat2` + `ModelBigCat1`, `ModelHorse2` + `ModelHorse1`, `ModelOgre2` + `ModelOgre1`,
   `ModelWolf2` + `ModelWolf1`. None of them turned out to be one shape drawn twice, which is what the
   manifest's `overlay` key is for. They are either two halves of one animal, drawn as two layers with
-  a texture each (the horse), or a state pass this port has no state for (the bear's angry coat, the
-  wolf's `wolfb.png`) — and the lion's mane, which is a layer this port does draw.
+  a texture each (the horse, the ogres and the pack wolf), or a state pass this port has no state for
+  (the bear's angry coat) — and the lion's mane, which is a layer this port does draw.
+  Telling the two apart matters: `ModelOgre2` alone is a headless ogre, because its head slot holds a
+  1x1x1 dot and the real head, torso and shins are all in `ModelOgre1` on `ogreb.png`; and `ModelWolf2`
+  alone is a wolf with a floating head, because its head sits two units clear of the front of its body
+  and what closes that gap is `ModelWolf1`'s neck plate on `wolfb.png`. Both of those passes read
+  `pass == 0 && !flag`, so the flag *suppresses* the pass rather than enabling it, and nothing but a
+  saved NBT tag ever sets it — which is why both draw always and unconditionally here.
 - **Two mobs have no model in the archive at all.** The original rendered its boar on Minecraft's
   `ModelPig` and its duck on `ModelChicken`. That is not a dead end — the converter already
   reconstructs vanilla base layers from BTA's own geometry, so it reconstructs the whole model for
@@ -131,12 +150,13 @@ Checked against a real copy rather than assumed, because several assumptions wer
 
 ## What converts, and what does not
 
-**31 geometries and 74 textures**, measured against a real v2.12.2 archive with nothing missing and
+**34 geometries and 77 textures**, measured against a real v2.12.2 archive with nothing missing and
 nothing skipped: `bear`, `deer`, `bird`, `kitty`, `bigcat`, `bigcat_maned`, `rat`, `rat_hell`,
 `mouse`, `dolphin`, `shark`, `shark_egg`, `fishy`, `fishy_egg`, `ogre`, `ogre_fire`, `ogre_cave`,
 `wraith`, `wraith_flame`, `werewolf`, `werewolf_beast`, `werewolf_wolf`, `boar`, `duck`, `litterbox`,
-and the six halves of the three horses. Most of those are things this repo ships **no** geometry for
-at all, so before the bridge runs they do not render.
+the second half of each ogre (`ogre_over`, `ogre_fire_over`, `ogre_cave_over`), and the six halves of
+the three horses. Most of those are things this repo ships **no** geometry for at all, so before the
+bridge runs they do not render.
 
 Four of these needed more than a manifest line, and each one is a pattern rather than a special case:
 
@@ -144,7 +164,7 @@ Four of these needed more than a manifest line, and each one is a pattern rather
 |---|---|
 | `boar`, `duck` | No class in the archive: the original rendered them on Minecraft's `ModelPig` and `ModelChicken`. The converter already rebuilds vanilla base layers from BTA's own geometry, so `<id>.vanilla` rebuilds the whole model the same way. |
 | `horse`, `horse_unicorn`, `horse_pegasus` | The original draws a horse as two models with a texture each — `horse<colour>a.png` for body/tail/legs, `horse<colour>b.png` for head/neck/ears and the horn or wings. Both halves convert and the horse renderers draw them as two layers, the way `MobRendererBigCat` draws the lion's mane. One head model serves all three: the horn and wings are always built and simply blank on a plain horse's sheet, which is how the original did it too. |
-| `werewolf_wolf` | The beast and the pack wolf shared one geometry here, so neither could take the skin painted for it. They are two models again — `ModelWerewolf` and `ModelWolf2` — as they were in the original. |
+| `werewolf_wolf` | The beast and the pack wolf shared one geometry here, so neither could take the skin painted for it. They are two models again — `ModelWerewolf` and `ModelWolf2` — as they were in the original, and the wolf takes `ModelWolf1` as a second layer on `wolfb.png` for the neck it was missing. |
 | `litterbox` | The original had one image and swapped a `Litter` box for a `LitterUsed` one. Both convert, and `LitterboxRenderer` hides whichever does not apply, the way the doe's antlers are hidden. |
 
 Two mobs are **not** bridged, and that is a decision rather than a gap:

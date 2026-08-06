@@ -85,7 +85,13 @@ public class MobBigCat extends MobAnimal {
 		"bigcat_lion", "bigcat_lion", "bigcat_panther", "bigcat_cheetah",
 		"bigcat_tiger", "bigcat_leopard", "bigcat_tiger_white"
 	};
-	private static final float[] VARIANT_SCALES = {1.0F, 1.1F, 0.9F, 0.8F, 1.1F, 0.8F, 1.2F};
+	/**
+	 * Build, per species, as width/height/length — the original scaled the three axes separately, so a
+	 * cheetah is a lioness stretched long and slimmed down rather than a smaller lioness.
+	 */
+	private static final float[] VARIANT_WIDTH = {1.0F, 1.1F, 0.9F, 0.8F, 1.1F, 0.8F, 1.2F};
+	private static final float[] VARIANT_HEIGHT = {1.0F, 1.1F, 0.9F, 0.8F, 1.1F, 0.8F, 1.2F};
+	private static final float[] VARIANT_LENGTH = {1.0F, 1.0F, 0.9F, 1.0F, 1.1F, 0.9F, 1.2F};
 	private static final float[] VARIANT_SPEEDS = {1.4F, 1.4F, 1.6F, 1.9F, 1.6F, 1.7F, 1.7F};
 	private static final double[] VARIANT_RANGES = {8.0, 4.0, 6.0, 6.0, 8.0, 4.0, 10.0};
 	private static final int[] VARIANT_DAMAGE = {5, 5, 4, 3, 6, 3, 8};
@@ -176,9 +182,21 @@ public class MobBigCat extends MobAnimal {
 		return VARIANT_RANGES[getVariant()];
 	}
 
-	/** Model scale for the renderer: the species' build, shrunk while the cat is still a cub. */
-	public float getRenderScale() {
-		return VARIANT_SCALES[getVariant()] * (getGrowth() / 100.0F);
+	/** Model scale for the renderer, per axis: the species' build, shrunk while the cat is still a cub. */
+	public float getRenderScaleX() {
+		return VARIANT_WIDTH[getVariant()] * cubFactor();
+	}
+
+	public float getRenderScaleY() {
+		return VARIANT_HEIGHT[getVariant()] * cubFactor();
+	}
+
+	public float getRenderScaleZ() {
+		return VARIANT_LENGTH[getVariant()] * cubFactor();
+	}
+
+	private float cubFactor() {
+		return isAdult() ? 1.0F : getGrowth() / 100.0F;
 	}
 
 	/** Only the grown male lion wears the mane, which is a second piece of geometry. */

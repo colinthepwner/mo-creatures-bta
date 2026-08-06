@@ -31,7 +31,8 @@ public class MobKitty extends MobAnimal {
 
 	public MobKitty(World world) {
 		super(world);
-		setSize(0.5F, 0.7F);
+		// A cat is longer than it is tall; the original had these the way round they are here.
+		setSize(0.7F, 0.5F);
 
 		heartsHalvesLife = 10;
 		skin = random.nextInt(4);

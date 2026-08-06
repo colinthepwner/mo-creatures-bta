@@ -7,6 +7,6 @@ import teamport.creatures.core.entity.mob.MobWraithFlame;
 @Environment(EnvType.CLIENT)
 public class MobRendererWraithFlame extends MobRendererWraithBase<MobWraithFlame> {
 	public MobRendererWraithFlame() {
-		super("/assets/creatures/models/entity/wraith_flame.json");
+		super("geometry.wraith_flame");
 	}
 }

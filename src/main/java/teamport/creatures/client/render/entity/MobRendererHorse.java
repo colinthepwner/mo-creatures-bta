@@ -33,12 +33,12 @@ public class MobRendererHorse extends MobRendererQuadrupedBase<MobHorse> {
 	private static final int LAYER_HEAD = 1;
 
 	public MobRendererHorse() {
-		this("/assets/creatures/models/entity/horse.json", "/assets/creatures/models/entity/horse_head.json");
+		this("geometry.horse", "geometry.horse_head");
 	}
 
-	protected MobRendererHorse(String bodyPath, String headPath) {
-		super(bodyPath, 0.0D, 0.75F);
-		setModel(HEAD_KEY, headPath, 0.0D);
+	protected MobRendererHorse(String bodyId, String headId) {
+		super(bodyId, 0.0D, 0.5F);
+		setModel(HEAD_KEY, headId, 0.0D);
 	}
 
 	@Override

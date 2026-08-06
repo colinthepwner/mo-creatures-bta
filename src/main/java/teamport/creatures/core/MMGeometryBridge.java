@@ -547,7 +547,19 @@ public final class MMGeometryBridge {
 
 		Interpreter interpreter = new Interpreter(node, ctors, m, out);
 		interpreter.run(entry, args);
+		if (out.problems.isEmpty()) interpreter.readRestPose(node);
 		return out;
+	}
+
+	/**
+	 * Descriptors of the methods a Beta 1.7.3 model poses itself in — {@code setRotationAngles} and
+	 * {@code render}, both of which take the six animation floats, plus {@code ModelBiped}'s variant
+	 * that also takes the "is riding" flag. Matched on descriptor, like everything else here: the
+	 * names are obfuscated and differ between the base class and its subclasses.
+	 */
+	private static boolean isPoseMethod(MethodNode method) {
+		return !"<init>".equals(method.name) && !"<clinit>".equals(method.name)
+			&& ("(FFFFFF)V".equals(method.desc) || "(FFFFFFZ)V".equals(method.desc));
 	}
 
 	private static final class Interpreter {
@@ -558,6 +570,18 @@ public final class MMGeometryBridge {
 		private final Map<String, Object> fields = new HashMap<>();
 		private String rendererType;
 		private int depth;
+		/**
+		 * Set while a pose method is being read rather than a constructor. In this mode nothing is
+		 * built and nothing is reported: the only thing taken out is a constant rotation angle, and
+		 * anything the reader does not understand ends that method quietly instead of failing the
+		 * model. See {@link #readRestPose}.
+		 */
+		private boolean pose;
+		/** Set by {@link #step} when the instruction it read was a jump it decided to take. */
+		private AbstractInsnNode jumped;
+
+		/** The six animation floats plus the trailing flag, all at rest. See {@link #readRestPose}. */
+		private static final double[] REST_ARGUMENTS = {0, 0, 0, 0, 0, 0, 0};
 
 		Interpreter(ClassNode owner, Map<String, MethodNode> ctors, Manifest manifest, Extraction out) {
 			this.owner = owner;
@@ -566,24 +590,191 @@ public final class MMGeometryBridge {
 			this.out = out;
 		}
 
+		/**
+		 * The rest pose a model puts itself in, for the models that build a box in one frame and turn
+		 * it into another when they pose rather than when they construct.
+		 * <p>
+		 * Minecraft's own {@code ModelQuadruped} is the pattern: it builds a body box standing on end
+		 * and lays it along the spine with {@code body.rotateAngleX = PI/2} inside
+		 * {@code setRotationAngles}, every frame, unconditionally. A subclass that copies that shape
+		 * without extending the class — the original's {@code ModelBigCat2} is exactly this — carries
+		 * the same assignment in its own pose method, and a converter that only reads constructors
+		 * emits a cat standing on its tail. So the pose methods are read too.
+		 * <p>
+		 * Rotation points are read the same way, and matter just as much: the original's
+		 * {@code ModelOgre2} builds its feet about y = 0 and moves them to y = 12 in its pose method,
+		 * exactly as {@code ModelBiped} does, so a converter that only reads constructors leaves an
+		 * ogre's feet at knee height. See {@link #writeRestPose} for which of the two wins when the
+		 * constructor and the pose method disagree.
+		 * <p>
+		 * Only <em>constant</em> writes count, so a value computed from the animation arguments is
+		 * skipped rather than frozen at whatever the reader made of it. Conditional bodies are stepped
+		 * over — the branch a flag this can evaluate takes with the flag clear, and the branch an
+		 * undecidable test is assumed to take — which reads the pose a model puts itself in with
+		 * nothing applying: its rest pose, rather than its sitting, sneaking or swinging variant.
+		 */
+		void readRestPose(ClassNode node) {
+			pose = true;
+			try {
+				for (MethodNode method : node.methods) {
+					if (!isPoseMethod(method)) continue;
+					depth = 0;
+					// Every animation argument at zero: no stride, no head turn, nothing held. That is
+					// what "rest pose" means, and it is what makes the constant beside an animation
+					// term readable rather than unknown.
+					run(method, REST_ARGUMENTS);
+				}
+			} catch (RuntimeException e) {
+				// A pose method is a bonus, never a requirement: the model is already built.
+			} finally {
+				pose = false;
+			}
+		}
+
 		void run(MethodNode method, double[] args) {
 			if (depth++ > 8) {
-				out.problems.add("constructor delegation is too deep to follow");
+				if (!pose) out.problems.add("constructor delegation is too deep to follow");
 				return;
 			}
 			Object[] locals = new Object[Math.max(method.maxLocals, 8) + 8];
 			locals[0] = THIS;
 			int slot = 1;
+			int index = 0;
 			for (Type type : Type.getArgumentTypes(method.desc)) {
-				if (slot - 1 < args.length) locals[slot] = args[slot - 1];
+				locals[slot] = index < args.length ? args[index] : defaultValue(type.getDescriptor());
 				slot += type.getSize();
+				index++;
 			}
 
 			List<Object> stack = new ArrayList<>();
-			for (AbstractInsnNode insn : method.instructions) {
-				if (!step(insn, stack, locals)) return;
+			AbstractInsnNode insn = method.instructions.getFirst();
+			// A jump can only be taken so many times before something is looping; a model that loops is
+			// not one this reads, and the budget is what stops it hanging rather than failing.
+			int budget = method.instructions.size() * 4 + 64;
+			try {
+				while (insn != null && budget-- > 0) {
+					jumped = null;
+					if (!step(insn, stack, locals)) return;
+					insn = jumped != null ? jumped : insn.getNext();
+				}
+			} finally {
+				depth--;
 			}
-			depth--;
+		}
+
+		/** @return true when {@code target} comes after {@code from}; a backwards jump is a loop. */
+		private static boolean isForward(AbstractInsnNode from, AbstractInsnNode target) {
+			for (AbstractInsnNode at = from.getNext(); at != null; at = at.getNext()) {
+				if (at == target) return true;
+			}
+			return false;
+		}
+
+		/**
+		 * Takes, skips or gives up on a jump.
+		 *
+		 * @param taken {@code TRUE} to jump, {@code FALSE} to fall through, {@code null} when the test
+		 *              could not be decided — which ends the method rather than guessing a branch
+		 * @return false when the walk must stop
+		 */
+		private boolean branch(AbstractInsnNode insn, Boolean taken) {
+			if (taken == null) {
+				// A constructor is the model, so a branch this cannot decide has to fail it rather
+				// than leave half the boxes out and call the result converted.
+				if (!pose) {
+					out.problems.add("constructor branches on something this cannot evaluate");
+					return false;
+				}
+				// A pose method is read for its rest pose, and javac compiles 'if (x) { body }' as a
+				// jump over the body. So an undecidable test skips its block and carries on, rather
+				// than abandoning the method: that is the same answer every flag this can evaluate
+				// already gives — none of the optional poses apply — and it is what reaches the
+				// unconditional tail. ModelBiped's swing block guards on a float the base class
+				// initialises outside the archive; stopping there loses everything after it.
+				taken = Boolean.TRUE;
+			}
+			if (!taken) return true;
+			AbstractInsnNode label = ((org.objectweb.asm.tree.JumpInsnNode) insn).label;
+			// Forwards only: a backwards jump is a loop, and this reads straight-line code.
+			if (!isForward(insn, label)) {
+				if (!pose) out.problems.add("constructor jumps backwards, which this cannot follow");
+				return false;
+			}
+			jumped = label;
+			return true;
+		}
+
+		/** @return whether the jump is taken, or {@code null} when its operands are not both known. */
+		private static Boolean decide(int op, Object left, Object right) {
+			if (op == Opcodes.IFNULL || op == Opcodes.IFNONNULL) {
+				// Only a tracked object proves non-null; an unknown could be either.
+				if (left == null) return null;
+				return op == Opcodes.IFNONNULL;
+			}
+			if (op == Opcodes.IF_ACMPEQ || op == Opcodes.IF_ACMPNE) {
+				if (left == null || right == null) return null;
+				return op == Opcodes.IF_ACMPEQ ? left == right : left != right;
+			}
+			if (!(left instanceof Double a)) return null;
+			double b;
+			if (right == null) {
+				b = 0.0;
+			} else if (right instanceof Double d) {
+				b = d;
+			} else {
+				return null;
+			}
+			if (Double.isNaN(a) || Double.isNaN(b)) return null;
+			return switch (op) {
+				case Opcodes.IFEQ, Opcodes.IF_ICMPEQ -> a == b;
+				case Opcodes.IFNE, Opcodes.IF_ICMPNE -> a != b;
+				case Opcodes.IFLT, Opcodes.IF_ICMPLT -> a < b;
+				case Opcodes.IFGE, Opcodes.IF_ICMPGE -> a >= b;
+				case Opcodes.IFGT, Opcodes.IF_ICMPGT -> a > b;
+				case Opcodes.IFLE, Opcodes.IF_ICMPLE -> a <= b;
+				default -> null;
+			};
+		}
+
+		/** Java's own default for a field or parameter this has no recorded value for. */
+		private static Object defaultValue(String descriptor) {
+			return switch (descriptor) {
+				case "Z", "B", "C", "S", "I", "J" -> 0.0;
+				default -> null;   // floats stay unknown: an animated angle must not read as zero
+			};
+		}
+
+		/**
+		 * Takes a rest pose out of a pose method — where a bone is turned to, and where it is hung
+		 * from, before anything is animated. Only a constant counts: a value built from the animation
+		 * arguments is a movement, not a shape.
+		 * <p>
+		 * Rotation and rotation point are taken on different terms, because the originals treat them
+		 * differently. An angle is <em>added to</em> across a frame, so one the constructor already
+		 * declared is the model's own and wins; a pose method only fills in an angle left at zero.
+		 * A rotation point is <em>assigned</em>, unconditionally, immediately before the box is drawn,
+		 * so the pose method's value is the one the original renders with and it replaces whatever the
+		 * constructor set. Minecraft's own {@code ModelBiped} is the pattern: it builds its legs about
+		 * y = 12 and then writes {@code rotationPointY = 12} again every frame — harmless there, but
+		 * the original's {@code ModelOgre2} builds its feet about y = 0 and writes 12 in the pose
+		 * method, so a converter that only reads constructors hangs an ogre's feet at knee height.
+		 * The boxes are held as offsets from the point, so moving it carries them along.
+		 */
+		private void writeRestPose(Bone bone, FieldInsnNode field, Object value) {
+			if (!(value instanceof Double d) || Double.isNaN(d)) return;
+			switch (meaning(field.name)) {
+				case "point-x" -> bone.pointX = (float) (double) d;
+				case "point-y" -> bone.pointY = (float) (double) d;
+				case "point-z" -> bone.pointZ = (float) (double) d;
+				case "rotate-x" -> { if (unrotated(bone) && d != 0.0) bone.angleX = (float) (double) d; }
+				case "rotate-y" -> { if (unrotated(bone) && d != 0.0) bone.angleY = (float) (double) d; }
+				case "rotate-z" -> { if (unrotated(bone) && d != 0.0) bone.angleZ = (float) (double) d; }
+				default -> { }
+			}
+		}
+
+		private static boolean unrotated(Bone bone) {
+			return bone.angleX == 0 && bone.angleY == 0 && bone.angleZ == 0;
 		}
 
 		/** @return false when the constructor cannot be read any further. */
@@ -650,7 +841,11 @@ public final class MMGeometryBridge {
 					FieldInsnNode field = (FieldInsnNode) insn;
 					Object target = pop(stack);
 					if (target == THIS) {
-						push(stack, fields.get(field.name));
+						// A field nothing has assigned still has a value: Java's own default. That is
+						// what makes reading a pose method mean something -- every flag a model tests
+						// is false, so the branch taken is the one it rests in.
+						push(stack, fields.containsKey(field.name) ? fields.get(field.name)
+							: defaultValue(field.desc));
 					} else if (target instanceof Bone bone) {
 						push(stack, readRendererField(bone, field.name));
 					} else {
@@ -661,7 +856,12 @@ public final class MMGeometryBridge {
 					FieldInsnNode field = (FieldInsnNode) insn;
 					Object value = pop(stack);
 					Object target = pop(stack);
-					if (target == THIS) {
+					if (pose) {
+						// A pose method only ever tells this one thing: the rest pose a bone is put
+						// in before anything is animated. Its own fields are left alone -- rewriting
+						// them here would replace a bone the constructor already built.
+						if (target instanceof Bone bone) writeRestPose(bone, field, value);
+					} else if (target == THIS) {
 						if (value instanceof Bone bone) {
 							bone.slot = field.name;
 						} else if (value instanceof BoneArray array) {
@@ -675,11 +875,36 @@ public final class MMGeometryBridge {
 						}
 					}
 				}
+				case Opcodes.INVOKESTATIC -> {
+					// Nothing static this reads returns a constant -- MathHelper.cos and friends take
+					// the animation arguments -- so the arguments come off and an unknown comes back.
+					MethodInsnNode call = (MethodInsnNode) insn;
+					popArgs(stack, Type.getArgumentTypes(call.desc));
+					if (!Type.VOID_TYPE.equals(Type.getReturnType(call.desc))) push(stack, null);
+				}
+				case Opcodes.IFEQ, Opcodes.IFNE, Opcodes.IFLT, Opcodes.IFGE, Opcodes.IFGT, Opcodes.IFLE,
+					Opcodes.IFNULL, Opcodes.IFNONNULL -> {
+					return branch(insn, decide(op, pop(stack), null));
+				}
+				case Opcodes.IF_ICMPEQ, Opcodes.IF_ICMPNE, Opcodes.IF_ICMPLT, Opcodes.IF_ICMPGE,
+					Opcodes.IF_ICMPGT, Opcodes.IF_ICMPLE, Opcodes.IF_ACMPEQ, Opcodes.IF_ACMPNE -> {
+					Object right = pop(stack);
+					return branch(insn, decide(op, pop(stack), right));
+				}
+				case Opcodes.GOTO -> {
+					return branch(insn, Boolean.TRUE);
+				}
+				case Opcodes.FCMPL, Opcodes.FCMPG, Opcodes.DCMPL, Opcodes.DCMPG, Opcodes.LCMP -> {
+					pop(stack);
+					pop(stack);
+					push(stack, null);
+				}
 				case Opcodes.INVOKESPECIAL -> {
 					MethodInsnNode call = (MethodInsnNode) insn;
 					Type[] params = Type.getArgumentTypes(call.desc);
 					double[] args = popArgs(stack, params);
 					Object target = pop(stack);
+					if (pose) return true;
 					if (!"<init>".equals(call.name)) return true;
 					if (target instanceof PendingNew && "(II)V".equals(call.desc) && rendererType == null) {
 						// The first two-int constructor in a model constructor is ModelRenderer(u,v).
@@ -710,6 +935,7 @@ public final class MMGeometryBridge {
 					double[] args = popArgs(stack, params);
 					Object target = pop(stack);
 					if (!Type.VOID_TYPE.equals(Type.getReturnType(call.desc))) push(stack, null);
+					if (pose) return true;
 					if (!(target instanceof Bone bone)) return true;
 					switch (call.desc) {
 						// Matched on descriptor, never on name.
@@ -727,9 +953,10 @@ public final class MMGeometryBridge {
 					}
 				}
 				case Opcodes.RETURN -> {
-					return true;
+					return false;
 				}
 				default -> {
+					if (pose) return false;
 					out.problems.add("constructor uses an instruction this cannot follow (opcode " + op + ")");
 					return false;
 				}
@@ -824,9 +1051,22 @@ public final class MMGeometryBridge {
 			return stack.isEmpty() ? null : stack.get(stack.size() - 1);
 		}
 
+		private static boolean isZero(Object value) {
+			return value instanceof Double d && d == 0.0;
+		}
+
 		private void binary(List<Object> stack, char operator) {
 			Object right = pop(stack);
 			Object left = pop(stack);
+			if (operator == '*' && (isZero(left) || isZero(right))) {
+				// Anything finite times zero is zero, and everything a model multiplies is finite.
+				// This is what makes a rest pose readable: an animation term is a trigonometric
+				// function of arguments this does not track, scaled by the limb-swing amount, and at
+				// rest that amount is zero -- so the term vanishes and the constant beside it is the
+				// value the original actually draws with.
+				push(stack, 0.0);
+				return;
+			}
 			if (!(left instanceof Double a) || !(right instanceof Double b)) {
 				push(stack, null);
 				return;

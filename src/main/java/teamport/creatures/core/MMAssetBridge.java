@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.render.EntityRendererDispatcher;
 import net.minecraft.client.render.texturepack.TexturePack;
 import net.minecraft.client.render.texturepack.TexturePackList;
+import net.minecraft.core.data.registry.Registries;
 import org.useless.dragonfly.data.entity.mojang.EntityGeometryMojangData;
 import teamport.creatures.MoreMobs;
 
@@ -57,7 +58,7 @@ public final class MMAssetBridge {
 	 * Bumped whenever a manifest or the converter changes shape, so an existing pack is rebuilt even
 	 * though the player's archive has not moved.
 	 */
-	private static final int BRIDGE_REVISION = 5;
+	private static final int BRIDGE_REVISION = 9;
 
 	/** How deep to follow zips inside zips. The original's download nests exactly one level. */
 	private static final int MAX_NESTING = 3;
@@ -321,6 +322,18 @@ public final class MMAssetBridge {
 	 */
 	private static void reloadGeometry(TexturePackList packs) {
 		try {
+			// Dragonfly only looks for /assets/<namespace>/models/entity/models.json for namespaces in
+			// this registry, so an unregistered namespace means the manifest is never even opened and
+			// every model silently falls back. Registering is idempotent enough to do defensively.
+			boolean known = Registries.NAMESPACES.getItem(MoreMobs.MOD_ID) != null;
+			MoreMobs.LOGGER.info("Asset bridge: namespace '{}' registered with Dragonfly: {}",
+				MoreMobs.MOD_ID, known);
+			if (!known) {
+				Registries.NAMESPACES.register(MoreMobs.MOD_ID, MoreMobs.MOD_ID);
+				MoreMobs.LOGGER.info("Asset bridge: registered namespace '{}' so its models can load",
+					MoreMobs.MOD_ID);
+			}
+
 			EntityGeometryMojangData.Cache.reload(packs);
 			EntityRendererDispatcher.instance.reload();
 			MoreMobs.LOGGER.info("Asset bridge: entity geometry reloaded from '{}'", PACK_NAME);

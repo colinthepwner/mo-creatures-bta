@@ -36,7 +36,8 @@ public class MobBear extends MobAnimal {
 		heartsHalvesLife = 40;
 		entityCheck = 1800 + random.nextInt(1800);
 
-		setSize(1, 1);
+		// The original's own box for a bear: longer than it is wide, and shorter than the model.
+		setSize(0.9F, 1.3F);
 	}
 
 	@Override

@@ -25,8 +25,8 @@ public class MobRendererHorsePegasus extends MobRendererHorse {
 	private static final float WING_SWEEP = 60.0F * MathHelper.DEG_TO_RAD;
 
 	public MobRendererHorsePegasus() {
-		super("/assets/creatures/models/entity/horse_pegasus.json",
-			"/assets/creatures/models/entity/horse_pegasus_head.json");
+		super("geometry.horse_pegasus",
+			"geometry.horse_pegasus_head");
 	}
 
 	@Override

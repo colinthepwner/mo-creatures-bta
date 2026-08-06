@@ -17,7 +17,7 @@ public class MobRendererShark extends MobRendererAquaticBase<MobShark> {
 	private static final String[] SNOUT = {"head", "Head", "UHead", "LHead", "RHead"};
 
 	public MobRendererShark() {
-		super("/assets/creatures/models/entity/shark.json", 0.0D, 0.8F);
+		super("geometry.shark", 0.0D, 0.6F);
 	}
 
 	@Override

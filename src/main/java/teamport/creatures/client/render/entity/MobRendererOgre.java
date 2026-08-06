@@ -7,6 +7,7 @@ import teamport.creatures.core.entity.mob.MobOgre;
 @Environment(EnvType.CLIENT)
 public class MobRendererOgre extends MobRendererOgreBase<MobOgre> {
 	public MobRendererOgre() {
-		super("/assets/creatures/models/entity/ogre.json");
+		super("geometry.ogre", "geometry.ogre_over",
+			"/assets/creatures/textures/entity/ogre/b_0.png");
 	}
 }

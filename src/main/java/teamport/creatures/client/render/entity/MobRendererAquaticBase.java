@@ -25,9 +25,9 @@ import teamport.creatures.core.entity.mob.MobAquaticBase;
 public abstract class MobRendererAquaticBase<T extends MobAquaticBase> extends MobRenderer<T> {
 	protected static final String MODEL_KEY = "main";
 
-	protected MobRendererAquaticBase(String modelPath, double inflation, float shadowSize) {
+	protected MobRendererAquaticBase(String modelId, double inflation, float shadowSize) {
 		super(shadowSize);
-		setModel(MODEL_KEY, modelPath, inflation);
+		setModel(MODEL_KEY, modelId, inflation);
 	}
 
 	/** Candidate names for the bones that sway with the stroke, most likely first. */

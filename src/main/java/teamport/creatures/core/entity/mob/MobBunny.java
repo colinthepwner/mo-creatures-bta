@@ -32,7 +32,7 @@ public class MobBunny extends MobAnimal {
 		timesBunnyShouldJump = random.nextInt(8) + 1;
 		whenBunnyShouldJump = random.nextInt(80) + 80;
 
-		setSize(0.5f, 0.5f);
+		setSize(0.4F, 0.4F);
 	}
 
 	@Override

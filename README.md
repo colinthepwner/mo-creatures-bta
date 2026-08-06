@@ -90,8 +90,11 @@ Why models and not just skins: the original art is painted against the original 
 model in this repo shares a UV layout with the original it stands in for. Bridging a skin without its
 geometry puts the art on boxes it was never laid out for, so the two travel together or not at all.
 
-Without the archive, mobs that have built-in art render normally and the rest fall back to the
-missing-texture checker. The startup audit prints exactly what resolved.
+**Ten of the 27 mobs ship geometry in this repository; the other 17 do not.** Without the archive
+those 17 have no model to draw at all, so they do not render — this is the one real install-time
+expectation, and it is worth knowing before you decide the mod is broken. The ten that do ship
+geometry render normally, falling back to the missing-texture checker for any skin the bridge would
+have supplied. The startup audit prints exactly what resolved, mob by mob.
 
 ## Summoning
 

@@ -162,15 +162,24 @@ public class MobWerewolf extends MobMonster {
 		return super.findPlayerToAttack();
 	}
 
-	/** Frozen mid-change, exactly as the original suspended its action state while transforming. */
+	/**
+	 * The change itself, ticked from the mob's own update rather than from its AI.
+	 * <p>
+	 * <b>This has to live here and not in {@link #updateAI()}.</b> BTA's {@code Mob.onLivingUpdate}
+	 * asks {@link #isMovementBlocked()} <em>before</em> it decides whether to call {@code updateAI}
+	 * at all, and skips it entirely when the answer is yes. So a werewolf that reported itself
+	 * blocked while transforming — which is how this was first ported, since that is the obvious
+	 * reading of the original's frozen action state — stopped being asked to think on the very tick
+	 * the change began, and {@link #tickTransformation()} is the only thing that can finish the
+	 * change and clear the flag. Every werewolf latched a second or two into its first night and
+	 * stayed that way for the rest of its life: never a beast, and stuck in the renderer's shudder
+	 * pose with its torso rocking on the spot. The original ran the same code from
+	 * {@code onLivingUpdate}, which nothing gates, and froze the mob by skipping the action state
+	 * instead — see {@link #updateAI()}.
+	 */
 	@Override
-	protected boolean isMovementBlocked() {
-		return isTransforming() || super.isMovementBlocked();
-	}
-
-	@Override
-	protected void updateAI() {
-		super.updateAI();
+	public void onLivingUpdate() {
+		super.onLivingUpdate();
 
 		if (world.isClientSide) {
 			return;
@@ -184,6 +193,26 @@ public class MobWerewolf extends MobMonster {
 
 		if (isTransforming()) {
 			tickTransformation();
+		}
+	}
+
+	@Override
+	protected void updateAI() {
+		// Frozen mid-change, exactly as the original suspended its action state while transforming.
+		// Skipping the body rather than answering isMovementBlocked() is the difference between a
+		// mob that cannot move and a mob that cannot finish changing; the three fields are the ones
+		// isMovementBlocked would have cleared for us.
+		if (isTransforming()) {
+			moveStrafing = 0.0F;
+			moveForward = 0.0F;
+			randomYawVelocity = 0.0F;
+			isJumping = false;
+			return;
+		}
+
+		super.updateAI();
+
+		if (world.isClientSide) {
 			return;
 		}
 

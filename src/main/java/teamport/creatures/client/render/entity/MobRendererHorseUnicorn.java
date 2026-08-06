@@ -11,7 +11,7 @@ import net.fabricmc.api.Environment;
 @Environment(EnvType.CLIENT)
 public class MobRendererHorseUnicorn extends MobRendererHorse {
 	public MobRendererHorseUnicorn() {
-		super("/assets/creatures/models/entity/horse_unicorn.json",
-			"/assets/creatures/models/entity/horse_unicorn_head.json");
+		super("geometry.horse_unicorn",
+			"geometry.horse_unicorn_head");
 	}
 }

@@ -23,9 +23,9 @@ public class MobRendererWerewolf extends MobRendererBipedBase<MobWerewolf> {
 	private static final String MODEL_BEAST = "beast";
 
 	public MobRendererWerewolf() {
-		super(0.5F);
-		setModel(MODEL_HUMAN, "/assets/creatures/models/entity/werewolf.json", 0.0D);
-		setModel(MODEL_BEAST, "/assets/creatures/models/entity/werewolf_beast.json", 0.0D);
+		super(0.7F);
+		setModel(MODEL_HUMAN, "geometry.werewolf", 0.0D);
+		setModel(MODEL_BEAST, "geometry.werewolf_beast", 0.0D);
 	}
 
 	@Override
@@ -55,7 +55,9 @@ public class MobRendererWerewolf extends MobRendererBipedBase<MobWerewolf> {
 		}
 
 		if (beast) {
-			setRotX(model, "tail", 0.4F + MathHelper.cos(limbSwing * 0.6662F) * 0.2F * limbYaw);
+			// Sway only. The tail's resting angle is carried by the geometry, which is where the
+			// original put it, and Dragonfly adds this on top rather than replacing it.
+			setRotX(model, "tail", MathHelper.cos(limbSwing * 0.6662F) * 0.2F * limbYaw);
 		}
 
 		return model;

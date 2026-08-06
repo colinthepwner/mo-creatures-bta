@@ -11,7 +11,7 @@ public class MobRendererBoar extends MobRendererQuadrupedBase<MobBoar> {
 	private static final String[] LEGS = {"legFrontLeft", "legFrontRight", "legBackLeft", "legBackRight"};
 
 	public MobRendererBoar() {
-		super("/assets/creatures/models/entity/boar.json", 0.0D, 0.5F);
+		super("geometry.boar", 0.0D, 0.7F);
 	}
 
 	@Override

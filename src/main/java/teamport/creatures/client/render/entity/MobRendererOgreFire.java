@@ -7,6 +7,7 @@ import teamport.creatures.core.entity.mob.MobOgreFire;
 @Environment(EnvType.CLIENT)
 public class MobRendererOgreFire extends MobRendererOgreBase<MobOgreFire> {
 	public MobRendererOgreFire() {
-		super("/assets/creatures/models/entity/ogre_fire.json");
+		super("geometry.ogre_fire", "geometry.ogre_fire_over",
+			"/assets/creatures/textures/entity/ogre_fire/b_0.png");
 	}
 }

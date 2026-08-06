@@ -18,22 +18,48 @@ import teamport.creatures.core.entity.mob.MobWerewolfWolf;
  * <p>
  * It used to share the transformed werewolf's geometry, which is why neither could be converted; they
  * are two models again, as they were in the original.
+ * <p>
+ * A wolf is drawn in two layers, because the original drew it as two models with a texture each:
+ * {@code ModelWolf2} on {@code wolfa.png} and {@code ModelWolf1} on {@code wolfb.png}. The second is
+ * not decoration — it carries the neck plate that joins the head to the body, which sit two units
+ * apart in the first. {@code RenderWWolf}'s condition for that pass reads
+ * {@code pass == 0 && !wolfboolean} — the flag suppresses the pass rather than enabling it, and
+ * nothing but a saved NBT tag ever sets it — so it always draws, the same arrangement
+ * {@link MobRendererOgreBase} uses.
+ * <p>
+ * Two things about the finished wolf are the original's shape rather than gaps here: it carries its
+ * head high on the shoulders rather than forward on a neck, and it has no tail at all — neither
+ * {@code ModelWolf1} nor {@code ModelWolf2} declares one, nor does the quadruped they extend.
  */
 @Environment(EnvType.CLIENT)
 public class MobRendererWerewolfWolf extends MobRenderer<MobWerewolfWolf> {
 	private static final String MODEL_KEY = "main";
+	/** The second half: neck plate, shoulder ruff and leg fur, on the wolf's {@code b} texture. */
+	private static final String OVER_KEY = "over";
+	private static final int LAYER_OVER = 1;
+	private static final String OVER_TEXTURE = "/assets/creatures/textures/entity/werewolf_wolf/b_0.png";
 
 	/** Front-left, front-right, back-left, back-right. */
 	private static final String[] LEGS = {"legFrontLeft", "legFrontRight", "legBackLeft", "legBackRight"};
 
 	public MobRendererWerewolfWolf() {
-		super(0.5F);
-		setModel(MODEL_KEY, "/assets/creatures/models/entity/werewolf_wolf.json", 0.0D);
+		super(0.7F);
+		setModel(MODEL_KEY, "geometry.werewolf_wolf", 0.0D);
+		setModel(OVER_KEY, "geometry.werewolf_wolf_over", 0.0D);
+	}
+
+	/** Only worth a second pass when there is a second geometry to draw with. */
+	@Override
+	protected int maxRenderLayer(MobWerewolfWolf entity) {
+		return getModel(OVER_KEY) != null ? LAYER_OVER : 0;
 	}
 
 	@Override
 	protected StaticEntityModel getAndSetupModelForLayer(MobWerewolfWolf entity, float partialTick, float unused, int layer) {
-		StaticEntityModel model = getModel(MODEL_KEY);
+		if (layer == LAYER_OVER) {
+			bindTexture(OVER_TEXTURE);
+		}
+		StaticEntityModel model = getModel(layer == LAYER_OVER ? OVER_KEY : MODEL_KEY);
 		if (model == null) {
 			return null;
 		}

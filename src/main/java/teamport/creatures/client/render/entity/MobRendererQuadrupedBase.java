@@ -16,14 +16,24 @@ import org.useless.dragonfly.models.entity.StaticEntityModel;
  * The bone names differ between the models inherited from the 7.2 branch (some use
  * {@code legLeftFront}, others {@code legFrontLeft}), so subclasses supply their own names
  * rather than this class assuming a single convention.
+ * <p>
+ * <b>A model is named by its geometry identifier, not by its file.</b> {@code setModel} hands its
+ * second argument straight to {@code EntityGeometryMojangData.Cache.getModel}, which is a lookup in
+ * a map keyed by the {@code "identifier"} declared inside the geometry JSON — so the argument is
+ * {@code "geometry.bear"}, never {@code "/assets/creatures/models/entity/bear.json"}. The file path
+ * belongs in {@code models/entity/models.json}, which is what tells Dragonfly where to read the
+ * file from in the first place. Passing a path here misses the map, and the miss is nearly silent:
+ * the renderer is handed {@code geometry.missing} — a single 1x1x1 cube — every bone lookup after
+ * that returns null, every caller null-checks it, and the mob draws as a textured block with no
+ * exception and no further log line.
  */
 @Environment(EnvType.CLIENT)
 public abstract class MobRendererQuadrupedBase<T extends Mob> extends MobRenderer<T> {
 	protected static final String MODEL_KEY = "main";
 
-	protected MobRendererQuadrupedBase(String modelPath, double inflation, float shadowSize) {
+	protected MobRendererQuadrupedBase(String modelId, double inflation, float shadowSize) {
 		super(shadowSize);
-		setModel(MODEL_KEY, modelPath, inflation);
+		setModel(MODEL_KEY, modelId, inflation);
 	}
 
 	/** Front-left, front-right, back-left, back-right, in that order. */

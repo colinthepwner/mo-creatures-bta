@@ -27,8 +27,8 @@ public class MobRendererBigCat extends MobRendererQuadrupedBase<MobBigCat> {
 	private static final float SIT_BACK_LEG_PITCH = (float) Math.toRadians(-90.0);
 
 	public MobRendererBigCat() {
-		super("/assets/creatures/models/entity/bigcat.json", 0.0D, 0.75F);
-		setModel(MANE_KEY, "/assets/creatures/models/entity/bigcat_maned.json", 0.0D);
+		super("geometry.bigcat", 0.0D, 0.7F);
+		setModel(MANE_KEY, "geometry.bigcat_maned", 0.0D);
 	}
 
 	@Override
@@ -50,8 +50,12 @@ public class MobRendererBigCat extends MobRendererQuadrupedBase<MobBigCat> {
 	@Override
 	protected void preRenderTransform(MobBigCat entity, double x, double y, double z, float rot, float partialTick) {
 		super.preRenderTransform(entity, x, y, z, rot, partialTick);
-		float scale = entity.getRenderScale();
-		GLRenderer.modelM4f().scale(scale, scale, scale);
+		GLRenderer.modelM4f().scale(entity.getRenderScaleX(), entity.getRenderScaleY(), entity.getRenderScaleZ());
+	}
+
+	@Override
+	public float getShadowSize(MobBigCat entity) {
+		return super.getShadowSize(entity) * entity.getRenderScaleX();
 	}
 
 	@Override

@@ -24,10 +24,10 @@ public abstract class MobRendererWraithBase<T extends MobWraith> extends MobRend
 	/** Ticks per full bob. */
 	protected static final float BOB_PERIOD = 40.0F;
 
-	protected MobRendererWraithBase(String modelPath) {
+	protected MobRendererWraithBase(String modelId) {
 		// No shadow: it is not resting on anything.
 		super(0.0F);
-		setModel(MODEL_KEY, modelPath, 0.0D);
+		setModel(MODEL_KEY, modelId, 0.0D);
 	}
 
 	@Override
@@ -57,9 +57,11 @@ public abstract class MobRendererWraithBase<T extends MobWraith> extends MobRend
 			body.rotZ = sway * 0.5F;
 		}
 
-		// Arms drift outwards and up rather than hanging.
-		setRot(model, "armLeft", -0.35F + sway, 0.4F);
-		setRot(model, "armRight", -0.35F - sway, -0.4F);
+		// Only the drift: the geometry already holds the arms straight out in front, which is the
+		// rest pose the original set every frame, and Dragonfly adds a bone's animation angle on top
+		// of the one the geometry declares rather than replacing it.
+		setRot(model, "armLeft", sway, 0.4F);
+		setRot(model, "armRight", -sway, -0.4F);
 		// Trailing legs, as if it were being pulled along.
 		setRot(model, "legLeft", 0.35F + sway, 0.0F);
 		setRot(model, "legRight", 0.35F - sway, 0.0F);

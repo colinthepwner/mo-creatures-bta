@@ -15,8 +15,8 @@ public class MobRendererSharkEgg extends MobRenderer<MobSharkEgg> {
 	private static final String MODEL_KEY = "main";
 
 	public MobRendererSharkEgg() {
-		super(0.2F);
-		setModel(MODEL_KEY, "/assets/creatures/models/entity/shark_egg.json", 0.0D);
+		super(0.1F);
+		setModel(MODEL_KEY, "geometry.shark_egg", 0.0D);
 	}
 
 	@Override

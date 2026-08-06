@@ -13,7 +13,7 @@ public class MobRendererFishy extends MobRendererAquaticBase<MobFishy> {
 	private static final String[] TAIL = {"tail", "Tail"};
 
 	public MobRendererFishy() {
-		super("/assets/creatures/models/entity/fishy.json", 0.0D, 0.2F);
+		super("geometry.fishy", 0.0D, 0.2F);
 	}
 
 	@Override

@@ -24,8 +24,8 @@ public class MobRendererDuck extends MobRenderer<MobDuck> {
 
 	public MobRendererDuck() {
 		super(0.3F);
-		setModel(MODEL_KEY, "/assets/creatures/models/entity/duck.json", 0.0D);
-		setModel(MODEL_FALLBACK, "/assets/creatures/models/entity/bird.json", 0.0D);
+		setModel(MODEL_KEY, "geometry.duck", 0.0D);
+		setModel(MODEL_FALLBACK, "geometry.bird", 0.0D);
 	}
 
 	@Override
