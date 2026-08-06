@@ -100,11 +100,15 @@ public final class MMGeometryBridge {
 		String overlayClass;
 		String base;
 		/**
-		 * Every texture this mob's renderers load, as original file name -> path in the pack. The
-		 * converted UVs only line up with the art they were painted for, so the geometry ships if
-		 * and only if all of these came out of the same archive.
+		 * Every texture this mob's renderers load, as original file name -> the paths in the pack it
+		 * supplies. The converted UVs only line up with the art they were painted for, so the geometry
+		 * ships if and only if all of these came out of the same archive.
+		 * <p>
+		 * One original can feed several paths: where this port splits a mob into states the original
+		 * drew with one skin — a tamed kitty is the same cat — naming the source twice is the honest
+		 * mapping, and the alternative is either an unrelated skin or no art at all.
 		 */
-		final Map<String, String> textures = new LinkedHashMap<>();
+		final Map<String, List<String>> textures = new LinkedHashMap<>();
 		/**
 		 * The UV space the original's texture offsets are expressed in — {@code ModelBase}'s own
 		 * defaults unless the original overrode them. Deliberately not read from the PNG: Mo'
@@ -169,7 +173,8 @@ public final class MMGeometryBridge {
 					for (String pair : split(value)) {
 						int eq = pair.indexOf('=');
 						if (eq < 0) continue;
-						entry.textures.put(pair.substring(0, eq).trim(), pair.substring(eq + 1).trim());
+						entry.textures.computeIfAbsent(pair.substring(0, eq).trim(), k -> new ArrayList<>())
+							.add(pair.substring(eq + 1).trim());
 					}
 				}
 				case "args" -> {
@@ -340,8 +345,9 @@ public final class MMGeometryBridge {
 			try {
 				// The art goes with it, so a half-written pack can never pair one mob's geometry
 				// with another source's textures.
-				for (Map.Entry<String, String> art : entry.textures.entrySet()) {
-					write(new File(packDir, art.getValue()), archive.get(art.getKey().toLowerCase(Locale.ROOT)));
+				for (Map.Entry<String, List<String>> art : entry.textures.entrySet()) {
+					byte[] image = archive.get(art.getKey().toLowerCase(Locale.ROOT));
+					for (String path : art.getValue()) write(new File(packDir, path), image);
 				}
 				write(new File(packDir, "assets/creatures/models/entity/" + entry.id + ".json"),
 					json.getBytes(StandardCharsets.UTF_8));

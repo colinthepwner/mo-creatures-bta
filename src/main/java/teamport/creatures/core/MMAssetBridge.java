@@ -55,7 +55,7 @@ public final class MMAssetBridge {
 	 * Bumped whenever a manifest or the converter changes shape, so an existing pack is rebuilt even
 	 * though the player's archive has not moved.
 	 */
-	private static final int BRIDGE_REVISION = 2;
+	private static final int BRIDGE_REVISION = 3;
 
 	/** How deep to follow zips inside zips. The original's download nests exactly one level. */
 	private static final int MAX_NESTING = 3;
@@ -77,7 +77,7 @@ public final class MMAssetBridge {
 		}
 		if (gameDir == null) return;
 
-		Map<String, String> manifest = readManifest();
+		Map<String, List<String>> manifest = readManifest();
 		if (manifest.isEmpty()) {
 			MoreMobs.LOGGER.warn("Asset bridge: manifest {} is empty or missing, skipping", MANIFEST);
 			return;
@@ -117,14 +117,18 @@ public final class MMAssetBridge {
 		List<String> missing = new ArrayList<>();
 		int written = 0;
 		try {
-			for (Map.Entry<String, String> mapping : manifest.entrySet()) {
+			for (Map.Entry<String, List<String>> mapping : manifest.entrySet()) {
 				byte[] bytes = entries.get(mapping.getKey());
 				if (bytes == null) {
 					missing.add(mapping.getKey());
 					continue;
 				}
-				write(new File(packDir, mapping.getValue()), bytes);
-				written++;
+				// One original can serve several paths, where this port splits a mob into states the
+				// original drew with a single skin.
+				for (String path : mapping.getValue()) {
+					write(new File(packDir, path), bytes);
+					written++;
+				}
 			}
 			writePackMeta(packDir);
 		} catch (IOException e) {
@@ -320,14 +324,23 @@ public final class MMAssetBridge {
 		return path.substring(slash + 1).toLowerCase(Locale.ROOT);
 	}
 
-	private static Map<String, String> readManifest() {
-		Map<String, String> map = new HashMap<>();
+	/**
+	 * @return archive base name -> every path in the pack it supplies. The value side is a
+	 *         comma-separated list so one original can serve several paths; see the manifest header.
+	 */
+	private static Map<String, List<String>> readManifest() {
+		Map<String, List<String>> map = new HashMap<>();
 		try (InputStream in = MMAssetBridge.class.getResourceAsStream(MANIFEST)) {
 			if (in == null) return map;
 			Properties props = new Properties();
 			props.load(in);
 			for (String key : props.stringPropertyNames()) {
-				map.put(key.toLowerCase(Locale.ROOT), props.getProperty(key));
+				List<String> paths = new ArrayList<>();
+				for (String path : props.getProperty(key).split(",")) {
+					String trimmed = path.trim();
+					if (!trimmed.isEmpty()) paths.add(trimmed);
+				}
+				if (!paths.isEmpty()) map.put(key.toLowerCase(Locale.ROOT), paths);
 			}
 		} catch (IOException e) {
 			MoreMobs.LOGGER.warn("Asset bridge: could not read manifest: {}", e.toString());

@@ -12,7 +12,7 @@ A continuation of the **Mo' Creatures** port for **Better than Adventure!** — 
 | **Mod loader** | Babric / fabric-loader `0.18.4-bta.11` |
 | **Requires** | HalpLibe `6.1.3+8.0` |
 | **Java** | 17 |
-| **Status** | Playable — 11 mobs. Some art still missing, see below |
+| **Status** | Playable — 27 mobs, full original roster |
 
 ## Lineage
 
@@ -45,39 +45,59 @@ Output lands in `build/libs/`. JDK 17 is required; Gradle will fetch the toolcha
 
 ## What's in it
 
-**11 mobs:** Bear (grizzly + polar), Bird, Bunny, Fox (red + arctic), Boar, Duck, Horse, Unicorn,
-Pegasus, Kitty, Deer — plus the Litterbox block.
+The full original roster — **27 mobs**:
 
-Polar bear and arctic fox are variant flags on the base mob rather than separate entities.
+- **Animals** — Bear (+ polar), Bird, Bunny, Fox (+ arctic), Boar, Duck, Deer, Mouse
+- **Horses** — Horse, Unicorn, Pegasus (tameable, rideable)
+- **Cats** — Kitty (+ Litterbox block), Big Cat in 7 species: lioness, lion, panther, cheetah, tiger, snow leopard, white tiger
+- **Aquatic** — Dolphin (tameable, rideable, breedable), Shark, Fishy, plus shark and fishy eggs
+- **Hostile** — Ogre, Fire Ogre, Cave Ogre, Werewolf (transforms at night), Wolf, Wraith, Flame Wraith, Rat, Hell Rat
 
-**The Deer replaces BTA's built-in deer.** BTA's own deer is not a vanilla Minecraft mob, so this
-swaps it for the Mo' Creatures one: the vanilla spawn entry is removed at biome construction and
-ours takes its place. Set `Replacements.replaceVanillaDeer = false` in `config/creatures.cfg` to keep
-BTA's instead.
+**The Deer replaces BTA's built-in deer.** BTA's own deer is not a vanilla Minecraft mob, so this swaps
+it for the Mo' Creatures one. Set `Replacements.replaceVanillaDeer = false` in `config/creatures.cfg`
+to keep BTA's instead.
 
-## Textures — the asset bridge
+Ogres break blocks to reach you, as they did originally — bounded here: it respects the
+`doMobGriefing` game rule, breaks at most 6 blocks per swing on a cooldown, never digs beneath itself,
+and spares bedrock, chests, furnaces, liquids and anything stone-hardness or above.
 
-This mod **ships no art from the original Mo' Creatures**. That mod is DrZhark's and its licence does
-not allow redistribution, so the textures cannot live in this repository.
+## Textures and models — the asset bridge
 
-Instead, if you own a copy of the original, drop the jar or zip into your game directory as
-`mocreatures-assets.zip` (or leave it in `mods/`). On startup the mod reads the images out of *your*
-copy and writes a `MoCreaturesAssets` texture pack, which you then enable in Options. Nothing is
-downloaded and nothing is redistributed — the file has to already be on your disk. Mapping lives in
-`assets/creatures/asset-bridge.properties`, so adding a mob is a one-line edit.
+This mod **ships no art or models from the original Mo' Creatures**. That is DrZhark's work and its
+licence does not allow redistribution, so none of it can live in this repository.
 
-Without it, mobs that have textures in this repo look correct and the rest fall back to the
-missing-texture checker. The startup audit prints exactly which are missing.
+Instead: **drop your own copy of the original into `mods/`.** That is the only step. It will not load
+as a mod — it is Beta 1.7.3 code and BTA ignores it — it is read purely as a data source. On startup
+the mod extracts the textures, converts the Java entity models to Bedrock geometry, writes a
+`MoCreaturesAssets` texture pack and enables it automatically.
+
+Measured against DrZhark's v2.12.2 for b1.7.3: **61 textures and 20 models** are converted, 17 of them
+for mobs this repo ships no geometry for at all. Nothing is downloaded and nothing is redistributed —
+the file has to already be on your disk.
+
+Why models and not just skins: the original art is painted against the original box layout, and *no*
+model in this repo shares a UV layout with the original it stands in for. Bridging a skin without its
+geometry puts the art on boxes it was never laid out for, so the two travel together or not at all.
+
+Without the archive, mobs that have built-in art render normally and the rest fall back to the
+missing-texture checker. The startup audit prints exactly what resolved.
 
 ## Known gaps
 
-Boar, Duck, Unicorn and Pegasus have **no textures** in this repo, and Duck has no model (it reuses
-the bird geometry). The asset bridge covers them if you supply the original mod. Several mobs are
-also silent — sound events are registered but the ogg files were never part of the port.
+Seven models are held back, each a mismatch between this port and v2.12.2 rather than a converter
+limitation — see [docs/GEOMETRY-BRIDGE.md](docs/GEOMETRY-BRIDGE.md):
 
-Mobs the original had that are still absent: big cats, dolphin, shark, ogre, werewolf, wraith, ghost,
-scorpion, snake, turtle, rat, crocodile, elephant/mammoth, wyvern. Their logic can be reimplemented,
-but none of them has geometry or textures here.
+- **Fox** — v2.12.2 ships one fox skin and **no arctic fox at all**
+- **Bunny** — archive has 4 skins, this port declares 5
+- **Horse / Unicorn / Pegasus** — the original splits a horse across two models and two textures
+  (body, then head/neck/horn/wings); this port draws one combined model
+- **Boar / Duck** — the original rendered these on Minecraft's own pig and chicken models, so there is
+  no class in the archive to convert
+- **Wolf** — one geometry here is shared by the werewolf's beast form and the pack wolf
+- **Litterbox** — this port wants clean and filthy states; the original swapped a box on one image
+
+Several mobs are also silent: sound events are registered but the audio sits flat in the assets folder
+rather than under `sounds/mob/<name>/`.
 
 ## Licence
 
