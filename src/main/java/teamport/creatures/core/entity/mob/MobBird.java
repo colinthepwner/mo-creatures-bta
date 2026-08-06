@@ -36,6 +36,15 @@ public class MobBird extends MobAnimal {
 		setSize(0.4F, 0.3F);
 	}
 
+	/**
+	 * A bird is meant to be fragile: two hearts, not the base mob's ten.
+	 * Matches {@code EntityBird} in v2.12.2; without it this inherited the base mob's default.
+	 */
+	@Override
+	public int getMaxHealth() {
+		return 2;
+	}
+
 	@Override
 	protected void causeFallDamage(float distance) {
 	}

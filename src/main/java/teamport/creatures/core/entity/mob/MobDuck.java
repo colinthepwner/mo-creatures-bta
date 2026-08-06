@@ -18,6 +18,10 @@ public class MobDuck extends MobChicken {
 		// re-pointed after super(). This also rebases defaultTexture and variantJsonPath; the duck has
 		// a single skin, so the missing variants.json resolves back to "0".
 		setTextureIdentifier(MoreMobs.MOD_ID, "duck");
+		// MobChicken's box, inherited through super(), is BTA's chicken at 0.4x0.8. The original set
+		// its duck's own box to 0.3x0.4 even though it drew the bird on ModelChicken, so the duck was
+		// standing in a hitbox twice its own height.
+		setSize(0.3F, 0.4F);
 	}
 
 	@Override

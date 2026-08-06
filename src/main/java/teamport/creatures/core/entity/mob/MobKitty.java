@@ -40,6 +40,15 @@ public class MobKitty extends MobAnimal {
 		potty = random.nextInt(6000) + 6000;
 	}
 
+	/**
+	 * The original's figure. Taming does not change it; only the tail droop reads off the ratio.
+	 * Matches {@code EntityKitty} in v2.12.2 — without it this inherited the base mob's default of 10.
+	 */
+	@Override
+	public int getMaxHealth() {
+		return 15;
+	}
+
 	@Override
 	public String getEntityTexture() {
 		return isTamed ? "/assets/creatures/textures/entity/kitty/tamed_" + skin + ".png" : "/assets/creatures/textures/entity/kitty/" + skin + ".png";

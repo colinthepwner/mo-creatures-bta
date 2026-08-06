@@ -40,6 +40,15 @@ public class MobFox extends MobAnimal {
 		setSize(0.8F, 0.8F);
 	}
 
+	/**
+	 * v2.12.2 gives a fox 15 whether or not it is arctic -- there is no arctic fox in that version at all.
+	 * Matches {@code EntityFox} in v2.12.2; without it this inherited the base mob's default.
+	 */
+	@Override
+	public int getMaxHealth() {
+		return 15;
+	}
+
 	@Override
 	protected void defineSynchedData() {
 		super.defineSynchedData();

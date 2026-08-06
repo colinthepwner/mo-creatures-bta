@@ -46,6 +46,16 @@ public class MobBear extends MobAnimal {
 		entityData.define(DATA_GENERIC_FLAGS, (byte) 0, Byte.class);
 	}
 
+	/**
+	 * The original's own figures: {@code EntityBear} carries 25 and {@code EntityPolarBear}, which
+	 * subclasses it, raises that to 30. Without this the bear inherited the base mob's 10 and was
+	 * dying to a third of what it should take.
+	 */
+	@Override
+	public int getMaxHealth() {
+		return isBearPolar() ? 30 : 25;
+	}
+
 	@Override
 	protected boolean makeStepSound() {
 		return false;
