@@ -130,6 +130,11 @@ public class MobBunny extends MobAnimal {
 		return "creatures:mob.bunny.lift";
 	}
 
+	/**
+	 * Deliberately silent. A bunny's idle voice is the hop itself — {@link #updateAI} plays the lift
+	 * and land clips through every jump in a burst — and the original never recorded a call to layer
+	 * on top of that.
+	 */
 	@Override
 	public String getLivingSound() {
 		return null;

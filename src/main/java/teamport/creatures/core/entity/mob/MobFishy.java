@@ -241,19 +241,24 @@ public class MobFishy extends MobAquaticBase {
 		return "/assets/creatures/textures/entity/fishy/0.png";
 	}
 
+	/**
+	 * No fish audio was ever recorded for the original mod, so these are vanilla: a flick of water
+	 * for the idle and a flesh hit for the rest. Better a small splash than a fish that can be
+	 * speared without a sound.
+	 */
 	@Override
 	public String getLivingSound() {
-		return null;
+		return "liquid.splash";
 	}
 
 	@Override
 	protected String getHurtSound() {
-		return null;
+		return "damage.hurtflesh";
 	}
 
 	@Override
 	protected String getDeathSound() {
-		return null;
+		return "damage.hurtflesh";
 	}
 
 	@Override

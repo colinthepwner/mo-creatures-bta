@@ -127,9 +127,14 @@ public class MobWerewolf extends MobMonster {
 
 	// --- Sounds -----------------------------------------------------------------------------------
 
+	/**
+	 * The original mod only ever recorded hurt and death lines for the untransformed form — there is
+	 * no idle "werehuman" clip in it or in this repo — so the human form borrows vanilla's gasp
+	 * rather than pointing at a sound id that nothing can resolve.
+	 */
 	@Override
 	public String getLivingSound() {
-		return isTransformed() ? "creatures:mob.werewolf" : "creatures:mob.werewolf.human";
+		return isTransformed() ? "creatures:mob.werewolf" : "random.breath";
 	}
 
 	@Override

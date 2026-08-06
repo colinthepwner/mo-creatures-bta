@@ -99,14 +99,18 @@ public class MobBird extends MobAnimal {
 		return false;
 	}
 
+	/**
+	 * The original mod recorded a call per plumage but no hurt or death line for any of them, so
+	 * both borrow vanilla's chicken squawk rather than leaving a struck bird silent.
+	 */
 	@Override
 	protected String getDeathSound() {
-		return null;
+		return "mob.chickenhurt";
 	}
 
 	@Override
 	protected String getHurtSound() {
-		return null;
+		return "mob.chickenhurt";
 	}
 
 	@Override

@@ -80,6 +80,10 @@ public abstract class MobAquaticEggBase extends Mob {
 		return 4;
 	}
 
+	/**
+	 * An egg has nothing to say while it incubates, but it has four hearts and can be broken, so
+	 * hitting one gives back vanilla's pop and cracking one open gives back the shell shattering.
+	 */
 	@Override
 	public String getLivingSound() {
 		return null;
@@ -87,12 +91,12 @@ public abstract class MobAquaticEggBase extends Mob {
 
 	@Override
 	protected String getHurtSound() {
-		return null;
+		return "random.pop";
 	}
 
 	@Override
 	protected String getDeathSound() {
-		return null;
+		return "random.glass";
 	}
 
 	@Override

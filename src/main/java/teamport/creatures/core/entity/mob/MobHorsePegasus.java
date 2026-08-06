@@ -40,6 +40,15 @@ public class MobHorsePegasus extends MobHorse {
 		return "/assets/creatures/textures/entity/horse/4.png";
 	}
 
+	/**
+	 * The original shipped a pegasus call of its own (pegasus.ogg) that nothing in this port had
+	 * been wired to; hurt and death still fall through to the ordinary horse lines.
+	 */
+	@Override
+	public String getLivingSound() {
+		return "creatures:mob.horse.pegasus";
+	}
+
 	@Override
 	protected int annoyanceRate() {
 		return 40;

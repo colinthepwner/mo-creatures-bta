@@ -25,6 +25,7 @@ creatures.subtitles.mob.bunny.hurt=Bunny hurt
 
 # Deer
 creatures.subtitles.mob.deer=Deer grunt
+creatures.subtitles.mob.deer.buck=Buck bellows
 creatures.subtitles.mob.deer.death=Deer death
 creatures.subtitles.mob.deer.hurt=Deer hurt
 
@@ -46,3 +47,47 @@ creatures.subtitles.mob.rat.hurt=Rat hurt
 creatures.subtitles.mob.mouse=Mouse squeaks
 creatures.subtitles.mob.mouse.death=Mouse death
 creatures.subtitles.mob.mouse.hurt=Mouse hurt
+
+# Dolphins
+creatures.subtitles.mob.dolphin=Dolphin clicks
+creatures.subtitles.mob.dolphin.upset=Dolphin squeals
+creatures.subtitles.mob.dolphin.death=Dolphin death
+creatures.subtitles.mob.dolphin.hurt=Dolphin hurt
+
+# Ducks
+creatures.subtitles.mob.duck=Duck quacks
+creatures.subtitles.mob.duck.hurt=Duck hurt
+
+# Horses (and unicorns, and pegasi)
+creatures.subtitles.mob.horse=Horse neighs
+creatures.subtitles.mob.horse.mad=Horse squeals
+creatures.subtitles.mob.horse.eat=Horse eats
+creatures.subtitles.mob.horse.pegasus=Pegasus calls
+creatures.subtitles.mob.horse.death=Horse death
+creatures.subtitles.mob.horse.hurt=Horse hurt
+
+# Kitties
+creatures.subtitles.mob.kitty=Kitty meows
+creatures.subtitles.mob.kitty.purr=Kitty purrs
+creatures.subtitles.mob.kitty.eating=Kitty eats
+creatures.subtitles.mob.kitty.death=Kitty death
+creatures.subtitles.mob.kitty.hurt=Kitty hurt
+
+# Ogres
+creatures.subtitles.mob.ogre=Ogre bellows
+creatures.subtitles.mob.ogre.destroy=Ogre smashes
+creatures.subtitles.mob.ogre.death=Ogre death
+creatures.subtitles.mob.ogre.hurt=Ogre hurt
+
+# Werewolves
+creatures.subtitles.mob.werewolf=Werewolf snarls
+creatures.subtitles.mob.werewolf.transform=Werewolf transforms
+creatures.subtitles.mob.werewolf.death=Werewolf death
+creatures.subtitles.mob.werewolf.hurt=Werewolf hurt
+creatures.subtitles.mob.werewolf.human.death=Werewolf death
+creatures.subtitles.mob.werewolf.human.hurt=Werewolf hurt
+
+# Wraiths
+creatures.subtitles.mob.wraith=Wraith moans
+creatures.subtitles.mob.wraith.death=Wraith death
+creatures.subtitles.mob.wraith.hurt=Wraith hurt

@@ -228,20 +228,24 @@ public class MobShark extends MobAquaticBase {
 		return "/assets/creatures/textures/entity/shark/0.png";
 	}
 
-	/** The original gave the shark no voice at all, and a silent shark is scarier anyway. */
+	/**
+	 * The original gave the shark no voice at all, so everything here is vanilla: the idle is the
+	 * water it displaces rather than a call, and being struck sounds like flesh because a shark has
+	 * no recorded hurt line to play instead.
+	 */
 	@Override
 	public String getLivingSound() {
-		return null;
+		return "liquid.splash";
 	}
 
 	@Override
 	protected String getHurtSound() {
-		return null;
+		return "damage.hurtflesh";
 	}
 
 	@Override
 	protected String getDeathSound() {
-		return null;
+		return "damage.hurtflesh";
 	}
 
 	@Override

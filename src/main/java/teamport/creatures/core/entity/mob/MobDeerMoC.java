@@ -81,7 +81,9 @@ public class MobDeerMoC extends MobAnimal {
 
 	@Override
 	public String getLivingSound() {
-		return "creatures:mob.deer";
+		// The original mod shipped a separate buck grunt (deerbgrunt) and doe grunt (deerfgrunt);
+		// the buck's is the deeper bellow, so it follows the same flag the renderer picks antlers off.
+		return isBuck() ? "creatures:mob.deer.buck" : "creatures:mob.deer";
 	}
 
 	@Override
