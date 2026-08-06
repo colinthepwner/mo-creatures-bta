@@ -55,11 +55,23 @@ public class MobOgre extends MobMonster {
 	public static final int SMASH_COOLDOWN_TICKS = 40;
 	/**
 	 * Blocks at or above this blast resistance are immune. {@code Block.getBlastResistance} is
-	 * {@code blastResistance / 5}, so stone sits at exactly 2.0 and is therefore spared, while dirt
-	 * (0.5), sand, glass and planks (1.0) are not. That mirrors the original's cutoff, which also let
-	 * ogres tear through soil and wood but not stone.
+	 * {@code blastResistance / 5}, which puts dirt at 0.5, planks and glass at 1.0 and stone at
+	 * exactly 2.0.
+	 *
+	 * <p>This used to sit at 2.0, which spared stone, on the belief that the original did the same.
+	 * It did not. {@code EntityOgre.DestroyingOgre} hands the job to
+	 * {@code Destroyer.DestroyBlast(world, self, x, y + 1, z, destroyForce, bogrefire)}, and that is
+	 * an explosion: it walks rays out from the ogre and tests each block's explosion resistance
+	 * against a decaying blast intensity, exactly as TNT does. TNT clears stone, so an ogre did too —
+	 * {@code destroyForce} is the configurable {@code mod_mocreatures.ogreStrength}, not a material
+	 * cutoff. The value here is raised to match, and the surrounding caps (reach, height, six blocks
+	 * a swing, never below its own feet, no tile entities, no fluids) are what keep it bounded
+	 * instead.
+	 *
+	 * <p>Obsidian and anything else built to survive TNT stays out of reach, and bedrock is excluded
+	 * separately by its negative hardness.
 	 */
-	public static final float MAX_BLAST_RESISTANCE = 2.0F;
+	public static final float MAX_BLAST_RESISTANCE = 60.0F;
 	/** Furthest an ogre will bother tunnelling towards a target it cannot see. */
 	public static final double SMASH_PURSUIT_RANGE = 12.0D;
 
