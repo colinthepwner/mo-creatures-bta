@@ -1,8 +1,10 @@
 package teamport.creatures.core;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.render.EntityRendererDispatcher;
 import net.minecraft.client.render.texturepack.TexturePack;
 import net.minecraft.client.render.texturepack.TexturePackList;
+import org.useless.dragonfly.data.entity.mojang.EntityGeometryMojangData;
 import teamport.creatures.MoreMobs;
 
 import java.io.BufferedInputStream;
@@ -284,11 +286,13 @@ public final class MMAssetBridge {
 				if (!PACK_NAME.equals(pack.fileName)) continue;
 				if (packs.selectedPacks.contains(pack)) {
 					packAutoEnabled = true;
+					reloadGeometry(packs);
 					return;
 				}
 				packs.setTexturePack(pack);
 				packs.refreshIfReady();
 				packAutoEnabled = true;
+				reloadGeometry(packs);
 				MoreMobs.LOGGER.info("Asset bridge: texture pack '{}' enabled automatically", PACK_NAME);
 				return;
 			}
@@ -297,6 +301,32 @@ public final class MMAssetBridge {
 		} catch (Throwable t) {
 			MoreMobs.LOGGER.warn("Asset bridge: could not enable texture pack '{}' automatically ({}); "
 				+ "enable it in Options to use it", PACK_NAME, t.toString());
+		}
+	}
+
+	/**
+	 * Re-reads entity geometry after the generated pack is enabled.
+	 * <p>
+	 * Without this the bridge writes 31 correct models and none of them appear. Textures survive the
+	 * ordering because {@code TextureManager} resolves them lazily at bind time, but geometry does not:
+	 * BTA fills its model cache from the selected packs once, in {@code Minecraft.startGame()}, which
+	 * has already run by the time this bridge gets to write anything. Worse, an
+	 * {@link net.minecraft.client.render.entity.EntityRenderer} resolves its model in its
+	 * <em>constructor</em>, so refreshing the cache alone would still leave every renderer holding the
+	 * model it captured at startup.
+	 * <p>
+	 * So both halves have to be redone, in order: reload the cache from the pack list, then rebuild the
+	 * renderers so they pick the new models up. The dispatcher's reload re-emits renderer registration,
+	 * which is what puts this mod's own renderers back.
+	 */
+	private static void reloadGeometry(TexturePackList packs) {
+		try {
+			EntityGeometryMojangData.Cache.reload(packs);
+			EntityRendererDispatcher.instance.reload();
+			MoreMobs.LOGGER.info("Asset bridge: entity geometry reloaded from '{}'", PACK_NAME);
+		} catch (Throwable t) {
+			MoreMobs.LOGGER.warn("Asset bridge: bridged models were written but could not be reloaded ({}); "
+				+ "restart the game to see them", t.toString());
 		}
 	}
 

@@ -38,6 +38,12 @@ same walls.
    `.jar`, whichever you have. Any filename containing `mocreatures` is picked up automatically; you can
    also name it `mocreatures-assets.zip`/`.jar` and leave it in the game directory instead.
 
+Mods of that era shipped as zips, and the original's own download nests the payload one level down in
+`mods/MoCreatures.zip` — the bridge descends into that by itself, so hand the whole zip over as-is.
+Tested against **v2.12.2 for Beta 1.7.3**, mirrored at
+[mcarchive.net](https://b2.mcarchive.net/file/mcarchive/77cac72cd428ea428eaa0a649ce8f901f7319ded7c5a88d04347e3fdf6343ec8/DrZharks_MoCreatures_Mod_v2.12.2_1.zip)
+(a third-party preservation archive, not affiliated with this project or with DrZhark).
+
 ## Build
 
 ```
@@ -86,6 +92,22 @@ geometry puts the art on boxes it was never laid out for, so the two travel toge
 
 Without the archive, mobs that have built-in art render normally and the rest fall back to the
 missing-texture checker. The startup audit prints exactly what resolved.
+
+## Summoning
+
+```
+/summon creatures:bear
+```
+
+The 27 ids are: `bear` `bird` `fox` `bunny` `boar` `duck` `horse` `horse_unicorn` `horse_pegasus`
+`kitty` `deer` `bigcat` `rat` `rat_hell` `mouse` `dolphin` `shark` `fishy` `shark_egg` `fishy_egg`
+`ogre` `ogre_fire` `ogre_cave` `werewolf` `werewolf_wolf` `wraith` `wraith_flame`.
+
+**Variants are not separate ids.** Polar bear and arctic fox are states of `creatures:bear` and
+`creatures:fox`, and all seven big cats — lioness, lion, panther, cheetah, tiger, snow leopard, white
+tiger — are `creatures:bigcat` with a skin variant, as are the six dolphins, six birds, ten fish and
+three rats. So `/summon creatures:polarbear` is correctly rejected; summon the base mob instead. The
+full list is also printed to the log at startup under `Creatures summon ids:`.
 
 ## Known gaps
 

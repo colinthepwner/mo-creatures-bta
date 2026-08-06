@@ -101,6 +101,16 @@ public final class MMAudit {
 		}
 
 		MoreMobs.LOGGER.info("Creatures ID fingerprint: {} entries, hash {}", ids.size(), fingerprint(ids));
+
+		// Printed so players can see exactly what /summon accepts, and so a mismatch between what was
+		// registered and what the command resolves is visible in the log rather than guessed at.
+		List<String> summonIds = new ArrayList<>();
+		for (String id : ids) {
+			NamespaceID nsid = NamespaceID.getPermanent(MoreMobs.MOD_ID, id);
+			Object entry = EntityDispatcher.getInstance().idToEntryMap.get(nsid);
+			summonIds.add(nsid + (entry == null ? " (MISSING)" : ""));
+		}
+		MoreMobs.LOGGER.info("Creatures summon ids: {}", String.join(", ", summonIds));
 	}
 
 	/**
