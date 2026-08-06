@@ -6,8 +6,9 @@ The original never loads as a mod — it is b1.7.3 code and BTA ignores it — i
 
 Status: **implemented** in `MMGeometryBridge`, driven by `assets/creatures/model-bridge.properties`.
 Measured against DrZhark's v2.12.2 for b1.7.3: all 27 model classes are read without a single
-extraction failure, and **20 of them are converted and shipped**. The seven that are not are listed at
-the end of this file, and none of them is blocked by the converter.
+extraction failure, and **31 geometries are written**, from 20 of those classes plus two of
+Minecraft's own. Nothing this port draws is held back for want of a source; the two mobs it does not
+bridge are named at the end of this file and both are deliberate.
 
 ## Why this instead of shipping models
 
@@ -80,6 +81,16 @@ subclass that writes into a base field slot is replacing that bone rather than a
 original builds but never draws are dropped with `= -`, and head furniture is reattached with
 `name@parent` so posing the head carries it along.
 
+Reattaching is not free, and the converter pays for it rather than the manifest. The originals have
+no hierarchy at all — every `ModelRenderer` is drawn about its own rotation point — while Dragonfly
+composes a bone's transform on top of its parent's. Hang a bone off a parent that has a rest rotation
+and it picks that rotation up twice and swings about the wrong pivot. So `MMGeometryBridge` divides
+the parent's rest transform back out: the child's pivot moves into the parent's unrotated frame and
+the parent's angles come off its own, which carries the cubes with it because a cube's origin is
+derived from the pivot. The rest pose is then bit-identical to the original's and the bone still
+follows its parent when posed. This is why the horse's ears and horn can hang off `head` at all, and
+it fixed a rat whose front torso was being drawn at 90 degrees to the rest of it.
+
 ## Output
 
 Geometry is written into the same generated `MoCreaturesAssets` pack the textures go to, at the paths
@@ -99,11 +110,18 @@ Checked against a real copy rather than assumed, because several assumptions wer
 - **Field names survive**, as hoped — only Minecraft's own classes were obfuscated in that era. All 27
   constructors are flat and readable; none loops over an array to build its boxes.
 - **Models are not one-per-mob.** Several mobs are two classes: `ModelBear2` + `ModelBear1`,
-  `ModelBigCat2` + `ModelBigCat1`, `ModelHorse2` + `ModelHorse1`, `ModelOgre2` + `ModelOgre1`. Some of
-  those pairs are one shape drawn twice with *different* textures (the bear's angry pass, the lion's
-  mane) and must stay separate; the manifest's `overlay` key is for the other kind.
+  `ModelBigCat2` + `ModelBigCat1`, `ModelHorse2` + `ModelHorse1`, `ModelOgre2` + `ModelOgre1`,
+  `ModelWolf2` + `ModelWolf1`. None of them turned out to be one shape drawn twice, which is what the
+  manifest's `overlay` key is for. They are either two halves of one animal, drawn as two layers with
+  a texture each (the horse), or a state pass this port has no state for (the bear's angry coat, the
+  wolf's `wolfb.png`) — and the lion's mane, which is a layer this port does draw.
 - **Two mobs have no model in the archive at all.** The original rendered its boar on Minecraft's
-  `ModelPig` and its duck on `ModelChicken`.
+  `ModelPig` and its duck on `ModelChicken`. That is not a dead end — the converter already
+  reconstructs vanilla base layers from BTA's own geometry, so it reconstructs the whole model for
+  these two (`<id>.vanilla`), which is exactly the layout `boar.png` and `duck.png` are painted for.
+  `pig.geo.json` and `chicken.geo.json` are the authority rather than Beta 1.7.3's classes, because
+  BTA moved the chicken's wing pivots and mirrors the pig's right-hand legs, and what has to match is
+  what BTA actually draws.
 - **UV space is not the image size.** The art is double resolution, so a 128x64 PNG is usually still a
   64x32 layout. It is derived from the offsets themselves — the largest `u + 2*(depth+width)` and
   `v + depth + height` over every cube — and only `ModelKitty` needed an override (`128, 64`).
@@ -113,26 +131,34 @@ Checked against a real copy rather than assumed, because several assumptions wer
 
 ## What converts, and what does not
 
-20 of the 27 model classes are converted: `bear`, `deer`, `bird`, `kitty`, `bigcat`, `bigcat_maned`,
-`rat`, `rat_hell`, `mouse`, `dolphin`, `shark`, `shark_egg`, `fishy`, `fishy_egg`, `ogre`,
-`ogre_fire`, `ogre_cave`, `wraith`, `wraith_flame` and `werewolf`. Seventeen of those are mobs this
-repo ships **no** geometry for at all, so before the bridge runs they do not render.
+**31 geometries and 74 textures**, measured against a real v2.12.2 archive with nothing missing and
+nothing skipped: `bear`, `deer`, `bird`, `kitty`, `bigcat`, `bigcat_maned`, `rat`, `rat_hell`,
+`mouse`, `dolphin`, `shark`, `shark_egg`, `fishy`, `fishy_egg`, `ogre`, `ogre_fire`, `ogre_cave`,
+`wraith`, `wraith_flame`, `werewolf`, `werewolf_beast`, `werewolf_wolf`, `boar`, `duck`, `litterbox`,
+and the six halves of the three horses. Most of those are things this repo ships **no** geometry for
+at all, so before the bridge runs they do not render.
 
-Nothing on the held-back list below is a converter limitation — each one is a mismatch between what
-v2.12.2 contains and what this port asks for, and `model-bridge.properties` carries the same list with
-the detail:
+Four of these needed more than a manifest line, and each one is a pattern rather than a special case:
 
-| Held back | Why |
+| Was held back | What it took |
 |---|---|
-| `fox` | v2.12.2 has `fox.png` only. This port also draws angry, arctic and arctic-angry; there is no arctic fox in this version at all. |
-| `bunny` | Archive has 4 skins, this port's `variants.json` declares 5. |
-| `horse`, `horse_unicorn`, `horse_pegasus` | The original splits a horse across two models and two textures — `horse<colour>a.png` for body/tail/legs and `horse<colour>b.png` for head/neck/horn/wings. This port draws one model with one combined skin, which neither half fits. |
-| `boar`, `duck` | The original used Minecraft's own `ModelPig` and `ModelChicken`; there is no class in the archive to convert. |
-| `werewolf_wolf` | This port draws the transformed werewolf and the pack wolf with one geometry; the original had two, with a texture painted for each. |
-| `litterbox` | This port wants a clean and a filthy skin; the original had one image and swapped between a `Litter` and a `LitterUsed` box on it. |
+| `boar`, `duck` | No class in the archive: the original rendered them on Minecraft's `ModelPig` and `ModelChicken`. The converter already rebuilds vanilla base layers from BTA's own geometry, so `<id>.vanilla` rebuilds the whole model the same way. |
+| `horse`, `horse_unicorn`, `horse_pegasus` | The original draws a horse as two models with a texture each — `horse<colour>a.png` for body/tail/legs, `horse<colour>b.png` for head/neck/ears and the horn or wings. Both halves convert and the horse renderers draw them as two layers, the way `MobRendererBigCat` draws the lion's mane. One head model serves all three: the horn and wings are always built and simply blank on a plain horse's sheet, which is how the original did it too. |
+| `werewolf_wolf` | The beast and the pack wolf shared one geometry here, so neither could take the skin painted for it. They are two models again — `ModelWerewolf` and `ModelWolf2` — as they were in the original. |
+| `litterbox` | The original had one image and swapped a `Litter` box for a `LitterUsed` one. Both convert, and `LitterboxRenderer` hides whichever does not apply, the way the doe's antlers are hidden. |
 
-Each becomes a one-line edit the moment its blocker moves — a fifth bunny skin, or a horse renderer
-that draws two layers.
+Two mobs are **not** bridged, and that is a decision rather than a gap:
+
+| Built in on purpose | Why |
+|---|---|
+| `fox` | v2.12.2 has `fox.png` and nothing else — there is no arctic fox in that version at all, and this port draws angry, arctic and arctic-angry as well. This repo's own fox set is complete and self-consistent; replacing one quarter of it with the original's art on the original's boxes would be a downgrade, not a partial win. |
+| `bunny` | The archive has four skins and this port's `variants.json` declares five. Same reasoning: a complete built-in set beats four fifths of a bridged one. |
+
+Two audit lines survive all of this and cannot be cleared from here: `entity 'duck' has no model` and
+`entity 'boar' has no texture directory`. `MMAudit` checks what the mod itself ships, and both of
+those are supplied by the generated pack at runtime — which is the whole point, since the art is not
+ours to ship. What the warnings pointed at (a duck with no geometry, a boar with no skin) is fixed;
+the check is looking in the wrong place to see it.
 
 ## Never
 

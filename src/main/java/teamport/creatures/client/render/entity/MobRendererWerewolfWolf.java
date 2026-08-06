@@ -9,22 +9,22 @@ import org.useless.dragonfly.models.entity.StaticEntityModel;
 import teamport.creatures.core.entity.mob.MobWerewolfWolf;
 
 /**
- * The pack wolf, on the same {@code werewolf_wolf} geometry the transformed werewolf uses.
+ * The pack wolf.
  * <p>
- * That geometry does not exist in this repository — the asset bridge builds it from the player's own
- * copy — so which of the two plausible skeletons it turns out to have is not knowable from here. The
- * original had two candidates: a four-legged wolf ({@code legFrontLeft}…) and an upright beast
- * ({@code armLeft}, {@code legLeft}…). Both are posed, and whichever set of bones is absent is simply
- * skipped, so the renderer is correct either way.
+ * The geometry does not exist in this repository — the asset bridge builds it from the player's own
+ * copy of the original, whose {@code ModelWolf2} is Minecraft's quadruped with a wolf's head, body
+ * and snout on it and {@code wolfa.png} painted for exactly that. Until the bridge has run there is
+ * no model at all, which is what the null check below is for.
+ * <p>
+ * It used to share the transformed werewolf's geometry, which is why neither could be converted; they
+ * are two models again, as they were in the original.
  */
 @Environment(EnvType.CLIENT)
 public class MobRendererWerewolfWolf extends MobRenderer<MobWerewolfWolf> {
 	private static final String MODEL_KEY = "main";
 
-	/** Four-legged layout, in front-left, front-right, back-left, back-right order. */
-	private static final String[] QUADRUPED_LEGS = {"legFrontLeft", "legFrontRight", "legBackLeft", "legBackRight"};
-	/** Upright layout: arms lead, legs counter. */
-	private static final String[] BIPED_LIMBS = {"armLeft", "armRight", "legLeft", "legRight"};
+	/** Front-left, front-right, back-left, back-right. */
+	private static final String[] LEGS = {"legFrontLeft", "legFrontRight", "legBackLeft", "legBackRight"};
 
 	public MobRendererWerewolfWolf() {
 		super(0.5F);
@@ -53,17 +53,13 @@ public class MobRendererWerewolfWolf extends MobRenderer<MobWerewolfWolf> {
 		float swing = MathHelper.cos(limbSwing * 0.6662F) * 1.5F * limbYaw;
 		float counterSwing = MathHelper.cos(limbSwing * 0.6662F + (float) Math.PI) * 1.5F * limbYaw;
 
-		setRotX(model, QUADRUPED_LEGS[0], swing);
-		setRotX(model, QUADRUPED_LEGS[1], counterSwing);
-		setRotX(model, QUADRUPED_LEGS[2], counterSwing);
-		setRotX(model, QUADRUPED_LEGS[3], swing);
+		setRotX(model, LEGS[0], swing);
+		setRotX(model, LEGS[1], counterSwing);
+		setRotX(model, LEGS[2], counterSwing);
+		setRotX(model, LEGS[3], swing);
 
-		setRotX(model, BIPED_LIMBS[0], counterSwing);
-		setRotX(model, BIPED_LIMBS[1], swing);
-		setRotX(model, BIPED_LIMBS[2], swing);
-		setRotX(model, BIPED_LIMBS[3], counterSwing);
-
-		// A hunting wolf carries its tail high and stiff.
+		// A hunting wolf carries its tail high and stiff. The original's wolf has no tail bone, so
+		// this only bites on geometry that does.
 		setRotX(model, "tail", 0.6F);
 
 		return model;

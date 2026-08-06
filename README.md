@@ -34,6 +34,9 @@ same walls.
 1. Install [Better than Adventure!](https://betterthanadventure.net/) `8.0.1` with Babric.
 2. Drop [HalpLibe](https://github.com/Turnip-Labs/bta-halplibe/releases) `6.1.3+8.0` into `mods/`.
 3. Drop `creatures-<version>+8.0.1.jar` into `mods/`.
+4. **Drop your own copy of the original Mo' Creatures into `mods/` as well** — either the `.zip` or the
+   `.jar`, whichever you have. Any filename containing `mocreatures` is picked up automatically; you can
+   also name it `mocreatures-assets.zip`/`.jar` and leave it in the game directory instead.
 
 ## Build
 
@@ -66,14 +69,16 @@ and spares bedrock, chests, furnaces, liquids and anything stone-hardness or abo
 This mod **ships no art or models from the original Mo' Creatures**. That is DrZhark's work and its
 licence does not allow redistribution, so none of it can live in this repository.
 
-Instead: **drop your own copy of the original into `mods/`.** That is the only step. It will not load
-as a mod — it is Beta 1.7.3 code and BTA ignores it — it is read purely as a data source. On startup
-the mod extracts the textures, converts the Java entity models to Bedrock geometry, writes a
-`MoCreaturesAssets` texture pack and enables it automatically.
+Instead: **drop your own copy of the original into `mods/`.** That is the only step. Either the `.zip`
+or the `.jar` works — the original's own download is a zip with the mod nested inside it, and the
+bridge descends into that automatically. It will not load as a mod — it is Beta 1.7.3 code and BTA
+ignores it — it is read purely as a data source. On startup the mod extracts the textures, converts the
+Java entity models to Bedrock geometry, writes a `MoCreaturesAssets` texture pack and enables it
+automatically.
 
-Measured against DrZhark's v2.12.2 for b1.7.3: **61 textures and 20 models** are converted, 17 of them
-for mobs this repo ships no geometry for at all. Nothing is downloaded and nothing is redistributed —
-the file has to already be on your disk.
+Measured against DrZhark's v2.12.2 for b1.7.3: **74 textures and 31 models** are converted, with
+nothing left unconverted. Nothing is downloaded and nothing is redistributed — the file has to already
+be on your disk.
 
 Why models and not just skins: the original art is painted against the original box layout, and *no*
 model in this repo shares a UV layout with the original it stands in for. Bridging a skin without its
@@ -84,20 +89,16 @@ missing-texture checker. The startup audit prints exactly what resolved.
 
 ## Known gaps
 
-Seven models are held back, each a mismatch between this port and v2.12.2 rather than a converter
-limitation — see [docs/GEOMETRY-BRIDGE.md](docs/GEOMETRY-BRIDGE.md):
+Every model the archive can supply now converts — 31 of them, nothing skipped. What remains:
 
-- **Fox** — v2.12.2 ships one fox skin and **no arctic fox at all**
-- **Bunny** — archive has 4 skins, this port declares 5
-- **Horse / Unicorn / Pegasus** — the original splits a horse across two models and two textures
-  (body, then head/neck/horn/wings); this port draws one combined model
-- **Boar / Duck** — the original rendered these on Minecraft's own pig and chicken models, so there is
-  no class in the archive to convert
-- **Wolf** — one geometry here is shared by the werewolf's beast form and the pack wolf
-- **Litterbox** — this port wants clean and filthy states; the original swapped a box on one image
-
-Several mobs are also silent: sound events are registered but the audio sits flat in the assets folder
-rather than under `sounds/mob/<name>/`.
+- **Fox and bunny use this repo's own art by design.** v2.12.2 ships one fox skin and no arctic fox at
+  all, and its bunny has 4 skins where this port declares 5. The built-in sets are complete and
+  self-consistent, so bridging a partial one would be a downgrade rather than an improvement.
+- **Three horse types are unmapped** — pack, nightmare and black pegasus. The archive has the sheets,
+  but this port has no mob or state for them yet. Saddled horse textures are likewise unmapped.
+- **Six mobs fall back to vanilla sounds** — shark, fishy and both eggs (no fish audio exists in the
+  repo *or* the original), bird hurt/death, and the werewolf's human idle. Everything else uses the
+  mod's own audio: 64 sound events, all 27 mobs have hurt and death, 24 have an idle call.
 
 ## Licence
 

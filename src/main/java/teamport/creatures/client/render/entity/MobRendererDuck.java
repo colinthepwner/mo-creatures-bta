@@ -9,21 +9,34 @@ import org.useless.dragonfly.models.entity.StaticEntityModel;
 import teamport.creatures.core.entity.mob.MobDuck;
 
 /**
- * The duck has no geometry of its own, so it borrows the bird's; the two share a bone layout
- * (head, body, tail, wingLeft, wingRight, legLeft, legRight) and the duck was a chicken to begin with.
+ * The original gave the duck no model of its own: it rendered on Minecraft's {@code ModelChicken},
+ * and {@code duck.png} is painted for that layout. The asset bridge rebuilds exactly that geometry
+ * from what BTA already ships and pairs it with the player's own copy of the skin.
+ * <p>
+ * Failing that there is nothing to draw a duck with, so it falls back to the bird — the two share a
+ * bone layout (head, body, wingLeft, wingRight, legLeft, legRight) and the duck was a chicken to
+ * begin with. The chicken has no tail bone; the tail tilt below simply finds nothing and does nothing.
  */
 @Environment(EnvType.CLIENT)
 public class MobRendererDuck extends MobRenderer<MobDuck> {
 	private static final String MODEL_KEY = "main";
+	private static final String MODEL_FALLBACK = "bird";
 
 	public MobRendererDuck() {
 		super(0.3F);
-		setModel(MODEL_KEY, "/assets/creatures/models/entity/bird.json", 0.0D);
+		setModel(MODEL_KEY, "/assets/creatures/models/entity/duck.json", 0.0D);
+		setModel(MODEL_FALLBACK, "/assets/creatures/models/entity/bird.json", 0.0D);
 	}
 
 	@Override
 	protected StaticEntityModel getAndSetupModelForLayer(MobDuck entity, float partialTick, float unused, int layer) {
 		StaticEntityModel model = getModel(MODEL_KEY);
+		if (model == null) {
+			model = getModel(MODEL_FALLBACK);
+		}
+		if (model == null) {
+			return null;
+		}
 		model.resetBones();
 
 		float limbSwing = getLimbSwing(entity, partialTick);

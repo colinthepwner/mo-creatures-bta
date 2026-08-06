@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -73,6 +74,11 @@ import java.util.Properties;
  * author's work</em>, so they are reconstructed here from the geometry BTA already ships (see
  * {@link #quadrupedBase} and {@link #bipedBase}) and the subclass's own boxes are composed on top.
  * A model whose base layer is unknown is reported and skipped rather than emitted half-built.
+ * <p>
+ * Two mobs take that to its conclusion: the original gave its boar and its duck no class at all and
+ * rendered them straight on {@code ModelPig} and {@code ModelChicken}. There is nothing to read, so
+ * the <em>whole</em> model is reconstructed the same way — see {@link #vanillaModel} — and paired
+ * with the {@code boar.png} and {@code duck.png} that were painted for those layouts.
  */
 public final class MMGeometryBridge {
 	private MMGeometryBridge() {}
@@ -99,6 +105,12 @@ public final class MMGeometryBridge {
 		/** A second class the original renders as an extra layer over the first, sharing its texture. */
 		String overlayClass;
 		String base;
+		/**
+		 * One of Minecraft's own models, when the original had no class of its own at all and simply
+		 * rendered the mob on a vanilla one. There is nothing in the archive to read, so the whole
+		 * model is reconstructed the same way {@link #base} layers are — see {@link #vanillaModel}.
+		 */
+		String vanilla;
 		/**
 		 * Every texture this mob's renderers load, as original file name -> the paths in the pack it
 		 * supplies. The converted UVs only line up with the art they were painted for, so the geometry
@@ -169,6 +181,7 @@ public final class MMGeometryBridge {
 				case "source" -> entry.sourceClass = value;
 				case "overlay" -> entry.overlayClass = value.isEmpty() || "-".equals(value) ? null : value;
 				case "base" -> entry.base = value.isEmpty() || "-".equals(value) ? null : value;
+				case "vanilla" -> entry.vanilla = value.isEmpty() || "-".equals(value) ? null : value;
 				case "textures" -> {
 					for (String pair : split(value)) {
 						int eq = pair.indexOf('=');
@@ -207,7 +220,7 @@ public final class MMGeometryBridge {
 			}
 		}
 		for (ModelEntry entry : byId.values()) {
-			if (entry.sourceClass != null) m.models.add(entry);
+			if (entry.sourceClass != null || entry.vanilla != null) m.models.add(entry);
 		}
 		manifest = m;
 		return m;
@@ -224,7 +237,8 @@ public final class MMGeometryBridge {
 	public static List<String> wantedEntries() {
 		List<String> wanted = new ArrayList<>();
 		for (ModelEntry entry : manifest().models) {
-			wanted.add(entry.sourceClass.toLowerCase(Locale.ROOT) + ".class");
+			// A vanilla-derived entry has no class to look for; only its art comes out of the archive.
+			if (entry.sourceClass != null) wanted.add(entry.sourceClass.toLowerCase(Locale.ROOT) + ".class");
 			if (entry.overlayClass != null) wanted.add(entry.overlayClass.toLowerCase(Locale.ROOT) + ".class");
 			for (String texture : entry.textures.keySet()) wanted.add(texture.toLowerCase(Locale.ROOT));
 		}
@@ -259,15 +273,11 @@ public final class MMGeometryBridge {
 		}
 
 		for (ModelEntry entry : m.models) {
-			byte[] bytes = archive.get(entry.sourceClass.toLowerCase(Locale.ROOT) + ".class");
-			if (bytes == null) {
-				result.skipped.add(entry.id);
-				result.problems.add(entry.id + ": '" + entry.sourceClass + ".class' is not in the archive");
-				continue;
-			}
 			// Converted UVs are painted against the original art. Shipping the geometry without it
 			// would land the original's box layout on this repo's own textures, which is worse than
-			// leaving both alone, so this is all or nothing.
+			// leaving both alone, so this is all or nothing. It holds for a vanilla-derived model too:
+			// the boar and the duck are painted for Minecraft's own pig and chicken layouts, and this
+			// repo's own boxes are not those either.
 			if (entry.textures.isEmpty()) {
 				result.skipped.add(entry.id);
 				result.problems.add(entry.id + ": the manifest lists no textures for it, so there is nothing "
@@ -284,62 +294,86 @@ public final class MMGeometryBridge {
 					+ ", so its geometry would not match the textures it would be drawn with");
 				continue;
 			}
-			Extraction extraction;
-			try {
-				extraction = extract(bytes, m, entry.args);
-			} catch (Throwable t) {
-				result.skipped.add(entry.id);
-				result.problems.add(entry.id + ": could not read " + entry.sourceClass + " (" + t + ")");
-				continue;
-			}
-			if (!extraction.problems.isEmpty()) {
-				result.skipped.add(entry.id);
-				for (String problem : extraction.problems) result.problems.add(entry.id + ": " + problem);
-				continue;
-			}
 
-			boolean composedBase = false;
-			if (extraction.superName != null && !extraction.superIsPlainBase) {
-				if (entry.base == null) {
+			List<Bone> recovered;
+			boolean composedBase;
+			if (entry.vanilla != null) {
+				// No class of its own in the archive: the original rendered this mob straight on one of
+				// Minecraft's own models, so the whole thing is reconstructed rather than read.
+				recovered = vanillaModel(entry.vanilla);
+				if (recovered == null) {
 					result.skipped.add(entry.id);
-					result.problems.add(entry.id + ": " + entry.sourceClass + " extends '" + extraction.superName
-						+ "', whose boxes are built outside the archive, and the manifest names no base layer");
+					result.problems.add(entry.id + ": no reconstruction is known for Minecraft's own '"
+						+ entry.vanilla + "' model");
 					continue;
 				}
-				List<Bone> base = baseLayer(entry.base, extraction, m, result, entry.id);
-				if (base == null) {
-					result.skipped.add(entry.id);
-					continue;
-				}
-				extraction.bones = merge(base, extraction.bones);
 				composedBase = true;
-			}
+			} else {
+				byte[] bytes = archive.get(entry.sourceClass.toLowerCase(Locale.ROOT) + ".class");
+				if (bytes == null) {
+					result.skipped.add(entry.id);
+					result.problems.add(entry.id + ": '" + entry.sourceClass + ".class' is not in the archive");
+					continue;
+				}
+				Extraction extraction;
+				try {
+					extraction = extract(bytes, m, entry.args);
+				} catch (Throwable t) {
+					result.skipped.add(entry.id);
+					result.problems.add(entry.id + ": could not read " + entry.sourceClass + " (" + t + ")");
+					continue;
+				}
+				if (!extraction.problems.isEmpty()) {
+					result.skipped.add(entry.id);
+					for (String problem : extraction.problems) result.problems.add(entry.id + ": " + problem);
+					continue;
+				}
 
-			if (entry.overlayClass != null) {
-				byte[] overlay = archive.get(entry.overlayClass.toLowerCase(Locale.ROOT) + ".class");
-				if (overlay == null) {
-					result.problems.add(entry.id + ": overlay '" + entry.overlayClass + ".class' is not in the archive");
-				} else {
-					try {
-						Extraction second = extract(overlay, m, new double[0]);
-						if (second.problems.isEmpty() && second.superIsPlainBase) {
-							extraction.bones = merge(extraction.bones, second.bones);
-						} else {
-							result.problems.add(entry.id + ": overlay " + entry.overlayClass + " could not be read"
-								+ (second.problems.isEmpty() ? " (it inherits boxes)" : " " + second.problems));
+				composedBase = false;
+				if (extraction.superName != null && !extraction.superIsPlainBase) {
+					if (entry.base == null) {
+						result.skipped.add(entry.id);
+						result.problems.add(entry.id + ": " + entry.sourceClass + " extends '" + extraction.superName
+							+ "', whose boxes are built outside the archive, and the manifest names no base layer");
+						continue;
+					}
+					List<Bone> base = baseLayer(entry.base, extraction, m, result, entry.id);
+					if (base == null) {
+						result.skipped.add(entry.id);
+						continue;
+					}
+					extraction.bones = merge(base, extraction.bones);
+					composedBase = true;
+				}
+
+				if (entry.overlayClass != null) {
+					byte[] overlay = archive.get(entry.overlayClass.toLowerCase(Locale.ROOT) + ".class");
+					if (overlay == null) {
+						result.problems.add(entry.id + ": overlay '" + entry.overlayClass + ".class' is not in the archive");
+					} else {
+						try {
+							Extraction second = extract(overlay, m, new double[0]);
+							if (second.problems.isEmpty() && second.superIsPlainBase) {
+								extraction.bones = merge(extraction.bones, second.bones);
+							} else {
+								result.problems.add(entry.id + ": overlay " + entry.overlayClass + " could not be read"
+									+ (second.problems.isEmpty() ? " (it inherits boxes)" : " " + second.problems));
+							}
+						} catch (Throwable t) {
+							result.problems.add(entry.id + ": overlay " + entry.overlayClass + " failed (" + t + ")");
 						}
-					} catch (Throwable t) {
-						result.problems.add(entry.id + ": overlay " + entry.overlayClass + " failed (" + t + ")");
 					}
 				}
+				recovered = extraction.bones;
 			}
 
-			List<Bone> bones = rename(extraction.bones, entry);
+			List<Bone> bones = rename(recovered, entry);
 			if (bones.isEmpty()) {
 				result.skipped.add(entry.id);
 				result.problems.add(entry.id + ": no bones survived extraction");
 				continue;
 			}
+			reparent(bones, result, entry.id);
 
 			String json = toGeometryJson(entry.id, bones, entry.uvWidth, entry.uvHeight);
 			try {
@@ -832,6 +866,72 @@ public final class MMGeometryBridge {
 		return bones;
 	}
 
+	/**
+	 * A whole model of Minecraft's own, for the two mobs the original never gave a class to: it
+	 * rendered its boar on {@code ModelPig} and its duck on {@code ModelChicken}, so there is nothing
+	 * in the archive to read and the art is painted for the vanilla box layout.
+	 * <p>
+	 * These are reconstructed exactly the way {@link #quadrupedBase} and {@link #bipedBase} are, and
+	 * from the same source: the Bedrock geometry BTA already ships. That matters more here than for a
+	 * base layer, because it is the <em>whole</em> model — a boar drawn on anything but BTA's own pig
+	 * boxes would put {@code boar.png} in the wrong places.
+	 *
+	 * @return {@code null} when the manifest names a model with no reconstruction here
+	 */
+	private static List<Bone> vanillaModel(String id) {
+		return switch (id) {
+			case "pig" -> pigBase();
+			case "chicken" -> chickenBase();
+			default -> null;
+		};
+	}
+
+	/**
+	 * Minecraft's own {@code ModelPig} — {@code ModelQuadruped(6, 0)} plus the snout, which the pig
+	 * adds as a second cube on the inherited head rather than as a bone of its own.
+	 * <p>
+	 * Reproduces {@code assets/minecraft/models/entity/pig/pig.geo.json} exactly, mirrored legs
+	 * included: BTA's conversion mirrors the two legs on {@code +x} and the plain quadruped base does
+	 * not, so this sets it here rather than in {@link #quadrupedBase}, where it would also change the
+	 * bear and the lion's mane.
+	 */
+	static List<Bone> pigBase() {
+		List<Bone> bones = quadrupedBase(6, 0);
+		Cube snout = box(-2, 0, -9, 4, 3, 1, 0);
+		snout.u = 16;
+		snout.v = 16;
+		bones.get(0).cubes.add(snout);
+		for (Bone bone : bones) {
+			if (bone.name.startsWith("legRight")) bone.cubes.get(0).mirror = true;
+		}
+		return bones;
+	}
+
+	/**
+	 * Minecraft's own {@code ModelChicken}.
+	 * <p>
+	 * Read back out of BTA's {@code chicken/chicken.geo.json} the same way the other bases are, and it
+	 * is that file rather than Beta 1.7.3's class that is authoritative: BTA moved the wing pivots one
+	 * unit inboard, and the duck has to hang on the boxes BTA actually draws a chicken with. Every
+	 * texture offset is untouched, which is what {@code duck.png} is painted against.
+	 * <p>
+	 * Sides follow the manifest's convention rather than vanilla's field names — {@code -x} is left.
+	 */
+	static List<Bone> chickenBase() {
+		List<Bone> bones = new ArrayList<>();
+		Bone body = bone("body", 0, 9, 0, 16, 0, box(-3, -4, -3, 6, 8, 6, 0));
+		body.angleX = (float) (Math.PI / 2.0);
+		bones.add(body);
+		bones.add(bone("head", 0, 0, 0, 15, -4, box(-2, -6, -2, 4, 6, 3, 0)));
+		bones.add(bone("beak", 14, 0, 0, 15, -4, box(-2, -4, -4, 4, 2, 2, 0)));
+		bones.add(bone("wattle", 14, 4, 0, 15, -4, box(-1, -2, -3, 2, 2, 2, 0)));
+		bones.add(bone("legLeft", 26, 0, -2, 19, 1, box(-1, 0, -3, 3, 5, 3, 0)));
+		bones.add(bone("legRight", 26, 0, 1, 19, 1, box(-1, 0, -3, 3, 5, 3, 0)));
+		bones.add(bone("wingLeft", 24, 13, -3, 13, 0, box(-1, 0, -3, 1, 4, 6, 0)));
+		bones.add(bone("wingRight", 24, 13, 3, 13, 0, box(0, 0, -3, 1, 4, 6, 0)));
+		return bones;
+	}
+
 	private static Bone bone(String name, int u, int v, float pointX, float pointY, float pointZ, Cube cube) {
 		Bone bone = new Bone();
 		bone.name = name;
@@ -906,6 +1006,112 @@ public final class MMGeometryBridge {
 			kept.add(bone);
 		}
 		return kept;
+	}
+
+	/**
+	 * Puts every bone the manifest reattached with {@code @parent} back where the original drew it.
+	 * <p>
+	 * Reattaching is not free. The originals have no hierarchy at all — each {@code ModelRenderer} is
+	 * drawn about its own rotation point, and never about another's — while Dragonfly composes a bone's
+	 * transform on top of its parent's. So a bone hung off a parent that has a rest rotation of its own
+	 * would pick that rotation up a second time and swing about the parent's pivot rather than its own.
+	 * A rat's snout at 90 degrees to its face, or a werewolf's shin bent 45 degrees out of its thigh.
+	 * <p>
+	 * Dragonfly builds a bone as {@code T(pivot) · Rz · Ry · Rx · T(-pivot)} and applies the parent's
+	 * first, so reproducing the original {@code M} needs {@code M' = M_parent⁻¹ · M}: the child's pivot
+	 * moves into the parent's unrotated frame and the parent's angles come off its own. Moving the pivot
+	 * carries the cubes with it — a cube's {@code origin} is derived from the pivot in
+	 * {@link #toGeometryJson} — which is exactly the shift the composition needs.
+	 * <p>
+	 * The pivot half is exact for any parent. The angle half subtracts componentwise, which is exact as
+	 * long as the parent turns about one axis and the child does not also turn about an axis Dragonfly
+	 * applies <em>outside</em> it — the order is Z, then Y, then X. Every pairing the manifest asks for
+	 * is a parent that turns about X alone or not at all; anything else is reported rather than bent.
+	 */
+	private static void reparent(List<Bone> bones, Result result, String modelId) {
+		Map<String, Bone> byName = new LinkedHashMap<>();
+		for (Bone bone : bones) byName.put(bone.name, bone);
+
+		List<Bone> children = new ArrayList<>();
+		for (Bone bone : bones) {
+			if (bone.parent != null) children.add(bone);
+		}
+		// Shallowest first, so a parent is already corrected by the time its own children are reached.
+		children.sort(Comparator.comparingInt(bone -> depth(bone, byName, bones.size())));
+
+		for (Bone bone : children) {
+			Bone parent = byName.get(bone.parent);
+			if (parent == null) {
+				result.problems.add(modelId + ": bone '" + bone.name + "' is reattached to '" + bone.parent
+					+ "', which this model has no bone for");
+				bone.parent = null;
+				continue;
+			}
+			if (parent.angleX == 0 && parent.angleY == 0 && parent.angleZ == 0) continue;
+			if (turnsOutside(bone, parent)) {
+				result.problems.add(modelId + ": '" + bone.name + "' and its parent '" + parent.name
+					+ "' turn about axes that do not compose, so its rest pose is approximate");
+			}
+
+			float[] pivot = unrotate(parent, bone.pointX, JAVA_ORIGIN_Y - bone.pointY, bone.pointZ);
+			bone.pointX = pivot[0];
+			bone.pointY = JAVA_ORIGIN_Y - pivot[1];
+			bone.pointZ = pivot[2];
+			bone.angleX -= parent.angleX;
+			bone.angleY -= parent.angleY;
+			bone.angleZ -= parent.angleZ;
+		}
+	}
+
+	private static int depth(Bone bone, Map<String, Bone> byName, int limit) {
+		int depth = 0;
+		Bone at = bone;
+		while (at != null && at.parent != null && depth <= limit) {
+			at = byName.get(at.parent);
+			depth++;
+		}
+		return depth;
+	}
+
+	/** @return true when subtracting the parent's angles is not exact; see {@link #reparent}. */
+	private static boolean turnsOutside(Bone bone, Bone parent) {
+		if (parent.angleZ != 0) return parent.angleY != 0 || parent.angleX != 0;
+		if (parent.angleY != 0) return parent.angleX != 0 || bone.angleZ != 0;
+		return bone.angleY != 0 || bone.angleZ != 0;
+	}
+
+	/**
+	 * A point read back out of the parent's rest rotation. Dragonfly turns a bone by
+	 * {@code Rz(-angleZ) · Ry(angleY) · Rx(-angleX)} about its pivot, so undoing that is
+	 * {@code Rx(angleX) · Ry(-angleY) · Rz(angleZ)} about the same point.
+	 */
+	private static float[] unrotate(Bone parent, float x, float y, float z) {
+		float pivotX = parent.pointX;
+		float pivotY = JAVA_ORIGIN_Y - parent.pointY;
+		float pivotZ = parent.pointZ;
+		double[] d = {x - pivotX, y - pivotY, z - pivotZ};
+		d = turnZ(d, parent.angleZ);
+		d = turnY(d, -parent.angleY);
+		d = turnX(d, parent.angleX);
+		return new float[]{(float) (pivotX + d[0]), (float) (pivotY + d[1]), (float) (pivotZ + d[2])};
+	}
+
+	private static double[] turnX(double[] v, double angle) {
+		double cos = Math.cos(angle);
+		double sin = Math.sin(angle);
+		return new double[]{v[0], v[1] * cos - v[2] * sin, v[1] * sin + v[2] * cos};
+	}
+
+	private static double[] turnY(double[] v, double angle) {
+		double cos = Math.cos(angle);
+		double sin = Math.sin(angle);
+		return new double[]{v[0] * cos + v[2] * sin, v[1], -v[0] * sin + v[2] * cos};
+	}
+
+	private static double[] turnZ(double[] v, double angle) {
+		double cos = Math.cos(angle);
+		double sin = Math.sin(angle);
+		return new double[]{v[0] * cos - v[1] * sin, v[0] * sin + v[1] * cos, v[2]};
 	}
 
 	// ------------------------------------------------------------------------------------------

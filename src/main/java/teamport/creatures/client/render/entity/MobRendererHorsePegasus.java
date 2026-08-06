@@ -15,13 +15,18 @@ import teamport.creatures.core.entity.mob.MobHorsePegasus;
  * {@code animation/horse_pegasus.animation.json} used to describe is reproduced here from the phase
  * and spread {@link MobHorsePegasus} ticks: a 60 degree sweep, one beat per 20-tick cycle, folded
  * away while the pegasus is on the ground.
+ * <p>
+ * The wings sit on whichever half of the horse carries them — the built-in combined model on layer 0,
+ * or the converted head half on layer 1 — and {@code poseExtra} runs over both, so this needs no idea
+ * of which is in play.
  */
 @Environment(EnvType.CLIENT)
 public class MobRendererHorsePegasus extends MobRendererHorse {
 	private static final float WING_SWEEP = 60.0F * MathHelper.DEG_TO_RAD;
 
 	public MobRendererHorsePegasus() {
-		super("/assets/creatures/models/entity/horse_pegasus.json");
+		super("/assets/creatures/models/entity/horse_pegasus.json",
+			"/assets/creatures/models/entity/horse_pegasus_head.json");
 	}
 
 	@Override

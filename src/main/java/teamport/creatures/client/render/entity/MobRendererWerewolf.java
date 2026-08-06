@@ -10,8 +10,12 @@ import teamport.creatures.core.entity.mob.MobWerewolf;
  * Draws whichever of the werewolf's two shapes it is currently wearing.
  * <p>
  * This is the reason the form flag has to be synched: the renderer picks between the {@code werewolf}
- * geometry (the man) and {@code werewolf_wolf} (the beast) purely from
- * {@link MobWerewolf#isTransformed()}. Both are loaded up front so the swap costs nothing mid-change.
+ * geometry (the man) and {@code werewolf_beast} purely from {@link MobWerewolf#isTransformed()}. Both
+ * are loaded up front so the swap costs nothing mid-change.
+ * <p>
+ * The beast used to share the pack wolf's {@code werewolf_wolf} geometry, which meant neither could
+ * be converted: the original drew them as two models with a skin painted for each. They are two here
+ * now, so both convert.
  */
 @Environment(EnvType.CLIENT)
 public class MobRendererWerewolf extends MobRendererBipedBase<MobWerewolf> {
@@ -21,7 +25,7 @@ public class MobRendererWerewolf extends MobRendererBipedBase<MobWerewolf> {
 	public MobRendererWerewolf() {
 		super(0.5F);
 		setModel(MODEL_HUMAN, "/assets/creatures/models/entity/werewolf.json", 0.0D);
-		setModel(MODEL_BEAST, "/assets/creatures/models/entity/werewolf_wolf.json", 0.0D);
+		setModel(MODEL_BEAST, "/assets/creatures/models/entity/werewolf_beast.json", 0.0D);
 	}
 
 	@Override
