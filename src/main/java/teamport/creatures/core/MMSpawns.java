@@ -49,16 +49,21 @@ import teamport.creatures.core.entity.mob.MobWraithFlame;
  * a biome that wants no passive mobs clears the list rather than fighting whatever put entries in
  * it. The result is a biome that spawns nothing of this mod's, with no error anywhere.
  *
- * <p>So the table is applied twice: once at construction, and once more in a sweep over
- * {@link Registries#BIOMES} after the game has started and every biome — from any mod — is built
- * and registered. {@link #apply(Biome)} is idempotent, so the second pass only fills gaps.
+ * <p>So the real placement happens in a sweep over {@link Registries#BIOMES} after the game has
+ * started and every biome — from any mod — is built and registered. {@link #apply(Biome)} is
+ * idempotent, and returns without doing anything while a biome is still under construction, because
+ * a biome's registry key is not bound until it is registered and the key is what says whether this
+ * is the Nether.
+ *
+ * <p>The weights are the original mod's own settings converted to BTA's pool; see
+ * {@link teamport.creatures.MMConfig} for the two baselines and the per-category factors.
  */
 public final class MMSpawns {
 
 	private MMSpawns() {
 	}
 
-	/** Land animals. */
+	/** Land animals. Overworld only, as in the original. */
 	private static final Object[][] CREATURES = {
 		{MobBear.class, "bear"},
 		{MobBird.class, "bird"},
@@ -84,7 +89,6 @@ public final class MMSpawns {
 	/** Hostiles belong on the monster list so they obey the difficulty and light spawn rules. */
 	private static final Object[][] MONSTERS = {
 		{MobRat.class, "rat"},
-		{MobRatHell.class, "rat_hell"},
 		{MobOgre.class, "ogre"},
 		{MobOgreFire.class, "ogre_fire"},
 		{MobOgreCave.class, "ogre_cave"},
@@ -95,16 +99,64 @@ public final class MMSpawns {
 	};
 
 	/**
+	 * What the Nether gets, and all it gets.
+	 *
+	 * <p>The original registered most of its roster through {@code ModLoader.AddSpawn(class, freq,
+	 * type)} with no biome array, which walks {@code BiomeGenBase.biomeList} — the 64x64 climate
+	 * lookup filled purely from temperature and rainfall. Hell is never written into that table, so
+	 * that call never reached it. Exactly three mobs were registered against hell explicitly, by
+	 * passing the biome array form with {@code BiomeGenBase.hell}: the fire ogre, the flame wraith
+	 * and the hell rat.
+	 *
+	 * <p>This port had been putting all twenty-four entries into every biome including the Nether.
+	 * That is what made ogres pile up there: {@code BiomeNether} clears its inherited spawn lists and
+	 * keeps only a ghast and a zombie pigman, 20 weight between them, so the mod's 64 was three
+	 * quarters of everything that could spawn — a fifth of it ogres the original never put in hell at
+	 * all.
+	 */
+	private static final Object[][] NETHER_MONSTERS = {
+		{MobOgreFire.class, "ogre_fire"},
+		{MobWraithFlame.class, "wraith_flame"},
+		{MobRatHell.class, "rat_hell"}
+	};
+
+	/**
 	 * Puts every entry this mod owns on one biome, skipping any already present.
 	 *
 	 * <p>Safe to call more than once on the same biome: that is the whole point, since it runs once
 	 * from the constructor and again from {@link #sweep()}.
 	 */
 	public static void apply(Biome biome) {
+		// A biome's registry key is bound when it is registered, which is after its constructor has
+		// run — so at construction there is no way to tell the Nether from anywhere else, and putting
+		// the overworld roster in first and correcting later is exactly the bug this avoids. The
+		// sweep, which runs once everything is registered, does the real work.
+		String key = biome.getRegistryKey();
+		if (key == null) {
+			return;
+		}
+
+		if (isNether(key)) {
+			addMissing(biome.getSpawnableList(MobCategory.MONSTER), NETHER_MONSTERS);
+			return;
+		}
+
 		addMissing(biome.getSpawnableList(MobCategory.CREATURE), CREATURES);
 		addMissing(biome.getSpawnableList(MobCategory.WATER_CREATURE), WATER_CREATURES);
 		addMissing(biome.getSpawnableList(MobCategory.MONSTER), MONSTERS);
 		applyDeerReplacement(biome.getSpawnableList(MobCategory.CREATURE));
+	}
+
+	/**
+	 * BTA names its biomes {@code minecraft:nether.crag}, {@code minecraft:overworld.forest} and so
+	 * on. Only the {@code nether.} path counts — {@code overworld.hell} is a surface biome that
+	 * merely looks the part, and biomes from other mods keep their own names and are treated as
+	 * overworld, which is what they almost always are.
+	 */
+	private static boolean isNether(String registryKey) {
+		int colon = registryKey.indexOf(':');
+		String path = colon < 0 ? registryKey : registryKey.substring(colon + 1);
+		return path.startsWith("nether.");
 	}
 
 	/**
