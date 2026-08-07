@@ -50,11 +50,6 @@ public class MobHorseNightmare extends MobHorse {
 		return "/assets/creatures/textures/entity/horse/2.png";
 	}
 
-	@Override
-	public int getMaxHealth() {
-		return 50;
-	}
-
 	/** Temper 700: harder to break than anything short of a black pegasus. */
 	@Override
 	protected int annoyanceLimit() {

@@ -58,7 +58,9 @@ public class MobWerewolf extends MobMonster {
 		super(world);
 		setTextureIdentifier(MoreMobs.MOD_ID, "werewolf");
 
-		setSize(0.9F, 1.8F);
+		// EntityWerewolf's own box, and it does not change between forms -- the original calls setSize
+		// exactly once, in the constructor, for both the man and the beast.
+		setSize(0.9F, 1.3F);
 		moveSpeed = 0.7F;
 		attackStrength = 4;
 		scoreValue = 250;

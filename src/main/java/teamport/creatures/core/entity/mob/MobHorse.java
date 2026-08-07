@@ -84,6 +84,10 @@ public class MobHorse extends MobAnimal {
 		super(world);
 		textureIdentifier = new NamespaceID(MoreMobs.MOD_ID, "horse");
 		setSkinVariant(random.nextInt(3));
+		// Health depends on the coat, and Mob's constructor filled the health slot from getMaxHealth()
+		// before there was a coat to read. Reseed it now the variant is set, as MobBigCat does for the
+		// same reason.
+		setHealthRaw(getMaxHealth());
 
 		// The original's own box: a horse is wider than it is tall in plan, not a 2-block pillar.
 		setSize(1.4F, 1.6F);
@@ -122,9 +126,25 @@ public class MobHorse extends MobAnimal {
 		return getGrowth() >= 1.0F;
 	}
 
+	/**
+	 * {@code chooseType}'s own table, indexed by genetic value: 25, 30, 35 for the three coats, 40 for
+	 * the unicorn, the pegasus and the pack horse, and 50 for the nightmare and the black pegasus.
+	 * <p>
+	 * The original's constructor sets 20 and {@code chooseType} immediately overwrites it, so 20 is
+	 * never a horse's health in play — it is what it holds between being constructed and having its
+	 * type rolled. A sweep that reads the constructor sees 20 and stops there, which is how every
+	 * horse in this port came to have 20.
+	 */
 	@Override
 	public int getMaxHealth() {
-		return 20;
+		switch (geneticValue()) {
+			case 1: return 25;
+			case 2: return 30;
+			case 3: return 35;
+			case 7:
+			case 8: return 50;
+			default: return 40;
+		}
 	}
 
 	/**
@@ -434,6 +454,9 @@ public class MobHorse extends MobAnimal {
 			case 3: {
 				MobHorse foal = new MobHorse(world);
 				foal.setSkinVariant(genetic - 1);
+				// The constructor rolled its own coat and sized the health slot to that one; this
+				// foal's coat is inherited, so the slot has to follow it.
+				foal.setHealthRaw(foal.getMaxHealth());
 				return foal;
 			}
 			default:

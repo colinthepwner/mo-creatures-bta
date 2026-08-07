@@ -24,6 +24,16 @@ public class MobDuck extends MobChicken {
 		setSize(0.3F, 0.4F);
 	}
 
+	/**
+	 * EntityDuck's own 4, not the 10 a mob has by default. The box was taken from the original when
+	 * the stats were last swept; this was missed alongside it, so a duck has been taking two and a
+	 * half times the punishment it should.
+	 */
+	@Override
+	public int getMaxHealth() {
+		return 4;
+	}
+
 	@Override
 	public String getEntityTexture() {
 		return "/assets/creatures/textures/entity/duck/" + getTextureReference() + ".png";

@@ -34,11 +34,6 @@ public class MobHorsePack extends MobHorse {
 	}
 
 	@Override
-	public int getMaxHealth() {
-		return 40;
-	}
-
-	@Override
 	public boolean acceptsChest() {
 		return true;
 	}

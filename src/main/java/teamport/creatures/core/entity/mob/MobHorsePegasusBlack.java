@@ -38,11 +38,6 @@ public class MobHorsePegasusBlack extends MobHorsePegasus {
 	}
 
 	@Override
-	public int getMaxHealth() {
-		return 50;
-	}
-
-	@Override
 	public boolean acceptsChest() {
 		return true;
 	}

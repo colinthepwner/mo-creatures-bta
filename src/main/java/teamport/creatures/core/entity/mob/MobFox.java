@@ -37,7 +37,9 @@ public class MobFox extends MobAnimal {
 		entityCheck = 1800 + random.nextInt(1800);
 		heartsHalvesLife = 10;
 
-		setSize(0.8F, 0.8F);
+		// EntityFox's own box. It is the same 0.9 x 1.3 the original gives the bear, the big cat and
+		// the deer -- a generous box for a fox, but it is the one the original fights and dies in.
+		setSize(0.9F, 1.3F);
 	}
 
 	/**
