@@ -34,7 +34,7 @@
 				},
 				{
 					"name": "legLeftBack",
-					"pivot": [0, 12, 5],
+					"pivot": [0, 12, 7.5],
 					"cubes": [
 						{"origin": [1, 0, 6], "size": [3, 12, 3], "uv": [0, 0]}
 					]
