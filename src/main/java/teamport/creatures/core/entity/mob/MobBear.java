@@ -70,15 +70,30 @@ public class MobBear extends MobAnimal {
 		return (entityData.getByte(DATA_GENERIC_FLAGS) & MASK_ARCTIC) != 0;
 	}
 
+	/**
+	 * One skin per colour, angry or not.
+	 * <p>
+	 * This used to swap to a {@code bear_angry} sheet, on the reading that {@code bearb.png} was an
+	 * angry coat. It is not: {@code EntityBear} contains a single texture string, {@code
+	 * /mob/bear.png}, assigned in its constructor and never reassigned, and {@code bearb.png} is
+	 * 11% opaque against {@code bear.png}'s 63% — two ear shapes and one patch of fur on an
+	 * otherwise empty sheet. It is the overlay {@code RenderBear} draws {@code ModelBear1} with, and
+	 * {@link teamport.creatures.client.render.entity.MobRendererBear} draws it as a second layer.
+	 * <p>
+	 * Bound as a main skin it made an angry bear almost entirely transparent.
+	 */
 	@Override
 	public String getEntityTexture() {
-		if (isBearPolar()) {
-			return isBearAngry() ? "/assets/creatures/textures/entity/bear_polar_angry/" + getTextureReference() + ".png" :
-				"/assets/creatures/textures/entity/bear_polar/" + getTextureReference() + ".png";
-		}
+		return isBearPolar()
+			? "/assets/creatures/textures/entity/bear_polar/" + getTextureReference() + ".png"
+			: "/assets/creatures/textures/entity/bear/" + getTextureReference() + ".png";
+	}
 
-		return isBearAngry() ? "/assets/creatures/textures/entity/bear_angry/" + getTextureReference() + ".png" :
-			"/assets/creatures/textures/entity/bear/" + getTextureReference() + ".png";
+	/** The overlay half, carrying the ears. Follows the coat colour, not the temper. */
+	public String getOverlayTexture() {
+		return isBearPolar()
+			? "/assets/creatures/textures/entity/bear_polar_angry/" + getTextureReference() + ".png"
+			: "/assets/creatures/textures/entity/bear_angry/" + getTextureReference() + ".png";
 	}
 
 	public void setBearAngry(boolean flag) {
