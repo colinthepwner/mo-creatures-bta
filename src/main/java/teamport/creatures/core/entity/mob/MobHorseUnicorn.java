@@ -17,6 +17,11 @@ public class MobHorseUnicorn extends MobHorse {
 	}
 
 	@Override
+	public int geneticValue() {
+		return 4;
+	}
+
+	@Override
 	public String textureIndex() {
 		return "3";
 	}

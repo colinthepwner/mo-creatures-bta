@@ -31,6 +31,11 @@ public class MobHorsePegasus extends MobHorse {
 	}
 
 	@Override
+	public int geneticValue() {
+		return 5;
+	}
+
+	@Override
 	public String textureIndex() {
 		return "4";
 	}

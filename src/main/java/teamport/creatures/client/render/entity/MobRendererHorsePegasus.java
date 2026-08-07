@@ -29,6 +29,10 @@ public class MobRendererHorsePegasus extends MobRendererHorse {
 			"geometry.horse_pegasus_head");
 	}
 
+	protected MobRendererHorsePegasus(String bodyId, String headId) {
+		super(bodyId, headId);
+	}
+
 	@Override
 	protected void poseExtra(StaticEntityModel model, MobHorse entity, float limbSwing, float limbYaw, float partialTick) {
 		super.poseExtra(model, entity, limbSwing, limbYaw, partialTick);

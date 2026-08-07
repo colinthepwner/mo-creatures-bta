@@ -27,7 +27,10 @@ import teamport.creatures.core.entity.mob.MobDeerMoC;
 import teamport.creatures.core.entity.mob.MobDuck;
 import teamport.creatures.core.entity.mob.MobFox;
 import teamport.creatures.core.entity.mob.MobHorse;
+import teamport.creatures.core.entity.mob.MobHorseNightmare;
+import teamport.creatures.core.entity.mob.MobHorsePack;
 import teamport.creatures.core.entity.mob.MobHorsePegasus;
+import teamport.creatures.core.entity.mob.MobHorsePegasusBlack;
 import teamport.creatures.core.entity.mob.MobHorseUnicorn;
 import teamport.creatures.core.entity.mob.MobKitty;
 
@@ -52,6 +55,9 @@ public final class MMEntityRenderers {
 		dispatcher.assignRenderer(MobHorse.class, new MobRendererHorse());
 		dispatcher.assignRenderer(MobHorseUnicorn.class, new MobRendererHorseUnicorn());
 		dispatcher.assignRenderer(MobHorsePegasus.class, new MobRendererHorsePegasus());
+		dispatcher.assignRenderer(MobHorsePack.class, new MobRendererHorsePack());
+		dispatcher.assignRenderer(MobHorseNightmare.class, new MobRendererHorseNightmare());
+		dispatcher.assignRenderer(MobHorsePegasusBlack.class, new MobRendererHorsePegasusBlack());
 		dispatcher.assignRenderer(MobKitty.class, new MobRendererKitty());
 		dispatcher.assignRenderer(MobDeerMoC.class, new MobRendererDeerMoC());
 		dispatcher.assignRenderer(MobBigCat.class, new MobRendererBigCat());

@@ -2,6 +2,7 @@ package teamport.creatures.client.render.entity;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.minecraft.client.render.renderer.GLRenderer;
 import net.minecraft.core.util.helper.MathHelper;
 import org.useless.dragonfly.models.entity.BoneTransform;
 import org.useless.dragonfly.models.entity.StaticEntityModel;
@@ -31,6 +32,8 @@ public class MobRendererHorse extends MobRendererQuadrupedBase<MobHorse> {
 
 	protected static final String HEAD_KEY = "head";
 	private static final int LAYER_HEAD = 1;
+	/** How big a newborn foal is drawn, as a fraction of the grown horse. */
+	private static final float FOAL_SCALE = 0.4F;
 
 	public MobRendererHorse() {
 		this("geometry.horse", "geometry.horse_head");
@@ -44,6 +47,28 @@ public class MobRendererHorse extends MobRendererQuadrupedBase<MobHorse> {
 	@Override
 	protected String[] legBones() {
 		return LEGS;
+	}
+
+	/**
+	 * Foals are drawn small and grow into themselves, the same way this port already draws a dolphin
+	 * calf. Growth runs from 0, so it is mapped onto {@link #FOAL_SCALE}..1 rather than used as the
+	 * scale directly — a newborn multiplied by its own growth would be scaled to nothing.
+	 */
+	@Override
+	protected void preRenderTransform(MobHorse entity, double x, double y, double z, float rotation, float partialTick) {
+		super.preRenderTransform(entity, x, y, z, rotation, partialTick);
+
+		if (!entity.isAdult()) {
+			float scale = FOAL_SCALE + (1.0F - FOAL_SCALE) * entity.getGrowth();
+			GLRenderer.modelM4f().scale(scale, scale, scale);
+		}
+	}
+
+	@Override
+	public float getShadowSize(MobHorse entity) {
+		return entity.isAdult()
+			? super.getShadowSize(entity)
+			: super.getShadowSize(entity) * (FOAL_SCALE + (1.0F - FOAL_SCALE) * entity.getGrowth());
 	}
 
 	/** Only worth a second pass when there is a second geometry to draw with. */

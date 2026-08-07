@@ -24,7 +24,6 @@ import static teamport.creatures.MoreMobs.MOD_ID;
  * <p><b>Not carried over.</b> Five original settings have nothing in this port to attach to, so they
  * are absent rather than present and inert:
  * <ul>
- *   <li>{@code EasyHorseBreeding} — horses do not breed here at all.</li>
  *   <li>{@code PegasusSpawningP} — the original rolled pegasus as a variant of one horse entity, so
  *       it needed a percentage. This port gives the pegasus its own entity and its own weight, which
  *       is {@code SpawnFrequencies.pegasus} and is strictly more expressive.</li>
@@ -82,6 +81,9 @@ public class MMConfig {
 	public static float caveOgreStrength;
 	/** {@code OgreRange} — how far off an ogre smells a player, in blocks. */
 	public static int ogreRange;
+
+	/** {@code EasyHorseBreeding} — rare foals every time, and no parent left sterile. */
+	public static boolean easyHorseBreeding;
 
 	/** {@code DolphinsAttackSharks} — whether dolphins and sharks pick fights with each other. */
 	public static boolean dolphinsAttackSharks;
@@ -233,6 +235,15 @@ public class MMConfig {
 					+ "hatched keep whatever they are. SpawnPiranhas.",
 				true);
 
+		TOML.addCategory(
+				"Original panel: \"Other Settings\".",
+				"Breeding")
+			.addEntry("easyHorseBreeding",
+				"Whether horse breeding is made easy: a rare foal comes up every time its parents' "
+					+ "combination allows one rather than one time in three, and neither parent is "
+					+ "left sterile afterwards. EasyHorseBreeding.",
+				false);
+
 		TOML.addCategory("Replacements")
 			.addEntry("replaceVanillaDeer",
 				"Swap BTA's built-in deer out of every biome's spawn list for the Mo' Creatures deer. " +
@@ -289,6 +300,8 @@ public class MMConfig {
 		fireOgreStrength = (float) cfg.getDouble("HostileMobs.fireOgreStrength");
 		caveOgreStrength = (float) cfg.getDouble("HostileMobs.caveOgreStrength");
 		ogreRange = cfg.getInt("HostileMobs.ogreRange");
+
+		easyHorseBreeding = cfg.getBoolean("Breeding.easyHorseBreeding");
 
 		dolphinsAttackSharks = cfg.getBoolean("WaterMobs.dolphinsAttackSharks");
 		spawnPiranhas = cfg.getBoolean("WaterMobs.spawnPiranhas");

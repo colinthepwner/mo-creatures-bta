@@ -28,7 +28,10 @@ import teamport.creatures.core.entity.mob.MobDeerMoC;
 import teamport.creatures.core.entity.mob.MobDuck;
 import teamport.creatures.core.entity.mob.MobFox;
 import teamport.creatures.core.entity.mob.MobHorse;
+import teamport.creatures.core.entity.mob.MobHorseNightmare;
+import teamport.creatures.core.entity.mob.MobHorsePack;
 import teamport.creatures.core.entity.mob.MobHorsePegasus;
+import teamport.creatures.core.entity.mob.MobHorsePegasusBlack;
 import teamport.creatures.core.entity.mob.MobHorseUnicorn;
 import teamport.creatures.core.entity.mob.MobKitty;
 
@@ -94,5 +97,11 @@ public final class MMEntities {
 		register(MobWerewolfWolf.class, "werewolf_wolf", "werewolf_wolf", MobWerewolfWolf::new);
 		register(MobWraith.class, "wraith", MobWraith::new);
 		register(MobWraithFlame.class, "wraith_flame", "wraith_flame", MobWraithFlame::new);
+		// The three bred horses. Appended rather than filed with the other horses above, because the
+		// order here is what worlds saved before this release recorded their mobs against.
+		register(MobHorsePack.class, "horse_pack", "horse_pack", MobHorsePack::new);
+		register(MobHorseNightmare.class, "horse_nightmare", "horse_nightmare", MobHorseNightmare::new);
+		register(MobHorsePegasusBlack.class, "horse_pegasus_black", "horse_pegasus_black",
+			MobHorsePegasusBlack::new);
 	}
 }
