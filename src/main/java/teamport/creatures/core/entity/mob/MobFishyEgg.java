@@ -12,7 +12,8 @@ import teamport.creatures.MoreMobs;
  * underwater; this is what restocks a lake that the sharks have been working over.
  * <p>
  * The variety carries across from the parent, so a pond of one kind of fish stays that kind. Roe
- * dropped without a parent — spawned in, say — picks a variety at random, piranhas included.
+ * dropped without a parent — spawned in, say — picks a variety at random, piranhas included unless
+ * {@code WaterMobs.spawnPiranhas} says otherwise.
  */
 public class MobFishyEgg extends MobAquaticEggBase {
 	/** Which of {@link MobFishy#VARIETIES} will come out. Server-side; nothing renders it. */
@@ -21,7 +22,7 @@ public class MobFishyEgg extends MobAquaticEggBase {
 	public MobFishyEgg(World world) {
 		super(world);
 		textureIdentifier = new NamespaceID(MoreMobs.MOD_ID, "fishy_egg");
-		variety = random.nextInt(MobFishy.VARIETIES);
+		variety = MobFishy.rollVariety(random);
 	}
 
 	public int getVariety() {

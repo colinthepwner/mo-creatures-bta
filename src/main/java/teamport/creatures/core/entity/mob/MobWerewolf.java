@@ -12,6 +12,7 @@ import net.minecraft.core.util.helper.DamageType;
 import net.minecraft.core.util.helper.MathHelper;
 import net.minecraft.core.world.World;
 import org.jetbrains.annotations.NotNull;
+import teamport.creatures.MMConfig;
 import teamport.creatures.MoreMobs;
 
 /**
@@ -323,9 +324,11 @@ public class MobWerewolf extends MobMonster {
 		super.attackEntity(entity, distance);
 	}
 
+	/** {@code HostileMobs.werewolfSpawnDifficulty} — the original's {@code wereSpawnDifficulty}. */
 	@Override
 	public boolean canSpawnHere() {
-		return world.getDifficulty().canHostileMobsSpawn() && super.canSpawnHere();
+		return MMConfig.spawnsAt(world.getDifficulty(), MMConfig.werewolfSpawnDifficulty)
+			&& super.canSpawnHere();
 	}
 
 	@Override

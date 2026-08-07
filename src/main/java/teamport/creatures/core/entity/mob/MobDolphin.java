@@ -16,6 +16,7 @@ import net.minecraft.core.util.helper.MathHelper;
 import net.minecraft.core.util.helper.UUIDHelper;
 import net.minecraft.core.world.World;
 import org.jetbrains.annotations.NotNull;
+import teamport.creatures.MMConfig;
 import teamport.creatures.MoreMobs;
 import teamport.creatures.core.MMUtils;
 
@@ -291,7 +292,9 @@ public class MobDolphin extends MobAquaticBase {
 
 	@Override
 	protected Entity findSwimTarget() {
-		if (!isAdult()) {
+		// WaterMobs.dolphinsAttackSharks -- the original's DolphinsAttackSharks, which EntityDolphin
+		// and EntityShark both read so that turning it off calls the feud off from both sides.
+		if (!isAdult() || !MMConfig.dolphinsAttackSharks) {
 			return null;
 		}
 

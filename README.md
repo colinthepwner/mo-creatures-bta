@@ -68,7 +68,91 @@ to keep BTA's instead.
 
 Ogres break blocks to reach you, as they did originally — bounded here: it respects the
 `doMobGriefing` game rule, breaks at most 6 blocks per swing on a cooldown, never digs beneath itself,
-and spares bedrock, chests, furnaces, liquids and anything stone-hardness or above.
+and spares bedrock, chests, furnaces, liquids and anything tough enough to survive TNT. How much it
+can chew through is `HostileMobs.ogreStrength`, below.
+
+## Settings
+
+Everything lives in **`config/creatures.cfg`**, written on first launch. The original edited the same
+knobs through a GUI API screen under *Options / Mods Settings*; BTA 8.0 has no equivalent panel for a
+mod to hang itself off, so this is a file. The six categories are the original's six panels, and every
+entry names the `mocreatures.cfg` key it came from, so an old config can be transcribed by hand.
+
+**`[SpawnLimits]`** — mobs per 256 eligible chunks. These are *global* caps: BTA counts every mob in
+the category, so the animal cap covers cows and sheep too. That is what the original did and why it
+had to — this mod roughly doubles the passive spawn pool, and under BTA's stock cap the new animals
+would displace the vanilla ones rather than add to them. Put back BTA's own `70 / 15 / 5` for stock
+behaviour.
+
+| key | default | original |
+|---|---|---|
+| `maxHostiles` | 70 | `MobsSpawnLimit` |
+| `maxAnimals` | 30 | `AnimalsSpawnLimit` |
+| `maxWaterMobs` | 25 | `WaterMobSpawnLimit` |
+
+**`[SpawnFrequencies]`** — relative spawn weight per mob, on BTA's scale rather than the original's
+0–10 one (the conversion, and why passive and hostile mobs need different factors, is commented in
+`MMConfig.java`). **Set any entry to 0 to stop that mob spawning naturally**, which is how the
+original's own activate/deactivate worked. `bear_polar` is the bear's weight in glacier and tundra —
+the original's `FreqPBear`, which has no separate entity here — and `squid` is BTA's own squid,
+exposed because the water cap above went from 5 to 25 and squid would otherwise take the headroom.
+
+**`[Hunters]`** — what the mod's predators are willing to hunt.
+
+| key | default | original |
+|---|---|---|
+| `attackHorses` | `false` | `HuntersAttackHorses` |
+| `attackWolves` | `false` | `HuntersAttackWolves` |
+| `destroyDrops` | `true` | `HuntersDestroyDrops` |
+
+**`[HostileMobs]`** — difficulties are the *lowest* setting the mob spawns on and mean that or
+harder. Strengths scale how much an ogre can break through; the original's number sized a literal
+explosion, which this port does not have, so it scales the blast-resistance ceiling instead, pinned so
+the default 2.5 reproduces the bound the port already used.
+
+| key | default | original |
+|---|---|---|
+| `ogreSpawnDifficulty` | `normal` | `ogreSpawnDifficulty` |
+| `fireOgreSpawnDifficulty` | `hard` | `FireOgreSpawnDifficulty` |
+| `caveOgreSpawnDifficulty` | `normal` | `CaveOgreSpawnDifficulty` |
+| `werewolfSpawnDifficulty` | `normal` | `wereSpawnDifficulty` |
+| `wraithSpawnDifficulty` | `normal` | `wraithSpawnDifficulty` |
+| `flameWraithSpawnDifficulty` | `hard` | `flameWraithSpawnDifficulty` |
+| `ogreStrength` | `2.5` | `OgreStrength` |
+| `fireOgreStrength` | `2.0` | `FireOgreStrength` |
+| `caveOgreStrength` | `3.0` | `CaveOgreStrength` |
+| `ogreRange` | `12` | `OgreRange` |
+
+**`[WaterMobs]`**
+
+| key | default | original |
+|---|---|---|
+| `sharkSpawnDifficulty` | `easy` | `sharkSpawnDifficulty` |
+| `dolphinsAttackSharks` | `true` | `DolphinsAttackSharks` |
+| `spawnPiranhas` | `true` | `SpawnPiranhas` |
+
+**`[Replacements]`** — `replaceVanillaDeer`, above. **`[IDs]`** — item, block and entity id bases.
+
+### Three defaults change behaviour
+
+Adopting the original's own defaults moves three things off where this port had them. Each is one line
+in the config to put back.
+
+- **Animal and water spawn caps rise** from BTA's 15 and 5 to 30 and 25, as described above.
+- **Ogres notice you at 12 blocks, not 24.** 24 is the original's slider *maximum*; its default is 12.
+  The readme line this port took 24 from ("they can smell players 24 blocks apart") predates the
+  setting existing at all.
+- **Fire ogres spawn on Hard, not Normal.** Same story: "Fire ogres now spawn on Normal difficulty" is
+  a 2.x changelog line, but v2.12.2 ships the setting at Hard.
+
+### Original settings not carried over
+
+Five have nothing in this port to attach to, so they are absent rather than present and inert:
+`EasyHorseBreeding` (horses do not breed here), `DisplayPetNames` / `DisplayPetHealth` /
+`DisplayPetEmotions` (no pet naming or nameplates), and `StaticKBeds` (no kitty bed). `StaticLitter` is
+likewise gone because the litter box is a block here and so is always static. `PegasusSpawningP` is
+superseded by `SpawnFrequencies.pegasus`: the original needed a percentage because pegasi were a
+variant roll on one horse entity, and this port gives them their own entity and their own weight.
 
 ## Textures and models — the asset bridge
 

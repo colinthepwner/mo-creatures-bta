@@ -17,6 +17,7 @@ import net.minecraft.core.world.biome.Biomes;
 import net.minecraft.core.world.season.SeasonWinter;
 import org.jetbrains.annotations.NotNull;
 import teamport.creatures.MoreMobs;
+import teamport.creatures.core.MMHunting;
 import teamport.creatures.core.MMUtils;
 
 import java.util.List;
@@ -170,7 +171,9 @@ public class MobBear extends MobAnimal {
 
 			if (!entitiesNearBear.isEmpty() && isAlive()) {
 				for (Entity entity : entitiesNearBear) {
-					if (entity instanceof MobAnimal && !(entity instanceof MobBear) && target == null) {
+					// Hunters.attackHorses / Hunters.attackWolves -- EntityBear read both.
+					if (entity instanceof MobAnimal && !(entity instanceof MobBear) && target == null
+						&& MMHunting.isHuntable(entity)) {
 						setTarget(entity);
 						break;
 					}

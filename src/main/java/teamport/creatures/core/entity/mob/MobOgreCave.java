@@ -1,9 +1,11 @@
 package teamport.creatures.core.entity.mob;
 
 import net.minecraft.core.WeightedRandomLootObject;
+import net.minecraft.core.enums.Difficulty;
 import net.minecraft.core.item.Items;
 import net.minecraft.core.util.helper.MathHelper;
 import net.minecraft.core.world.World;
+import teamport.creatures.MMConfig;
 import teamport.creatures.MoreMobs;
 
 /**
@@ -49,6 +51,16 @@ public class MobOgreCave extends MobOgre {
 	@Override
 	public int getMaxHealth() {
 		return 50;
+	}
+
+	@Override
+	protected float blastCeiling() {
+		return MMConfig.blastCeiling(MMConfig.caveOgreStrength);
+	}
+
+	@Override
+	protected Difficulty spawnDifficulty() {
+		return MMConfig.caveOgreSpawnDifficulty;
 	}
 
 	@Override

@@ -7,8 +7,10 @@ import net.minecraft.core.data.registry.Registries;
 import net.minecraft.core.entity.Entity;
 import net.minecraft.core.entity.SpawnListEntry;
 import net.minecraft.core.entity.animal.MobDeer;
+import net.minecraft.core.entity.animal.MobSquid;
 import net.minecraft.core.enums.MobCategory;
 import net.minecraft.core.world.biome.Biome;
+import net.minecraft.core.world.biome.Biomes;
 
 import teamport.creatures.MMConfig;
 import teamport.creatures.MoreMobs;
@@ -63,9 +65,17 @@ public final class MMSpawns {
 	private MMSpawns() {
 	}
 
-	/** Land animals. Overworld only, as in the original. */
+	/**
+	 * Land animals. Overworld only, as in the original.
+	 *
+	 * <p>A row is {@code {class, frequency key}}, or {@code {class, frequency key, cold-biome key}}
+	 * for a mob whose cold-biome form had its own frequency in the original. Only the bear does: it
+	 * is one entity here with a polar variant that {@link MobBear#spawnInit()} switches on in exactly
+	 * the glacier and tundra, so {@code bear_polar} stands in for the original's {@code FreqPBear}
+	 * across those two biomes and {@code bear} covers the rest.
+	 */
 	private static final Object[][] CREATURES = {
-		{MobBear.class, "bear"},
+		{MobBear.class, "bear", "bear_polar"},
 		{MobBird.class, "bird"},
 		{MobFox.class, "fox"},
 		{MobBunny.class, "bunny"},
@@ -137,14 +147,53 @@ public final class MMSpawns {
 		}
 
 		if (isNether(key)) {
-			addMissing(biome.getSpawnableList(MobCategory.MONSTER), NETHER_MONSTERS);
+			addMissing(biome.getSpawnableList(MobCategory.MONSTER), NETHER_MONSTERS, biome);
 			return;
 		}
 
-		addMissing(biome.getSpawnableList(MobCategory.CREATURE), CREATURES);
-		addMissing(biome.getSpawnableList(MobCategory.WATER_CREATURE), WATER_CREATURES);
-		addMissing(biome.getSpawnableList(MobCategory.MONSTER), MONSTERS);
+		addMissing(biome.getSpawnableList(MobCategory.CREATURE), CREATURES, biome);
+		addMissing(biome.getSpawnableList(MobCategory.WATER_CREATURE), WATER_CREATURES, biome);
+		addMissing(biome.getSpawnableList(MobCategory.MONSTER), MONSTERS, biome);
 		applyDeerReplacement(biome.getSpawnableList(MobCategory.CREATURE));
+		applySquidFrequency(biome.getSpawnableList(MobCategory.WATER_CREATURE));
+	}
+
+	/**
+	 * The biomes {@link MobBear#spawnInit()} turns a bear polar in, and so the biomes whose bears are
+	 * weighted by {@code bear_polar} rather than {@code bear}.
+	 */
+	private static boolean isCold(Biome biome) {
+		return biome == Biomes.OVERWORLD_GLACIER || biome == Biomes.OVERWORLD_TUNDRA;
+	}
+
+	/**
+	 * Applies {@code SpawnFrequencies.squid} to BTA's own squid.
+	 *
+	 * <p>Not this mod's mob, and included only because the original exposed it for one reason: it
+	 * raises the water cap from BTA's 5 to 25 to fit dolphins, sharks and fish in, and squid would
+	 * otherwise take that new headroom first. {@code Biome}'s constructor adds squid once at a flat
+	 * weight of 10, so this is an outright override of that number rather than a scaling of it, and
+	 * leaving the entry at its default of 10 changes nothing.
+	 */
+	private static void applySquidFrequency(List<SpawnListEntry> water) {
+		if (water == null) {
+			return;
+		}
+		int weight = MMConfig.frequency("squid");
+		Iterator<SpawnListEntry> entries = water.iterator();
+		while (entries.hasNext()) {
+			SpawnListEntry entry = entries.next();
+			if (entry.entityClass != MobSquid.class) {
+				continue;
+			}
+			// Zero means "do not spawn", which has to be a removal rather than a zeroed weight — see
+			// addMissing for why a zero-weight entry is not the same thing.
+			if (weight <= 0) {
+				entries.remove();
+			} else {
+				entry.spawnFrequency = weight;
+			}
+		}
 	}
 
 	/**
@@ -164,7 +213,7 @@ public final class MMSpawns {
 	 * beside it, so the vanilla entry comes back out first.
 	 */
 	private static void applyDeerReplacement(List<SpawnListEntry> creatures) {
-		if (!MMConfig.cfg.getBoolean("Replacements.replaceVanillaDeer")) {
+		if (creatures == null || !MMConfig.cfg.getBoolean("Replacements.replaceVanillaDeer")) {
 			return;
 		}
 		Iterator<SpawnListEntry> entries = creatures.iterator();
@@ -173,20 +222,36 @@ public final class MMSpawns {
 				entries.remove();
 			}
 		}
-		if (!contains(creatures, MobDeerMoC.class)) {
-			creatures.add(new SpawnListEntry(MobDeerMoC.class, frequency("deer")));
+		int weight = frequency("deer");
+		if (weight > 0 && !contains(creatures, MobDeerMoC.class)) {
+			creatures.add(new SpawnListEntry(MobDeerMoC.class, weight));
 		}
 	}
 
-	private static void addMissing(List<SpawnListEntry> list, Object[][] table) {
+	/**
+	 * Adds every entry in the table that the biome does not already carry.
+	 *
+	 * <p>A frequency of zero or less means the mob is switched off and no entry is added at all. That
+	 * is the original's own reading of a zero frequency — every one of its spawn checks opened with
+	 * {@code if (freq > 0)} — and removing the entry rather than zeroing its weight is what
+	 * {@link net.minecraft.core.world.SpawnerMobs} needs: it sums the weights and rolls
+	 * {@code nextInt(total)}, which throws outright on an all-zero list, and it seeds its choice with
+	 * {@code list.get(0)} before walking, so a zero-weight entry sitting first is still reachable.
+	 */
+	private static void addMissing(List<SpawnListEntry> list, Object[][] table, Biome biome) {
 		if (list == null) {
 			return;
 		}
+		boolean cold = isCold(biome);
 		for (Object[] row : table) {
 			@SuppressWarnings("unchecked")
 			Class<? extends Entity> type = (Class<? extends Entity>) row[0];
-			if (!contains(list, type)) {
-				list.add(new SpawnListEntry(type, frequency((String) row[1])));
+			if (contains(list, type)) {
+				continue;
+			}
+			int weight = frequency((String) (cold && row.length > 2 ? row[2] : row[1]));
+			if (weight > 0) {
+				list.add(new SpawnListEntry(type, weight));
 			}
 		}
 	}
@@ -201,7 +266,7 @@ public final class MMSpawns {
 	}
 
 	private static int frequency(String entity) {
-		return MMConfig.cfg.getInt("SpawnFrequencies." + entity);
+		return MMConfig.frequency(entity);
 	}
 
 	/**

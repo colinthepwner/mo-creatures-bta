@@ -18,6 +18,7 @@ import net.minecraft.core.world.biome.Biome;
 import net.minecraft.core.world.biome.Biomes;
 import org.jetbrains.annotations.NotNull;
 import teamport.creatures.MoreMobs;
+import teamport.creatures.core.MMHunting;
 import teamport.creatures.core.MMUtils;
 
 import java.util.List;
@@ -411,6 +412,9 @@ public class MobBigCat extends MobAnimal {
 			if (!(candidate instanceof Mob)) continue;
 			if (candidate instanceof Player || candidate == vehicle || candidate == passenger) continue;
 			if (!candidate.isAlive()) continue;
+			// Hunters.attackHorses / Hunters.attackWolves. Both settings exist because of this mob:
+			// a lion wandering past a stable was the original's most complained-about behaviour.
+			if (!MMHunting.isHuntable(candidate)) continue;
 
 			// A cub only takes on something smaller than it is.
 			if (!isAdult() && (candidate.bbWidth > 0.5F || candidate.bbHeight > 0.5F)) continue;

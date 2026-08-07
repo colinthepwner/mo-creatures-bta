@@ -14,6 +14,7 @@ import net.minecraft.core.world.World;
 import net.minecraft.core.world.pos.TilePos;
 import net.minecraft.core.world.weather.Weather;
 import org.jetbrains.annotations.NotNull;
+import teamport.creatures.MMConfig;
 import teamport.creatures.MoreMobs;
 
 /**
@@ -316,7 +317,8 @@ public class MobWraith extends MobFlying implements Enemy {
 	 */
 	@Override
 	public boolean canSpawnHere() {
-		if (!world.getDifficulty().canHostileMobsSpawn()) {
+		// HostileMobs.wraithSpawnDifficulty -- the original's wraithSpawnDifficulty.
+		if (!MMConfig.spawnsAt(world.getDifficulty(), MMConfig.wraithSpawnDifficulty)) {
 			return false;
 		}
 

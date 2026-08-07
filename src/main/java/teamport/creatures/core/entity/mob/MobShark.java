@@ -2,7 +2,6 @@ package teamport.creatures.core.entity.mob;
 
 import com.mojang.nbt.tags.CompoundTag;
 import net.minecraft.core.entity.Entity;
-import net.minecraft.core.entity.EntityItem;
 import net.minecraft.core.entity.Mob;
 import net.minecraft.core.entity.player.Player;
 import net.minecraft.core.item.Items;
@@ -11,10 +10,10 @@ import net.minecraft.core.util.collection.NamespaceID;
 import net.minecraft.core.util.helper.DamageType;
 import net.minecraft.core.world.World;
 import org.jetbrains.annotations.NotNull;
+import teamport.creatures.MMConfig;
 import teamport.creatures.MoreMobs;
+import teamport.creatures.core.MMHunting;
 import teamport.creatures.core.MMUtils;
-
-import java.util.List;
 
 /**
  * The shark: the reason the original mod's install notes end with "punch the sharks in the nose".
@@ -39,6 +38,13 @@ public class MobShark extends MobAquaticBase {
 	private static final float BREEDING_GROWTH = 1.5F;
 	private static final float REACH = 3.5F;
 	private static final int BITE_DAMAGE = 5;
+	/** Radius a shark clears drops within after a kill. */
+	private static final double DEVOUR_RADIUS = 3.0D;
+	/**
+	 * Only items this fresh count as part of the kill. Anything older was already floating there and
+	 * is very likely a player's, so the shark leaves it alone.
+	 */
+	private static final int DEVOUR_MAX_ITEM_AGE = 50;
 
 	public MobShark(World world) {
 		super(world);
@@ -142,8 +148,30 @@ public class MobShark extends MobAquaticBase {
 		if (candidate instanceof MobShark || candidate instanceof MobSharkEgg) {
 			return false;
 		}
+		// Hunters.attackHorses / Hunters.attackWolves. A horse in deep water is a rare sight, but the
+		// original asked the same question here as it did on land, and a shark that ignores the
+		// setting is a shark that eats the horse you swam across the strait with.
+		if (!MMHunting.isHuntable(candidate)) {
+			return false;
+		}
+		// WaterMobs.dolphinsAttackSharks. Read from both sides of the fight, as the original did:
+		// EntityShark and EntityDolphin both consulted it, so turning it off calls the whole feud off
+		// rather than leaving the shark hunting a dolphin that will not hunt back.
+		if (!MMConfig.dolphinsAttackSharks && candidate instanceof MobDolphin) {
+			return false;
+		}
 		// Players are handled above so that they are always preferred and always at full range.
 		return !(candidate instanceof Player);
+	}
+
+	/**
+	 * {@code WaterMobs.sharkSpawnDifficulty} — the original's {@code sharkSpawnDifficulty}, which
+	 * defaults to Easy and so only ever keeps sharks out of a peaceful world.
+	 */
+	@Override
+	public boolean canSpawnHere() {
+		return MMConfig.spawnsAt(world.getDifficulty(), MMConfig.sharkSpawnDifficulty)
+			&& super.canSpawnHere();
 	}
 
 	@Override
@@ -167,14 +195,11 @@ public class MobShark extends MobAquaticBase {
 	 * A shark that kills a shoal would otherwise leave a raft of items floating on the surface, so
 	 * it takes the drops with it. Player drops are left alone, which the item's own age tells us:
 	 * anything a player threw has had time on the clock.
+	 *
+	 * <p>{@code Hunters.destroyDrops} turns this off — the original's {@code HuntersDestroyDrops}.
 	 */
 	private void eatNearbyDrops() {
-		List<EntityItem> drops = world.getEntitiesWithinAABB(EntityItem.class, MMUtils.grow(bb, 3.0, 3.0, 3.0));
-		for (EntityItem drop : drops) {
-			if (drop.age < 50) {
-				drop.remove();
-			}
-		}
+		MMHunting.devourDrops(this, DEVOUR_RADIUS, DEVOUR_MAX_ITEM_AGE);
 	}
 
 	@Override

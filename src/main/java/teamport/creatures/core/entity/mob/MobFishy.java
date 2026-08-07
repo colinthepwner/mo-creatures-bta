@@ -12,10 +12,13 @@ import net.minecraft.core.util.helper.DamageType;
 import net.minecraft.core.util.helper.MathHelper;
 import net.minecraft.core.world.World;
 import org.jetbrains.annotations.NotNull;
+import teamport.creatures.MMConfig;
 import teamport.creatures.MoreMobs;
+import teamport.creatures.core.MMHunting;
 import teamport.creatures.core.MMUtils;
 
 import java.util.List;
+import java.util.Random;
 
 /**
  * The lil' fish: ten varieties, nine of which want nothing to do with anyone, and one that does.
@@ -47,7 +50,7 @@ public class MobFishy extends MobAquaticBase {
 		heartsHalvesLife = 10;
 
 		setSize(0.3F, 0.3F);
-		setVariety(random.nextInt(VARIETIES));
+		setVariety(rollVariety(random));
 		setGrowth(0.6F + random.nextFloat() * (ADULT_GROWTH - 0.6F));
 
 		mobDrops.add(new WeightedRandomLootObject(Items.FOOD_FISH_RAW.getDefaultStack(), 1));
@@ -63,6 +66,18 @@ public class MobFishy extends MobAquaticBase {
 
 	public boolean isPiranha() {
 		return getVariety() == PIRANHA;
+	}
+
+	/**
+	 * Rolls a variety for a fish nobody asked for a colour of, honouring
+	 * {@code WaterMobs.spawnPiranhas} — the original's {@code SpawnPiranhas}.
+	 *
+	 * <p>The piranha is the last of the ten, so leaving it out is just a shorter roll. This only
+	 * covers the random case: a fish hatched from roe takes its parent's variety, and one asked for
+	 * by id keeps whatever it was given, both of which the original left alone too.
+	 */
+	public static int rollVariety(Random random) {
+		return random.nextInt(MMConfig.spawnPiranhas ? VARIETIES : PIRANHA);
 	}
 
 	@Override
@@ -125,7 +140,9 @@ public class MobFishy extends MobAquaticBase {
 		for (Mob candidate : world.getEntitiesWithinAABB(Mob.class, MMUtils.grow(bb, 12.0, 6.0, 12.0))) {
 			if (candidate == this || !candidate.isAlive() || candidate instanceof MobAquaticBase
 				|| candidate instanceof MobSharkEgg || candidate instanceof MobFishyEgg
-				|| candidate instanceof Player) {
+				|| candidate instanceof Player
+				// Hunters.attackHorses / Hunters.attackWolves: EntityFishy read both.
+				|| !MMHunting.isHuntable(candidate)) {
 				continue;
 			}
 			double distance = distanceToSqr(candidate);

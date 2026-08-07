@@ -2,7 +2,6 @@ package teamport.creatures.core.entity.mob;
 
 import net.minecraft.core.WeightedRandomLootObject;
 import net.minecraft.core.entity.Entity;
-import net.minecraft.core.entity.EntityItem;
 import net.minecraft.core.entity.Mob;
 import net.minecraft.core.entity.animal.MobAnimal;
 import net.minecraft.core.entity.monster.MobMonster;
@@ -13,6 +12,7 @@ import net.minecraft.core.util.helper.DamageType;
 import net.minecraft.core.world.World;
 import org.jetbrains.annotations.NotNull;
 import teamport.creatures.MoreMobs;
+import teamport.creatures.core.MMHunting;
 import teamport.creatures.core.MMUtils;
 
 import java.util.List;
@@ -34,8 +34,6 @@ public class MobWerewolfWolf extends MobMonster {
 	/** Chance per tick of looking for prey when there is no player to chase. */
 	public static final int PREY_SEARCH_CHANCE = 80;
 
-	/** Whether a fed wolf eats the drops off its kill. */
-	public static final boolean DEVOURS_DROPS = true;
 	/** Radius it will clear drops within. */
 	public static final double DEVOUR_RADIUS = 2.0D;
 	/**
@@ -136,7 +134,10 @@ public class MobWerewolfWolf extends MobMonster {
 		double closestDistance = -1.0D;
 
 		for (MobAnimal candidate : nearby) {
-			if (!candidate.isAlive() || isPackMate(candidate) || isTooBigToHunt(candidate)) {
+			// Hunters.attackHorses / Hunters.attackWolves -- EntityWWolf read both, and the second one
+			// is what stops a pack of these tearing through a player's dogs.
+			if (!candidate.isAlive() || isPackMate(candidate) || isTooBigToHunt(candidate)
+				|| !MMHunting.isHuntable(candidate)) {
 				continue;
 			}
 
@@ -179,20 +180,13 @@ public class MobWerewolfWolf extends MobMonster {
 		}
 	}
 
-	/** Clears the freshly dropped remains of a kill. Never touches anything that was already lying about. */
+	/**
+	 * Clears the freshly dropped remains of a kill. Never touches anything that was already lying
+	 * about, and does nothing at all when {@code Hunters.destroyDrops} is off — the original's
+	 * {@code HuntersDestroyDrops}.
+	 */
 	protected void devourDrops() {
-		if (!DEVOURS_DROPS || world.isClientSide) {
-			return;
-		}
-
-		List<EntityItem> drops = world.getEntitiesWithinAABB(EntityItem.class,
-			MMUtils.grow(bb, DEVOUR_RADIUS, DEVOUR_RADIUS, DEVOUR_RADIUS));
-
-		for (EntityItem drop : drops) {
-			if (drop.age < DEVOUR_MAX_ITEM_AGE) {
-				drop.remove();
-			}
-		}
+		MMHunting.devourDrops(this, DEVOUR_RADIUS, DEVOUR_MAX_ITEM_AGE);
 	}
 
 	@Override

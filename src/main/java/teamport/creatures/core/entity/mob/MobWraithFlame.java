@@ -2,12 +2,12 @@ package teamport.creatures.core.entity.mob;
 
 import net.minecraft.core.WeightedRandomLootObject;
 import net.minecraft.core.entity.Entity;
-import net.minecraft.core.enums.Difficulty;
 import net.minecraft.core.item.Items;
 import net.minecraft.core.util.helper.DamageType;
 import net.minecraft.core.util.helper.MathHelper;
 import net.minecraft.core.world.World;
 import org.jetbrains.annotations.NotNull;
+import teamport.creatures.MMConfig;
 import teamport.creatures.MoreMobs;
 
 /**
@@ -88,9 +88,14 @@ public class MobWraithFlame extends MobWraith {
 		entity.remainingFireTicks = Math.max(entity.remainingFireTicks, BURN_TICKS_ON_HIT);
 	}
 
+	/**
+	 * {@code HostileMobs.flameWraithSpawnDifficulty} — the original's
+	 * {@code flameWraithSpawnDifficulty}, which defaults to Hard and so leaves this where it was.
+	 */
 	@Override
 	public boolean canSpawnHere() {
-		return world.getDifficulty() == Difficulty.HARD && super.canSpawnHere();
+		return MMConfig.spawnsAt(world.getDifficulty(), MMConfig.flameWraithSpawnDifficulty)
+			&& super.canSpawnHere();
 	}
 
 	@Override

@@ -9,6 +9,7 @@ import net.minecraft.core.data.gamerule.GameRules;
 import net.minecraft.core.entity.Entity;
 import net.minecraft.core.entity.monster.MobMonster;
 import net.minecraft.core.entity.player.Player;
+import net.minecraft.core.enums.Difficulty;
 import net.minecraft.core.enums.EnumDropCause;
 import net.minecraft.core.item.Items;
 import net.minecraft.core.util.helper.DamageType;
@@ -16,6 +17,7 @@ import net.minecraft.core.util.helper.MathHelper;
 import net.minecraft.core.world.World;
 import net.minecraft.core.world.pos.TilePos;
 import org.jetbrains.annotations.NotNull;
+import teamport.creatures.MMConfig;
 import teamport.creatures.MoreMobs;
 
 /**
@@ -31,8 +33,12 @@ import teamport.creatures.MoreMobs;
  * <p>
  * Everything about that is bounded by the {@code SMASH_*} constants below plus the vanilla
  * {@code doMobGriefing} game rule. See {@link #smashBlock(int, int, int)} for the per-block rules.
- * {@code MMConfig} is not this class's to edit, so the knobs are exposed here as {@code public static
- * final} for the config to be wired to later.
+ * <p>
+ * The three knobs the original itself exposed — how far an ogre notices you, how much it can chew
+ * through, and the difficulty it spawns on — come from {@code config/creatures.cfg} through
+ * {@link #awarenessRange()}, {@link #blastCeiling()} and {@link #spawnDifficulty()}, which the fire
+ * and cave ogres override to read their own entries. The {@code SMASH_*} caps around them have no
+ * counterpart in the original and are not configurable.
  */
 public class MobOgre extends MobMonster {
 	// --- Block destruction bounds. Config-friendly: every one of these is a hard cap, and the ---
@@ -53,30 +59,8 @@ public class MobOgre extends MobMonster {
 	private static final int[] SMASH_SIDES = {0, -1, 1};
 	/** Minimum ticks between swings that break anything. */
 	public static final int SMASH_COOLDOWN_TICKS = 40;
-	/**
-	 * Blocks at or above this blast resistance are immune. {@code Block.getBlastResistance} is
-	 * {@code blastResistance / 5}, which puts dirt at 0.5, planks and glass at 1.0 and stone at
-	 * exactly 2.0.
-	 *
-	 * <p>This used to sit at 2.0, which spared stone, on the belief that the original did the same.
-	 * It did not. {@code EntityOgre.DestroyingOgre} hands the job to
-	 * {@code Destroyer.DestroyBlast(world, self, x, y + 1, z, destroyForce, bogrefire)}, and that is
-	 * an explosion: it walks rays out from the ogre and tests each block's explosion resistance
-	 * against a decaying blast intensity, exactly as TNT does. TNT clears stone, so an ogre did too —
-	 * {@code destroyForce} is the configurable {@code mod_mocreatures.ogreStrength}, not a material
-	 * cutoff. The value here is raised to match, and the surrounding caps (reach, height, six blocks
-	 * a swing, never below its own feet, no tile entities, no fluids) are what keep it bounded
-	 * instead.
-	 *
-	 * <p>Obsidian and anything else built to survive TNT stays out of reach, and bedrock is excluded
-	 * separately by its negative hardness.
-	 */
-	public static final float MAX_BLAST_RESISTANCE = 60.0F;
 	/** Furthest an ogre will bother tunnelling towards a target it cannot see. */
 	public static final double SMASH_PURSUIT_RANGE = 12.0D;
-
-	/** "They can smell players 24 blocks apart" — readme, and the original's default {@code ogrerange}. */
-	public static final double AWARENESS_RANGE = 24.0D;
 
 	public static final int MASK_ANGRY = 0b0000_0001;
 	public static final int MASK_ATTACKING = 0b0000_0010;
@@ -116,6 +100,50 @@ public class MobOgre extends MobMonster {
 	@Override
 	public int getMaxHealth() {
 		return 35;
+	}
+
+	// --- Config hooks -----------------------------------------------------------------------------
+
+	/**
+	 * How far off this ogre smells a player — {@code HostileMobs.ogreRange}, the original's
+	 * {@code OgreRange}, which {@code EntityOgre}'s constructor assigned straight to its
+	 * {@code attackRange}.
+	 *
+	 * <p>The original's default is 12 and its slider stops at 24. The readme's "they can smell
+	 * players 24 blocks apart" is a line from the 2.x changelog that predates the setting existing,
+	 * so 24 is the ceiling rather than the norm; this port had been treating it as the norm.
+	 */
+	protected double awarenessRange() {
+		return MMConfig.ogreRange;
+	}
+
+	/**
+	 * Blocks at or above this blast resistance are immune. {@code Block.getBlastResistance} is
+	 * {@code blastResistance / 5}, which puts dirt at 0.5, planks and glass at 1.0 and stone at
+	 * exactly 2.0.
+	 *
+	 * <p>This used to be a flat 2.0, which spared stone, on the belief that the original did the
+	 * same. It did not. {@code EntityOgre.DestroyingOgre} hands the job to
+	 * {@code Destroyer.DestroyBlast(world, self, x, y + 1, z, destroyForce, bogrefire)}, and that is
+	 * an explosion: it walks rays out from the ogre and tests each block's explosion resistance
+	 * against a decaying blast intensity, exactly as TNT does. TNT clears stone, so an ogre did too —
+	 * {@code destroyForce} is the configurable {@code mod_mocreatures.ogreStrength}, not a material
+	 * cutoff. The surrounding caps (reach, height, six blocks a swing, never below its own feet, no
+	 * tile entities, no fluids) are what keep it bounded instead.
+	 *
+	 * <p>Since there is no explosion here to give a force to, {@code HostileMobs.ogreStrength} scales
+	 * this ceiling instead — see {@link MMConfig#blastCeiling}, which is pinned so the original's
+	 * default of 2.5 gives the 60 this port already used. Obsidian and anything else built to survive
+	 * TNT stays out of reach at any setting, and bedrock is excluded separately by its negative
+	 * hardness.
+	 */
+	protected float blastCeiling() {
+		return MMConfig.blastCeiling(MMConfig.ogreStrength);
+	}
+
+	/** Lowest difficulty this ogre spawns on — {@code ogreSpawnDifficulty}, meaning that or harder. */
+	protected Difficulty spawnDifficulty() {
+		return MMConfig.ogreSpawnDifficulty;
 	}
 
 	// --- Synched renderer state -------------------------------------------------------------------
@@ -191,7 +219,7 @@ public class MobOgre extends MobMonster {
 			return null;
 		}
 
-		Player player = world.getClosestPlayerToEntity(this, AWARENESS_RANGE);
+		Player player = world.getClosestPlayerToEntity(this, awarenessRange());
 		if (player != null && player.getGamemode().hasHostileMobs()) {
 			return player;
 		}
@@ -335,7 +363,7 @@ public class MobOgre extends MobMonster {
 	 *   <li>Never a block with a tile entity: chests, furnaces, signs, spawners, and this mod's own
 	 *       litterbox all keep their contents.</li>
 	 *   <li>Never a fluid, so an ogre by the coast cannot drain the sea.</li>
-	 *   <li>Never anything at or above {@link #MAX_BLAST_RESISTANCE}, which spares stone and up.</li>
+	 *   <li>Never anything at or above {@link #blastCeiling()}.</li>
 	 * </ul>
 	 *
 	 * @return true if a block was actually removed
@@ -383,7 +411,7 @@ public class MobOgre extends MobMonster {
 		if (block.hasTag(BlockTags.IS_WATER) || block.hasTag(BlockTags.IS_LAVA) || block.hasTag(BlockTags.IS_ACID)) {
 			return false;
 		}
-		return block.getBlastResistance(this) < MAX_BLAST_RESISTANCE;
+		return block.getBlastResistance(this) < blastCeiling();
 	}
 
 	// --- Daylight ---------------------------------------------------------------------------------
@@ -410,7 +438,7 @@ public class MobOgre extends MobMonster {
 
 	@Override
 	public boolean canSpawnHere() {
-		return world.getDifficulty().canHostileMobsSpawn() && super.canSpawnHere();
+		return MMConfig.spawnsAt(world.getDifficulty(), spawnDifficulty()) && super.canSpawnHere();
 	}
 
 	@Override
