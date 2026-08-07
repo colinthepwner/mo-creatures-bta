@@ -14,8 +14,14 @@ import teamport.creatures.core.entity.mob.MobDolphin;
  */
 @Environment(EnvType.CLIENT)
 public class MobRendererDolphin extends MobRendererAquaticBase<MobDolphin> {
-	private static final String[] TAIL = {"tail", "PTail", "LTail", "RTail"};
-	private static final String[] DORSAL = {"finUpper", "UpperFin", "upperFin"};
+	/**
+	 * Only the two flukes, which is what {@code ModelDolphin}'s pose method assigns to.
+	 * <p>
+	 * {@code PTail} — the peduncle — used to be driven as well, and here that was the opposite fault
+	 * to the shark's: the flukes <em>are</em> children of the peduncle in this geometry, so turning
+	 * both applied the stroke to them twice and they swung out past the tail they hang off.
+	 */
+	private static final String[] TAIL = {"LTail", "RTail"};
 
 	public MobRendererDolphin() {
 		super("geometry.dolphin", 0.0D, 0.6F);
@@ -34,15 +40,5 @@ public class MobRendererDolphin extends MobRendererAquaticBase<MobDolphin> {
 	@Override
 	protected float tailAmplitude() {
 		return 0.45F;
-	}
-
-	@Override
-	protected void poseExtra(StaticEntityModel model, MobDolphin entity, float limbSwing, float limbYaw, float partialTick) {
-		// The dorsal fin rocks a little out of phase with the flukes, which sells the body flexing
-		// through the stroke rather than swinging as one rigid piece.
-		BoneTransform dorsal = bone(model, DORSAL);
-		if (dorsal != null) {
-			dorsal.rotZ = MathHelper.sin(limbSwing * 0.6662F) * 0.12F * Math.max(limbYaw, 0.25F);
-		}
 	}
 }

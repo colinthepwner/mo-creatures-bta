@@ -33,16 +33,32 @@ public abstract class MobRendererAquaticBase<T extends MobAquaticBase> extends M
 	/** Candidate names for the bones that sway with the stroke, most likely first. */
 	protected abstract String[] tailBones();
 
+	/**
+	 * Empty by default, and deliberately.
+	 * <p>
+	 * These heads are not one bone. The original's shark carries its head as four separate boxes
+	 * ({@code UHead}, {@code DHead}, {@code LHead}, {@code RHead}) that are siblings of each other,
+	 * not children — so turning the first one found took a quarter of the head with it and left the
+	 * other three behind. Read against the source: {@code ModelShark}'s pose method assigns to
+	 * {@code UpperTailFin} and {@code LowerTailFin} and to nothing else, so the head never turned.
+	 * A renderer whose model really does keep its head on one bone can override this.
+	 */
 	protected String[] headBones() {
-		return new String[]{"head", "Head", "UHead"};
+		return new String[0];
 	}
 
+	/**
+	 * Empty by default. No original animates a pectoral fin, and their geometry says why they could
+	 * not: the shark's {@code RightFin} has its rotation point at {@code x = -10} against a box
+	 * spanning {@code -10..-2} — the outer tip, not the shoulder. That is faithful, and it is
+	 * harmless while the bone is only ever placed, but rotating it swings the whole fin off the body.
+	 */
 	protected String[] leftFinBones() {
-		return new String[]{"finLeft", "LeftFin", "leftFin"};
+		return new String[0];
 	}
 
 	protected String[] rightFinBones() {
-		return new String[]{"finRight", "RightFin", "rightFin"};
+		return new String[0];
 	}
 
 	/**

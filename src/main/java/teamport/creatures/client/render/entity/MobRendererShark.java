@@ -13,8 +13,15 @@ import teamport.creatures.core.entity.mob.MobShark;
  */
 @Environment(EnvType.CLIENT)
 public class MobRendererShark extends MobRendererAquaticBase<MobShark> {
-	private static final String[] TAIL = {"tail", "PTail", "LTail", "RTail", "UpperTailFin", "LowerTailFin"};
-	private static final String[] SNOUT = {"head", "Head", "UHead", "LHead", "RHead"};
+	/**
+	 * Only the two tail fins, which is exactly what {@code ModelShark}'s pose method assigns to.
+	 * <p>
+	 * {@code PTail} — the tail stock — used to be in this list as well, and that was the fault: the
+	 * two fins are its <em>siblings</em> in the geometry, not its children, so swinging the stock
+	 * moved it out from under fins that stayed where they were and the tail came apart. Driving only
+	 * the fins is both what the original does and the only thing this hierarchy supports.
+	 */
+	private static final String[] TAIL = {"UpperTailFin", "LowerTailFin"};
 
 	public MobRendererShark() {
 		super("geometry.shark", 0.0D, 0.6F);
@@ -26,21 +33,7 @@ public class MobRendererShark extends MobRendererAquaticBase<MobShark> {
 	}
 
 	@Override
-	protected String[] headBones() {
-		return SNOUT;
-	}
-
-	@Override
 	protected float tailAmplitude() {
 		return 0.6F;
-	}
-
-	@Override
-	protected void poseExtra(StaticEntityModel model, MobShark entity, float limbSwing, float limbYaw, float partialTick) {
-		BoneTransform head = bone(model, SNOUT);
-		if (head != null) {
-			// Counter-swing against the tail, so the body reads as one continuous S.
-			head.rotY += MathHelper.cos(limbSwing * 0.6662F + (float) Math.PI) * 0.15F * Math.max(limbYaw, 0.25F);
-		}
 	}
 }
