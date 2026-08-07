@@ -301,14 +301,18 @@ public final class MMAssetBridge {
 	 */
 	private static List<Source> findSources(File gameDir, File packDir, Set<String> wanted) {
 		List<Source> sources = new ArrayList<>();
+		// Resolved once and carried down. Every canonical path costs a filesystem round trip, and this
+		// one is otherwise re-resolved for each candidate found -- pure waste on the cold cache that a
+		// game launch always starts from.
+		String rootPath = safePath(gameDir);
 		String packPath = safePath(packDir);
 		int[] budget = {MAX_SCAN_FILES};
-		scan(gameDir, gameDir, packPath, wanted, sources, 0, budget);
+		scan(gameDir, rootPath, packPath, wanted, sources, 0, budget);
 		Collections.sort(sources);
 		return sources;
 	}
 
-	private static void scan(File dir, File gameDir, String packPath, Set<String> wanted,
+	private static void scan(File dir, String rootPath, String packPath, Set<String> wanted,
 		List<Source> sources, int depth, int[] budget) {
 		if (depth > MAX_SCAN_DEPTH || budget[0] <= 0) return;
 
@@ -324,16 +328,16 @@ public final class MMAssetBridge {
 				// Never walk into the pack this bridge writes: it is full of the very files being
 				// looked for, under their new names, and rereading it would be a slow no-op at best.
 				if (SKIPPED_DIRS.contains(name) || safePath(child).equals(packPath)) continue;
-				scan(child, gameDir, packPath, wanted, sources, depth + 1, budget);
+				scan(child, rootPath, packPath, wanted, sources, depth + 1, budget);
 				continue;
 			}
 			if (!child.isFile()) continue;
 
 			String name = baseName(child.getName());
 			if (wanted.contains(name)) {
-				sources.add(new Source(child, false, name, rank(gameDir, child), depth));
+				sources.add(new Source(child, false, name, rank(rootPath, child), depth));
 			} else if (!isOwnJar(name) && isZip(child)) {
-				sources.add(new Source(child, true, name, rank(gameDir, child), depth));
+				sources.add(new Source(child, true, name, rank(rootPath, child), depth));
 			}
 		}
 	}
@@ -344,8 +348,8 @@ public final class MMAssetBridge {
 	 * <p>Judged on the whole path below the game directory, not just the file name, so an unpacked
 	 * {@code mods/MoCreatures/mob/bear.png} ranks as well as the zip it came out of.
 	 */
-	private static int rank(File gameDir, File file) {
-		String relative = relativePath(gameDir, file).toLowerCase(Locale.ROOT);
+	private static int rank(String rootPath, File file) {
+		String relative = relativeTo(rootPath, safePath(file)).toLowerCase(Locale.ROOT);
 		if (baseName(file.getName()).startsWith("mocreatures-assets")) return RANK_EXPLICIT;
 		if (relative.contains("mocreature") || relative.contains("mo_creature")
 			|| relative.contains("mo-creature") || relative.contains("mo creature")
@@ -647,8 +651,11 @@ public final class MMAssetBridge {
 
 	/** Path below the game directory, with forward slashes, so a stamp survives a moved install. */
 	private static String relativePath(File root, File file) {
-		String rootPath = safePath(root);
-		String filePath = safePath(file);
+		return relativeTo(safePath(root), safePath(file));
+	}
+
+	/** As {@link #relativePath}, for callers that already hold the root's resolved path. */
+	private static String relativeTo(String rootPath, String filePath) {
 		String relative = filePath.startsWith(rootPath + File.separator)
 			? filePath.substring(rootPath.length() + 1)
 			: filePath;

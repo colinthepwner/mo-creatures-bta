@@ -128,12 +128,14 @@ public final class MMAudit {
 			return;
 		}
 		if (MMAssetBridge.usedCache) {
-			MoreMobs.LOGGER.info("Creatures audit: texture pack '{}' was already built from '{}' and was reused; "
+			// sourceArchive arrives quoted already -- it may name a folder and a file count, not just a
+			// file -- so it is placed bare here rather than quoted a second time.
+			MoreMobs.LOGGER.info("Creatures audit: texture pack '{}' was already built from {} and was reused; "
 				+ "delete it to force a rebuild. Pack auto-enabled: {}", MMAssetBridge.PACK_NAME,
 				MMAssetBridge.sourceArchive, MMAssetBridge.packAutoEnabled);
 			return;
 		}
-		MoreMobs.LOGGER.info("Creatures audit: asset bridge read '{}' — {} textures bridged, {} not found, "
+		MoreMobs.LOGGER.info("Creatures audit: asset bridge read {} — {} textures bridged, {} not found, "
 			+ "pack auto-enabled: {}", MMAssetBridge.sourceArchive, MMAssetBridge.bridgedCount,
 			MMAssetBridge.missingCount, MMAssetBridge.packAutoEnabled);
 
