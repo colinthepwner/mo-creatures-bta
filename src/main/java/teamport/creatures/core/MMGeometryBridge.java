@@ -393,6 +393,7 @@ public final class MMGeometryBridge {
 				continue;
 			}
 			reparent(bones, result, entry.id);
+			mirrorRightHandSide(bones);
 
 			String json = toGeometryJson(entry.id, bones, entry.uvWidth, entry.uvHeight);
 			try {
@@ -1298,6 +1299,80 @@ public final class MMGeometryBridge {
 			}
 		}
 		return merged;
+	}
+
+	/**
+	 * Sets Bedrock's {@code mirror} flag on the {@code +x} half of every mirrored pair of bones.
+	 * <p>
+	 * This is BTA's own convention rather than an invention here, and it is not something the Java
+	 * models carry. Vanilla {@code ModelQuadruped} never touches its mirror field, yet BTA's converted
+	 * {@code cow.geo.json} sets {@code "mirror": true} on {@code leg1} and {@code leg3} — the two legs
+	 * at {@code midX = 4} — and leaves {@code leg0} and {@code leg2} at {@code midX = -4} alone.
+	 * Bedrock unwraps those faces the opposite way round, and the flag is what puts them back.
+	 * <p>
+	 * Without it a mirrored pair drawn from one texture region comes out with the right-hand member
+	 * reversed. Invisible on symmetric fur, obvious on an asymmetric detail: the bird's two legs share
+	 * {@code uv[26,0]} and its toes read back to front on the {@code +x} foot.
+	 * <p>
+	 * The test is deliberately narrow, because over-flagging would reverse art that is currently
+	 * right. A pair qualifies only when the names are a left/right counterpart, the first cubes share
+	 * a texture offset <em>and</em> a size, and the two sit mirrored about the centre line. That last
+	 * check is what keeps it off a bone like the cow's head, which carries both horns itself and is
+	 * not half of a pair — BTA does not flag that one either.
+	 */
+	private static void mirrorRightHandSide(List<Bone> bones) {
+		for (Bone bone : bones) {
+			if (bone.cubes.isEmpty()) continue;
+			String partnerName = counterpartName(bone.name);
+			if (partnerName == null) continue;
+			for (Bone partner : bones) {
+				if (partner == bone || partner.cubes.isEmpty()) continue;
+				if (!partnerName.equals(partner.name)) continue;
+
+				Cube a = bone.cubes.get(0);
+				Cube b = partner.cubes.get(0);
+				if (a.u != b.u || a.v != b.v) continue;
+				if (a.width != b.width || a.height != b.height || a.depth != b.depth) continue;
+
+				double mine = midX(bone);
+				double theirs = midX(partner);
+				// Mirrored about x = 0, and only the half that sits on +x takes the flag.
+				if (Math.abs(mine + theirs) > 0.51 || mine <= 0.0) continue;
+
+				for (Cube cube : bone.cubes) {
+					cube.mirror = true;
+				}
+			}
+		}
+	}
+
+	/** The left/right counterpart of a bone name, or null when the name names no side. */
+	private static String counterpartName(String name) {
+		if (name == null) return null;
+		if (name.contains("Left")) return name.replace("Left", "Right");
+		if (name.contains("Right")) return name.replace("Right", "Left");
+		// LTail/RTail style, where the side is a single leading letter before a capital.
+		if (name.length() > 1 && Character.isUpperCase(name.charAt(1))) {
+			if (name.charAt(0) == 'L') return 'R' + name.substring(1);
+			if (name.charAt(0) == 'R') return 'L' + name.substring(1);
+		}
+		return null;
+	}
+
+	/**
+	 * Centre of a bone's boxes on the x axis, in the model space the bones are still in here — a
+	 * cube's offset is relative to its bone's rotation point, and x is the one axis the conversion
+	 * carries straight through, so this reads the same before and after.
+	 */
+	private static double midX(Bone bone) {
+		double min = Double.MAX_VALUE;
+		double max = -Double.MAX_VALUE;
+		for (Cube cube : bone.cubes) {
+			double left = bone.pointX + cube.offX;
+			min = Math.min(min, left);
+			max = Math.max(max, left + cube.width);
+		}
+		return (min + max) / 2.0;
 	}
 
 	private static List<Bone> rename(List<Bone> bones, ModelEntry entry) {
