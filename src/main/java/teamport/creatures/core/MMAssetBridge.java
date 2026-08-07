@@ -58,7 +58,7 @@ public final class MMAssetBridge {
 	 * Bumped whenever a manifest or the converter changes shape, so an existing pack is rebuilt even
 	 * though the player's archive has not moved.
 	 */
-	private static final int BRIDGE_REVISION = 11;
+	private static final int BRIDGE_REVISION = 12;
 
 	/** How deep to follow zips inside zips. The original's download nests exactly one level. */
 	private static final int MAX_NESTING = 3;

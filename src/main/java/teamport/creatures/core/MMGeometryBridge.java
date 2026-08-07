@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -137,6 +138,20 @@ public final class MMGeometryBridge {
 		final Map<String, String> renames = new LinkedHashMap<>();
 		/** output bone name -> parent bone name. */
 		final Map<String, String> parents = new LinkedHashMap<>();
+		/**
+		 * Output bone names whose cubes take Bedrock's {@code mirror} flag.
+		 * <p>
+		 * BTA's own conversion of Minecraft's models sets this on the bones that sit at {@code +x}
+		 * even where the Java model never touched its mirror field — vanilla {@code ModelQuadruped}
+		 * sets no mirror at all, yet BTA's {@code cow.geo.json} carries {@code "mirror": true} on
+		 * {@code leg1} and {@code leg3}, the two legs at {@code midX = 4}. Bedrock unwraps those
+		 * faces the other way round, and the flag is what puts them back.
+		 * <p>
+		 * The converter otherwise only mirrors what the original explicitly asked for, so a model
+		 * that relies on the convention rather than the flag comes out with its {@code +x} side
+		 * reversed. Invisible on symmetric fur; obvious on an asymmetric detail like a bird's toes.
+		 */
+		final Set<String> mirrorBones = new LinkedHashSet<>();
 	}
 
 	static final class Manifest {
@@ -205,6 +220,7 @@ public final class MMGeometryBridge {
 						entry.uvHeight = Integer.parseInt(parts[1]);
 					}
 				}
+				case "mirror" -> entry.mirrorBones.addAll(List.of(split(value)));
 				case "bones" -> {
 					for (String pair : split(value)) {
 						int eq = pair.indexOf('=');
@@ -1294,6 +1310,13 @@ public final class MMGeometryBridge {
 			}
 			bone.name = name;
 			bone.parent = entry.parents.get(name);
+			// Applied here rather than at extraction, because the manifest names bones by their
+			// output name and this is where that name is settled.
+			if (entry.mirrorBones.contains(name)) {
+				for (Cube cube : bone.cubes) {
+					cube.mirror = true;
+				}
+			}
 			kept.add(bone);
 		}
 		return kept;
