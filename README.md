@@ -34,9 +34,8 @@ same walls.
 1. Install [Better than Adventure!](https://betterthanadventure.net/) `8.0.1` with Babric.
 2. Drop [HalpLibe](https://github.com/Turnip-Labs/bta-halplibe/releases) `6.1.3+8.0` into `mods/`.
 3. Drop `creatures-<version>+8.0.1.jar` into `mods/`.
-4. **Drop your own copy of the original Mo' Creatures into `mods/` as well** — either the `.zip` or the
-   `.jar`, whichever you have. Any filename containing `mocreatures` is picked up automatically; you can
-   also name it `mocreatures-assets.zip`/`.jar` and leave it in the game directory instead.
+4. **Drop your own copy of the original Mo' Creatures somewhere under your game directory.** That is
+   the whole step — see below.
 
 Mods of that era shipped as zips, and the original's own download nests the payload one level down in
 `mods/MoCreatures.zip` — the bridge descends into that by itself, so hand the whole zip over as-is.
@@ -159,12 +158,28 @@ variant roll on one horse entity, and this port gives them their own entity and 
 This mod **ships no art or models from the original Mo' Creatures**. That is DrZhark's work and its
 licence does not allow redistribution, so none of it can live in this repository.
 
-Instead: **drop your own copy of the original into `mods/`.** That is the only step. Either the `.zip`
-or the `.jar` works — the original's own download is a zip with the mod nested inside it, and the
-bridge descends into that automatically. It will not load as a mod — it is Beta 1.7.3 code and BTA
-ignores it — it is read purely as a data source. On startup the mod extracts the textures, converts the
-Java entity models to Bedrock geometry, writes a `MoCreaturesAssets` texture pack and enables it
-automatically.
+Instead: **drop your own copy of the original anywhere under your game directory.** That is the only
+step, and it really is *anywhere* — the search does not care what the file is called or where it sits:
+
+- **Any folder**, not just `mods/`, to six levels deep.
+- **Any name.** After fifteen years of being passed around the original turns up as
+  `DrZharks_MoCreatures_Mod_v2.12.2_1.zip`, as the `MoCreatures.zip` nested inside that, as a `.jar`,
+  or renamed to something meaningless. A container is recognised by its zip header, so the extension
+  is irrelevant — `.zip`, `.jar`, `.disabled`, `.bin`, none at all, all the same.
+- **Unpacked works too.** If you extracted it, the loose `.png` and `.class` files are picked up
+  individually, so a folder is as good as an archive.
+- **Nested archives are followed**, three levels deep, which is what handles the original's own
+  download without you having to open it.
+
+The name still counts for one thing: it decides what gets looked at first, so an obviously named
+archive wins over an unrelated mod jar that happens to contain a `bear.png`. More than one source can
+contribute, first match per file, so a partial copy gets topped up rather than rejected.
+
+It will not load as a mod — it is Beta 1.7.3 code and BTA ignores it — it is read purely as a data
+source. On startup the mod extracts the textures, converts the Java entity models to Bedrock geometry,
+writes a `MoCreaturesAssets` texture pack and enables it automatically. What it was built from is
+recorded in the pack, so later launches skip the search entirely; delete
+`texturepacks/MoCreaturesAssets` to force a fresh look.
 
 Measured against DrZhark's v2.12.2 for b1.7.3: **74 textures and 31 models** are converted, with
 nothing left unconverted. Nothing is downloaded and nothing is redistributed — the file has to already
