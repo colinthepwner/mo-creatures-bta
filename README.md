@@ -10,7 +10,7 @@ A continuation of the **Mo' Creatures** port for **Better than Adventure!** — 
 |---|---|
 | **Minecraft / BTA** | Better than Adventure! `8.0.1` (`release` channel) |
 | **Mod loader** | Babric / fabric-loader `0.18.4-bta.11` |
-| **Requires** | HalpLibe `6.1.3+8.0` |
+| **Requires** | HalpLibe `6.1.3+8.0` — bundled, no separate download needed |
 | **Java** | 17 |
 | **Status** | Playable — 27 mobs, full original roster |
 
@@ -32,10 +32,13 @@ same walls.
 ## Install
 
 1. Install [Better than Adventure!](https://betterthanadventure.net/) `8.0.1` with Babric.
-2. Drop [HalpLibe](https://github.com/Turnip-Labs/bta-halplibe/releases) `6.1.3+8.0` into `mods/`.
-3. Drop `creatures-<version>+8.0.1.jar` into `mods/`.
-4. **Drop your own copy of the original Mo' Creatures somewhere under your game directory.** That is
+2. Drop `creatures-<version>+8.0.1.jar` into `mods/`.
+3. **Drop your own copy of the original Mo' Creatures somewhere under your game directory.** That is
    the whole step — see below.
+
+[HalpLibe](https://github.com/Turnip-Labs/bta-halplibe/releases) `6.1.3+8.0` rides along inside the
+jar, so there is nothing to install for it. If you already have HalpLibe in `mods/`, the loader keeps
+whichever version is newer — a copy you installed yourself is never downgraded by this one.
 
 Mods of that era shipped as zips, and the original's own download nests the payload one level down in
 `mods/MoCreatures.zip` — the bridge descends into that by itself, so hand the whole zip over as-is.

@@ -38,6 +38,12 @@ dependencies {
 	implementation(libs.loader)
 	implementation(libs.halplibe) // If you do not need halplibe you can delete this line
 
+	// Ship HalpLibe inside the jar so the mod works on its own. Fabric treats a nested jar as one more
+	// candidate rather than an override: if the player already has HalpLibe, the loader picks whichever
+	// version is higher, so a newer one they installed themselves still wins and this copy is ignored.
+	// Not transitive -- the loader and Minecraft it asks for are the game's own and must not be nested.
+	include(libs.halplibe) { isTransitive = false }
+
 	// Only required at compilation
 	// provides documentation, can be removed if that isn't needed
 	compileOnly(libs.bundles.btaLwjgl)
