@@ -205,12 +205,16 @@ public class MMConfig {
 			// force to set. What the number does here is scale the blast-resistance ceiling below which
 			// a block can be broken, proportionally, so the original's default of 2.5 reproduces this
 			// port's existing ceiling of 60 exactly. See MobOgre.blastCeiling.
+			// Declared as doubles, and read back with getDouble, because a decimal in the file parses to
+			// a Double and TomlConfigHandler.getFloat casts rather than converts. A Float default
+			// survives the launch that writes the file and then throws ClassCastException on the next
+			// one, when the value is read back from disk. See cache().
 			.addEntry("ogreStrength",
 				"How much a green ogre can chew through. Original range 0.1 to 5.0; 2.5 leaves stone "
 					+ "breakable and obsidian and bedrock safe. OgreStrength.",
-				2.5F)
-			.addEntry("fireOgreStrength", "FireOgreStrength.", 2.0F)
-			.addEntry("caveOgreStrength", "CaveOgreStrength.", 3.0F)
+				2.5D)
+			.addEntry("fireOgreStrength", "FireOgreStrength.", 2.0D)
+			.addEntry("caveOgreStrength", "CaveOgreStrength.", 3.0D)
 			.addEntry("ogreRange",
 				"How far off an ogre smells a player, in blocks. Original range 1 to 24. OgreRange.",
 				12);
@@ -259,9 +263,10 @@ public class MMConfig {
 		flameWraithSpawnDifficulty = difficulty("HostileMobs.flameWraithSpawnDifficulty", Difficulty.HARD);
 		sharkSpawnDifficulty = difficulty("WaterMobs.sharkSpawnDifficulty", Difficulty.EASY);
 
-		ogreStrength = cfg.getFloat("HostileMobs.ogreStrength");
-		fireOgreStrength = cfg.getFloat("HostileMobs.fireOgreStrength");
-		caveOgreStrength = cfg.getFloat("HostileMobs.caveOgreStrength");
+		// getDouble, not getFloat: the file's decimals parse to Double and getFloat would cast one.
+		ogreStrength = (float) cfg.getDouble("HostileMobs.ogreStrength");
+		fireOgreStrength = (float) cfg.getDouble("HostileMobs.fireOgreStrength");
+		caveOgreStrength = (float) cfg.getDouble("HostileMobs.caveOgreStrength");
 		ogreRange = cfg.getInt("HostileMobs.ogreRange");
 
 		dolphinsAttackSharks = cfg.getBoolean("WaterMobs.dolphinsAttackSharks");
