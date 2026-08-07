@@ -72,10 +72,12 @@ can chew through is `HostileMobs.ogreStrength`, below.
 
 ## Settings
 
-Everything lives in **`config/creatures.cfg`**, written on first launch. The original edited the same
-knobs through a GUI API screen under *Options / Mods Settings*; BTA 8.0 has no equivalent panel for a
-mod to hang itself off, so this is a file. The six categories are the original's six panels, and every
-entry names the `mocreatures.cfg` key it came from, so an old config can be transcribed by hand.
+Everything lives in **`config/creatures.cfg`**, written on first launch and topped up on every launch
+after it, so a file from an earlier version gains whatever has been added since without losing your
+edits. The original edited the same knobs through a GUI API screen under *Options / Mods Settings*;
+BTA 8.0 has no equivalent panel for a mod to hang itself off, so this is a file. The six categories
+are the original's six panels, and every entry names the `mocreatures.cfg` key it came from, so an old
+config can be transcribed by hand.
 
 **`[SpawnLimits]`** — mobs per 256 eligible chunks. These are *global* caps: BTA counts every mob in
 the category, so the animal cap covers cows and sheep too. That is what the original did and why it

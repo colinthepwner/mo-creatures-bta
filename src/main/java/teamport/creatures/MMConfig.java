@@ -240,7 +240,28 @@ public class MMConfig {
 				true);
 
 		cfg = new TomlConfigHandler(MOD_ID, TOML);
+		fillInSettingsAddedSinceTheFileWasWritten();
 		cache();
+	}
+
+	/**
+	 * Puts entries the config file does not have back into it, at their defaults.
+	 *
+	 * <p>Needed because {@code TomlConfigHandler} rewrites a file it read with
+	 * {@code merge(true, ...)}, which replaces the entries the file already has and adds nothing.
+	 * A {@code creatures.cfg} written by an earlier version therefore keeps exactly the settings it
+	 * was written with: a category added since appears but stays empty, and an entry added to a
+	 * category that already existed never appears at all. The values are still <em>read</em>
+	 * correctly — the handler's in-memory copy carries the defaults declared above — so nothing
+	 * misbehaves, but the settings are invisible in the one place they can be edited, which for a
+	 * file whose whole purpose is to be edited is the same as not shipping them.
+	 *
+	 * <p>{@code addMissing} is the library's own answer to this and adds each absent entry with its
+	 * comment, leaving every value already in the file alone.
+	 */
+	private static void fillInSettingsAddedSinceTheFileWasWritten() {
+		cfg.getRawParsed().addMissing(TOML);
+		cfg.writeConfig();
 	}
 
 	private MMConfig() {
