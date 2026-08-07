@@ -42,6 +42,10 @@ public class MobWraith extends MobFlying implements Enemy {
 	public static final float ATTACK_REACH = 2.5F;
 	/** Ticks it burns for when caught in the sun. */
 	public static final int DAYLIGHT_BURN_TICKS = 300;
+	/** How far above the floor beneath it a wandering wraith will drift. */
+	public static final int HAUNT_CEILING = 6;
+	/** How far below that floor it will sink. It passes through rock, so caves are fair game. */
+	public static final int HAUNT_DEPTH = 20;
 
 	/** {@code MobFlying} sits outside the monster hierarchy, so it carries its own attack strength. */
 	protected int attackStrength;
@@ -225,19 +229,55 @@ public class MobWraith extends MobFlying implements Enemy {
 			waypointY = y + (random.nextDouble() - 0.5D) * 8.0D;
 			waypointZ = z + (random.nextDouble() - 0.5D) * 16.0D;
 
-			// Stay inside the world even though blocks do not stop it.
-			waypointY = Math.max(2.0D, Math.min(world.getHeightBlocks() - 2.0D, waypointY));
+			waypointY = tetherToFloor(waypointX, waypointY, waypointZ);
 		}
 
 		driftTowards(waypointX, waypointY, waypointZ);
 
-		double dx = waypointX - x;
-		double dz = waypointZ - z;
-		if ((dx * dx) + (dz * dz) > 1.0E-4D) {
-			yRot = (float) (Math.atan2(dz, dx) * 180.0D / Math.PI) - 90.0F;
+		double dx2 = waypointX - x;
+		double dz2 = waypointZ - z;
+		if ((dx2 * dx2) + (dz2 * dz2) > 1.0E-4D) {
+			yRot = (float) (Math.atan2(dz2, dx2) * 180.0D / Math.PI) - 90.0F;
 			yBodyRot = yRot;
 		}
 	}
+
+	/**
+	 * Holds a wandering wraith near the ground.
+	 *
+	 * <p>Each waypoint used to be picked relative to wherever the wraith happened to be, clamped only
+	 * against the top and bottom of the world. That is an unbiased random walk in a column with a
+	 * reflecting floor and no restoring force anywhere, and {@code MobFlying} damps vertical velocity
+	 * without ever applying gravity — so nothing pulled a wraith back down and they climbed away into
+	 * the sky over a few minutes.
+	 *
+	 * <p>The original had no such problem because it did not steer this way at all: {@code
+	 * EntityFlyerMob} asked the world for a path to its quarry and followed it, which kept it on the
+	 * terrain and also let walls stop it. This port deliberately traded that for free drift and real
+	 * noclip, so the tether has to be put back by hand.
+	 *
+	 * <p>The floor is found by scanning down from the waypoint rather than from the height map,
+	 * because a height map in the Nether reports the ceiling — which would have herded flame wraiths
+	 * up against the roof instead of holding them down.
+	 */
+	private double tetherToFloor(double wx, double wy, double wz) {
+		int bx = MathHelper.floor(wx);
+		int bz = MathHelper.floor(wz);
+		int top = Math.min(MathHelper.floor(wy), world.getHeightBlocks() - 1);
+
+		int floor = 2;
+		for (int by = Math.max(top, 2); by > 1; by--) {
+			if (world.getBlockId(bx, by, bz) != 0) {
+				floor = by + 1;
+				break;
+			}
+		}
+
+		double lowest = Math.max(2.0D, floor - HAUNT_DEPTH);
+		double highest = Math.min(world.getHeightBlocks() - 2.0D, floor + HAUNT_CEILING);
+		return Math.max(lowest, Math.min(highest, wy));
+	}
+
 
 	protected void attackEntity(@NotNull Entity entity, float distance) {
 		if (attackTime > 0 || distance >= ATTACK_REACH) {
