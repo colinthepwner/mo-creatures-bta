@@ -12,7 +12,7 @@ A continuation of the **Mo' Creatures** port for **Better than Adventure!** — 
 | **Mod loader** | Babric / fabric-loader `0.18.4-bta.11` |
 | **Requires** | HalpLibe `6.1.3+8.0` — bundled, no separate download needed |
 | **Java** | 17 |
-| **Status** | Playable — 27 mobs, full original roster |
+| **Status** | Playable — 30 mobs, full original roster |
 
 ## Lineage
 
@@ -56,10 +56,10 @@ Output lands in `build/libs/`. JDK 17 is required; Gradle will fetch the toolcha
 
 ## What's in it
 
-The full original roster — **27 mobs**:
+The full original roster — **30 mobs**:
 
 - **Animals** — Bear (+ polar), Bird, Bunny, Fox (+ arctic), Boar, Duck, Deer, Mouse
-- **Horses** — Horse, Unicorn, Pegasus (tameable, rideable)
+- **Horses** — Horse, Unicorn, Pegasus, Pack Horse, Nightmare, Black Pegasus (tameable, rideable, breedable)
 - **Cats** — Kitty (+ Litterbox block), Big Cat in 7 species: lioness, lion, panther, cheetah, tiger, snow leopard, white tiger
 - **Aquatic** — Dolphin (tameable, rideable, breedable), Shark, Fishy, plus shark and fishy eggs
 - **Hostile** — Ogre, Fire Ogre, Cave Ogre, Werewolf (transforms at night), Wolf, Wraith, Flame Wraith, Rat, Hell Rat
@@ -78,8 +78,8 @@ can chew through is `HostileMobs.ogreStrength`, below.
 Everything lives in **`config/creatures.cfg`**, written on first launch and topped up on every launch
 after it, so a file from an earlier version gains whatever has been added since without losing your
 edits. The original edited the same knobs through a GUI API screen under *Options / Mods Settings*;
-BTA 8.0 has no equivalent panel for a mod to hang itself off, so this is a file. The six categories
-are the original's six panels, and every entry names the `mocreatures.cfg` key it came from, so an old
+BTA 8.0 has no equivalent panel for a mod to hang itself off, so this is a file. The categories
+are the original's six panels plus two of this port's own, and every entry names the `mocreatures.cfg` key it came from, so an old
 config can be transcribed by hand.
 
 **`[SpawnLimits]`** — mobs per 256 eligible chunks. These are *global* caps: BTA counts every mob in
@@ -135,6 +135,8 @@ the default 2.5 reproduces the bound the port already used.
 | `dolphinsAttackSharks` | `true` | `DolphinsAttackSharks` |
 | `spawnPiranhas` | `true` | `SpawnPiranhas` |
 
+**`[Breeding]`** — `easyHorseBreeding`, default `false`. See [Breeding horses](#breeding-horses).
+
 **`[Replacements]`** — `replaceVanillaDeer`, above. **`[IDs]`** — item, block and entity id bases.
 
 ### Three defaults change behaviour
@@ -151,9 +153,9 @@ in the config to put back.
 
 ### Original settings not carried over
 
-Five have nothing in this port to attach to, so they are absent rather than present and inert:
-`EasyHorseBreeding` (horses do not breed here), `DisplayPetNames` / `DisplayPetHealth` /
-`DisplayPetEmotions` (no pet naming or nameplates), and `StaticKBeds` (no kitty bed). `StaticLitter` is
+Four have nothing in this port to attach to, so they are absent rather than present and inert:
+`DisplayPetNames` / `DisplayPetHealth` / `DisplayPetEmotions` (no pet naming or nameplates), and
+`StaticKBeds` (no kitty bed). `StaticLitter` is
 likewise gone because the litter box is a block here and so is always static. `PegasusSpawningP` is
 superseded by `SpawnFrequencies.pegasus`: the original needed a percentage because pegasi were a
 variant roll on one horse entity, and this port gives them their own entity and their own weight.
@@ -186,7 +188,7 @@ writes a `MoCreaturesAssets` texture pack and enables it automatically. What it 
 recorded in the pack, so later launches skip the search entirely; delete
 `texturepacks/MoCreaturesAssets` to force a fresh look.
 
-Measured against DrZhark's v2.12.2 for b1.7.3: **74 textures and 31 models** are converted, with
+Measured against DrZhark's v2.12.2 for b1.7.3: **88 textures and 37 models** are converted, with
 nothing left unconverted. Nothing is downloaded and nothing is redistributed — the file has to already
 be on your disk.
 
@@ -194,7 +196,7 @@ Why models and not just skins: the original art is painted against the original 
 model in this repo shares a UV layout with the original it stands in for. Bridging a skin without its
 geometry puts the art on boxes it was never laid out for, so the two travel together or not at all.
 
-**Ten of the 27 mobs ship geometry in this repository; the other 17 do not.** Without the archive
+**Ten of the 30 mobs ship geometry in this repository; the other 20 do not.** Without the archive
 those 17 have no model to draw at all, so they do not render — this is the one real install-time
 expectation, and it is worth knowing before you decide the mod is broken. The ten that do ship
 geometry render normally, falling back to the missing-texture checker for any skin the bridge would
@@ -206,9 +208,13 @@ have supplied. The startup audit prints exactly what resolved, mob by mob.
 /summon creatures:bear
 ```
 
-The 27 ids are: `bear` `bird` `fox` `bunny` `boar` `duck` `horse` `horse_unicorn` `horse_pegasus`
+The 30 ids are: `bear` `bird` `fox` `bunny` `boar` `duck` `horse` `horse_unicorn` `horse_pegasus`
 `kitty` `deer` `bigcat` `rat` `rat_hell` `mouse` `dolphin` `shark` `fishy` `shark_egg` `fishy_egg`
-`ogre` `ogre_fire` `ogre_cave` `werewolf` `werewolf_wolf` `wraith` `wraith_flame`.
+`ogre` `ogre_fire` `ogre_cave` `werewolf` `werewolf_wolf` `wraith` `wraith_flame` `horse_pack`
+`horse_nightmare` `horse_pegasus_black`.
+
+The last three cannot be found in the world — the original never spawns them either. They are bred;
+see below.
 
 **Variants are not separate ids.** Polar bear and arctic fox are states of `creatures:bear` and
 `creatures:fox`, and all seven big cats — lioness, lion, panther, cheetah, tiger, snow leopard, white
@@ -216,18 +222,49 @@ tiger — are `creatures:bigcat` with a skin variant, as are the six dolphins, s
 three rats. So `/summon creatures:polarbear` is correctly rejected; summon the base mob instead. The
 full list is also printed to the log at startup under `Creatures summon ids:`.
 
+## Breeding horses
+
+Two horses breed if both are **tamed**, **grown**, within about four blocks of each other, and have
+each been fed a **pumpkin, egg, cake or bowl of mushroom stew**. It is not quick — roughly the back
+half of a Minecraft day — and afterwards one of the two is left sterile. Set
+`Breeding.easyHorseBreeding = true` to remove the sterility and make the rare foals certain.
+
+What you get depends on the parents' **genetic values**: light 1, brown 2, dark 3, unicorn 4,
+pegasus 5, pack horse 6, nightmare 7, black pegasus 8. Two of the same kind breed true. Otherwise the
+values are added, and four sums have something rarer behind them — each on a one-in-three roll:
+
+| parents sum to | foal | example pairing |
+|---|---|---|
+| 7 | Pack Horse | dark + unicorn, or brown + pegasus |
+| 9 | Nightmare | unicorn + pegasus |
+| 10 | Pegasus | unicorn + pack horse |
+| 12 | Black Pegasus | pegasus + nightmare |
+
+Any other sum re-rolls the wild spawn table, so even an unremarkable pairing can throw a unicorn. Two
+pack horses give a pack horse rather than a black pegasus, despite summing to 12, because breeding
+true is checked first.
+
+Foals cannot be ridden or bred and grow up on their own; feeding one speeds it along.
+
+**Pack horses and black pegasi carry a chest.** Hand one a chest, then right-click it holding a torch
+or a shovel to open the 27 slots. The chest and its contents drop if the horse dies.
+
+**Nightmares lay fire.** Feed one redstone and it leaves a trail of flame behind it for the next 500
+ticks it is ridden. It will not set its own rider alight, and neither it nor the black pegasus burns.
+
 ## Known gaps
 
-Every model the archive can supply now converts — 31 of them, nothing skipped. What remains:
+Every model the archive can supply now converts — 37 of them, nothing skipped. What remains:
 
 - **Fox and bunny use this repo's own art by design.** v2.12.2 ships one fox skin and no arctic fox at
   all, and its bunny has 4 skins where this port declares 5. The built-in sets are complete and
   self-consistent, so bridging a partial one would be a downgrade rather than an improvement.
-- **Three horse types are unmapped** — pack, nightmare and black pegasus. The archive has the sheets,
-  but this port has no mob or state for them yet. Saddled horse textures are likewise unmapped.
-- **Six mobs fall back to vanilla sounds** — shark, fishy and both eggs (no fish audio exists in the
-  repo *or* the original), bird hurt/death, and the werewolf's human idle. Everything else uses the
-  mod's own audio: 64 sound events, all 27 mobs have hurt and death, 24 have an idle call.
+- **Six mobs fall back to vanilla sounds** — shark, fishy and both eggs, bird hurt/death, and the
+  werewolf's human idle. This one cannot be closed: v2.12.2 ships no fish audio at all, no bird hurt
+  or death, and no idle for the werewolf's human form, so there is nothing to bridge. Everything else
+  uses the mod's own audio: 64 sound events, all 30 mobs have hurt and death, 24 have an idle call.
+- **The pack horse's inventory is titled "Chest".** BTA's container screen does not resolve a
+  translation key from a mod's own language files, so a key of this mod's would show as raw text.
 
 ## Licence
 
