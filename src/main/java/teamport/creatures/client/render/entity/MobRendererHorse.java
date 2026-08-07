@@ -53,14 +53,13 @@ public class MobRendererHorse extends MobRendererQuadrupedBase<MobHorse> {
 	}
 
 	/**
-	 * The head half is painted on its own sheet, named alongside the body's. Derived from whatever
-	 * texture the entity picked rather than from the variant, so a horse can never end up wearing one
-	 * colour's body and another's head.
+	 * The head half is painted on its own sheet, named off the same index as the body's, so a horse
+	 * can never end up wearing one colour's body and another's head. Taken from the index rather than
+	 * from {@code getEntityTexture}, which points at the saddled sheet once the horse is saddled —
+	 * only the body half has a saddled variant.
 	 */
 	protected String headTexture(MobHorse entity) {
-		String body = entity.getEntityTexture();
-		int slash = body.lastIndexOf('/');
-		return body.substring(0, slash + 1) + "b_" + body.substring(slash + 1);
+		return "/assets/creatures/textures/entity/horse/b_" + entity.textureIndex() + ".png";
 	}
 
 	@Override

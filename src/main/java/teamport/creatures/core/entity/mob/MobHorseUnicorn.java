@@ -17,8 +17,8 @@ public class MobHorseUnicorn extends MobHorse {
 	}
 
 	@Override
-	public String getEntityTexture() {
-		return "/assets/creatures/textures/entity/horse/3.png";
+	public String textureIndex() {
+		return "3";
 	}
 
 	@Override

@@ -31,8 +31,8 @@ public class MobHorsePegasus extends MobHorse {
 	}
 
 	@Override
-	public String getEntityTexture() {
-		return "/assets/creatures/textures/entity/horse/4.png";
+	public String textureIndex() {
+		return "4";
 	}
 
 	@Override

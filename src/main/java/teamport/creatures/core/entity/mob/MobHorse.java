@@ -63,9 +63,26 @@ public class MobHorse extends MobAnimal {
 		return 20;
 	}
 
+	/**
+	 * Which of the horse sheets this horse wears, as it appears in the file name — {@code "0"} to
+	 * {@code "2"} for the three coat colours, and a fixed one per subclass for the rarer horses.
+	 * <p>
+	 * The head half and the saddled body are named off the same index, so a horse can never end up
+	 * wearing one colour's body with another's head.
+	 */
+	public String textureIndex() {
+		return String.valueOf(getSkinVariant() % 3);
+	}
+
+	/**
+	 * Saddling swaps the body sheet outright rather than drawing a saddle over it, which is what the
+	 * original does — {@code RenderHorse.func_176_a} binds {@code horse<colour>saddle.png} in place of
+	 * {@code horse<colour>a.png} while the horse is rideable, and leaves the head sheet alone.
+	 */
 	@Override
 	public String getEntityTexture() {
-		return "/assets/creatures/textures/entity/horse/" + (getSkinVariant() % 3) + ".png";
+		return "/assets/creatures/textures/entity/horse/"
+			+ (isHorseSaddled() ? "saddled_" : "") + textureIndex() + ".png";
 	}
 
 	@Override
