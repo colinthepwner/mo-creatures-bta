@@ -15,13 +15,14 @@ import teamport.creatures.core.entity.mob.MobDolphin;
 @Environment(EnvType.CLIENT)
 public class MobRendererDolphin extends MobRendererAquaticBase<MobDolphin> {
 	/**
-	 * Only the two flukes, which is what {@code ModelDolphin}'s pose method assigns to.
+	 * The peduncle alone. {@code LTail} and {@code RTail} are already its children in the manifest,
+	 * so they follow it and must not be driven as well.
 	 * <p>
-	 * {@code PTail} — the peduncle — used to be driven as well, and here that was the opposite fault
-	 * to the shark's: the flukes <em>are</em> children of the peduncle in this geometry, so turning
-	 * both applied the stroke to them twice and they swung out past the tail they hang off.
+	 * Driving the peduncle <em>and</em> both flukes was the original fault: the stroke reached the
+	 * flukes twice and they swung out past the tail they hang off. Driving only the flukes fixed
+	 * that but left the peduncle — most of the visible tail — completely still.
 	 */
-	private static final String[] TAIL = {"LTail", "RTail"};
+	private static final String[] TAIL = {"PTail"};
 
 	public MobRendererDolphin() {
 		super("geometry.dolphin", 0.0D, 0.6F);

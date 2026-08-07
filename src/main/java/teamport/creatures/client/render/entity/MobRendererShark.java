@@ -14,14 +14,15 @@ import teamport.creatures.core.entity.mob.MobShark;
 @Environment(EnvType.CLIENT)
 public class MobRendererShark extends MobRendererAquaticBase<MobShark> {
 	/**
-	 * Only the two tail fins, which is exactly what {@code ModelShark}'s pose method assigns to.
+	 * The tail stock alone. The two tail fins hang off it in the manifest, so they are carried by it
+	 * rather than driven separately.
 	 * <p>
-	 * {@code PTail} — the tail stock — used to be in this list as well, and that was the fault: the
-	 * two fins are its <em>siblings</em> in the geometry, not its children, so swinging the stock
-	 * moved it out from under fins that stayed where they were and the tail came apart. Driving only
-	 * the fins is both what the original does and the only thing this hierarchy supports.
+	 * Driving all three was the original fault — the fins were siblings of the stock then, so
+	 * swinging the stock moved it out from under fins that stayed put and the tail came apart.
+	 * Driving only the fins fixed that but left the body itself dead, because the stock is most of
+	 * the visible tail. Parenting the fins to the stock is what makes one bone enough.
 	 */
-	private static final String[] TAIL = {"UpperTailFin", "LowerTailFin"};
+	private static final String[] TAIL = {"PTail"};
 
 	public MobRendererShark() {
 		super("geometry.shark", 0.0D, 0.6F);
