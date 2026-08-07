@@ -222,7 +222,8 @@ public class MobBear extends MobAnimal {
 		// bite from. A bear's ranges do not overlap, so this is a guard rather than a repair.
 		if (distance <= 3f && entity.bb.maxY > bb.minY && entity.bb.minY < bb.maxY) {
 			attackTime = 20;
-			byte damage = 4;
+			// EntityBear.attackEntity passes its force field straight through, and force is 5.
+			byte damage = 5;
 
 			entity.hurt(this, damage, DamageType.COMBAT);
 			return;

@@ -105,7 +105,8 @@ public class MobBoar extends MobAnimal {
 			if (!(distance > 2.0F) || !(distance < 6.0F) || random.nextInt(10) != 0) {
 				if ((double) distance < 1.5 && entity.bb.maxY > bb.minY && entity.bb.minY < bb.maxY) {
 					attackTime = 20;
-					entity.hurt(this, 2, DamageType.COMBAT);
+					// EntityBoar.attackEntity passes its force field straight through, and force is 1.
+					entity.hurt(this, 1, DamageType.COMBAT);
 				}
 			} else if (onGround) {
 				// The charge: a short leap towards the target rather than a plain melee swing.
