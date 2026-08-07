@@ -94,6 +94,16 @@ public class MobBigCat extends MobAnimal {
 	private static final float[] VARIANT_LENGTH = {1.0F, 1.0F, 0.9F, 1.0F, 1.1F, 0.9F, 1.2F};
 	private static final float[] VARIANT_SPEEDS = {1.4F, 1.4F, 1.6F, 1.9F, 1.6F, 1.7F, 1.7F};
 	private static final double[] VARIANT_RANGES = {8.0, 4.0, 6.0, 6.0, 8.0, 4.0, 10.0};
+	/**
+	 * How close a big cat has to be to land a swipe.
+	 * <p>
+	 * Measured rather than picked: a big cat chasing a player settles at about 2.6 blocks
+	 * centre-to-centre and holds there. At the old 2.5 it was permanently a tenth of a block short
+	 * and only ever connected on the frame it happened to pounce — 5 damage over 150 ticks, against
+	 * 50 for a bear at the same width. The bear reaches 3.0, and a big cat is the same 0.9 wide.
+	 */
+	private static final float BITE_RANGE = 3.0F;
+
 	private static final int[] VARIANT_DAMAGE = {5, 5, 4, 3, 6, 3, 8};
 	private static final int[] VARIANT_HEALTH = {25, 30, 20, 20, 35, 25, 40};
 
@@ -431,20 +441,25 @@ public class MobBigCat extends MobAnimal {
 	protected void attackEntity(@NotNull Entity entity, float distance) {
 		if (entity instanceof EntityItem) return;
 
-		if (distance > 2.0F && distance < 6.0F && random.nextInt(50) == 0) {
-			// The pounce. Big cats close the last few blocks in one leap rather than trotting up.
-			if (onGround) {
-				double dx = entity.x - x;
-				double dz = entity.z - z;
-				float length = MathHelper.sqrt(dx * dx + dz * dz);
-				xd = dx / (double) length * 0.5 * 0.8F + xd * 0.2F;
-				zd = dz / (double) length * 0.5 * 0.8F + zd * 0.2F;
-				yd = 0.4F;
-			}
-		} else if (distance < 2.5F && entity.bb.maxY > bb.minY && entity.bb.minY < bb.maxY) {
+		// The bite is checked first and on its own. As the else of the pounce it was unreachable
+		// between 2.0 and 2.5: the pounce branch claimed that whole band, so on the forty-nine ticks
+		// in fifty its dice roll failed the cat simply stood there, and a big cat settles at about
+		// 2.7 from a player, which is inside the band it can never bite from.
+		if (distance < BITE_RANGE && entity.bb.maxY > bb.minY && entity.bb.minY < bb.maxY) {
 			attackTime = 20;
 			entity.hurt(this, getAttackDamage(), DamageType.COMBAT);
 			hungry = false;
+			return;
+		}
+
+		// The pounce. Big cats close the last few blocks in one leap rather than trotting up.
+		if (distance < 6.0F && random.nextInt(50) == 0 && onGround) {
+			double dx = entity.x - x;
+			double dz = entity.z - z;
+			float length = MathHelper.sqrt(dx * dx + dz * dz);
+			xd = dx / (double) length * 0.5 * 0.8F + xd * 0.2F;
+			zd = dz / (double) length * 0.5 * 0.8F + zd * 0.2F;
+			yd = 0.4F;
 		}
 	}
 

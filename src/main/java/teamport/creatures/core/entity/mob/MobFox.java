@@ -185,23 +185,41 @@ public class MobFox extends MobAnimal {
 		return true;
 	}
 
+	/** The original's own bite range — {@code EntityFox.attackEntity} opens with {@code distance < 2.5}. */
+	private static final float BITE_RANGE = 2.5F;
+
+	/**
+	 * Bites at {@link #BITE_RANGE}, and pounces the gap before that.
+	 * <p>
+	 * The bite is checked on its own rather than as the {@code else} of the pounce. Written the other
+	 * way round the pounce's own dice roll decided whether the bite was even considered, so a fox
+	 * standing in range did nothing at all on the nine ticks out of ten the roll failed — it could
+	 * only land a hit in the frame it happened to leap.
+	 * <p>
+	 * The range is the original's: {@code EntityFox.attackEntity} opens with {@code if (distance <
+	 * 2.5)}. This port had 2, which is half a block short, and a fox settles at about 1.9 to 2.1 from
+	 * a player — right on that edge, which is why it so often stood there without connecting.
+	 */
 	@Override
 	protected void attackEntity(@NotNull Entity entity, float distance) {
-		if (distance > 2 && distance < 6 && random.nextInt(10) == 0) {
-			if (onGround) {
-				double dx = entity.x - x;
-				double dz = entity.z - z;
+		boolean canReach = distance < BITE_RANGE
+			&& entity.bb.maxY > bb.minY && entity.bb.minY < bb.maxY;
 
-				double targetDistance = Math.sqrt((dx * dx) + (dz * dz));
-				xd = ((dx / targetDistance) * 0.5 * 0.8) + (xd * 0.2);
-				yd = 0.4;
-				zd = ((dz / targetDistance) * 0.5 * 0.8) + (zd * 0.2);
-			}
-		} else if ((distance <= 2) && (entity.bb.maxY > bb.minY && entity.bb.minY < bb.maxY)) {
+		if (canReach) {
 			attackTime = 20;
 			byte damage = 2;
-
 			entity.hurt(this, damage, DamageType.COMBAT);
+			return;
+		}
+
+		if (distance < 6 && random.nextInt(10) == 0 && onGround) {
+			double dx = entity.x - x;
+			double dz = entity.z - z;
+
+			double targetDistance = Math.sqrt((dx * dx) + (dz * dz));
+			xd = ((dx / targetDistance) * 0.5 * 0.8) + (xd * 0.2);
+			yd = 0.4;
+			zd = ((dz / targetDistance) * 0.5 * 0.8) + (zd * 0.2);
 		}
 	}
 

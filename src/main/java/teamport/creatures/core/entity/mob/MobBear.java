@@ -214,21 +214,25 @@ public class MobBear extends MobAnimal {
 
 	@Override
 	protected void attackEntity(@NotNull Entity entity, float distance) {
-		if (distance > 3 && distance < 6 && random.nextInt(10) == 0) {
-			if (onGround) {
-				double dx = entity.x - x;
-				double dz = entity.z - z;
-
-				double targetDistance = Math.sqrt((dx * dx) + (dz * dz));
-				xd = ((dx / targetDistance) * 0.5 * 0.8) + (xd * 0.2);
-				yd = 0.4;
-				zd = ((dz / targetDistance) * 0.5 * 0.8) + (zd * 0.2);
-			}
-		} else if ((distance <= 3f) && (entity.bb.maxY > bb.minY && entity.bb.minY < bb.maxY)) {
+		// Swing first and on its own. The charge's dice roll must not decide whether the swing is
+		// even considered — see MobBigCat, where the same shape left a band the cat could never
+		// bite from. A bear's ranges do not overlap, so this is a guard rather than a repair.
+		if (distance <= 3f && entity.bb.maxY > bb.minY && entity.bb.minY < bb.maxY) {
 			attackTime = 20;
 			byte damage = 4;
 
 			entity.hurt(this, damage, DamageType.COMBAT);
+			return;
+		}
+
+		if (distance < 6 && random.nextInt(10) == 0 && onGround) {
+			double dx = entity.x - x;
+			double dz = entity.z - z;
+
+			double targetDistance = Math.sqrt((dx * dx) + (dz * dz));
+			xd = ((dx / targetDistance) * 0.5 * 0.8) + (xd * 0.2);
+			yd = 0.4;
+			zd = ((dz / targetDistance) * 0.5 * 0.8) + (zd * 0.2);
 		}
 	}
 
