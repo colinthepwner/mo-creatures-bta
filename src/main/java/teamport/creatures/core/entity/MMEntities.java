@@ -40,19 +40,8 @@ import static teamport.creatures.MoreMobs.MOD_ID;
 public final class MMEntities {
 	private MMEntities() {}
 
-	/** Entity ids registered by this mod, in registration order. Used by {@link teamport.creatures.core.MMAudit}. */
 	public static final java.util.List<String> REGISTERED_IDS = new java.util.ArrayList<>();
 
-	/**
-	 * Registers an entity with BTA's dispatcher. As of BTA 8.0 the display name is a language key
-	 * rather than a literal. BTA resolves mob names through the guidebook namespace, so the key is
-	 * {@code guidebook.section.mob.<langName>.name} — those entries already exist in
-	 * {@code lang/creatures/en_US/guidebook.lang}.
-	 *
-	 * @param name     the entity id, which is also the network/save id
-	 * @param langName the guidebook lang name, which is not always the entity id
-	 *                 (e.g. {@code horse_unicorn} is documented as {@code unicorn})
-	 */
 	private static <T extends Entity> void register(Class<T> entityClass, String name, String langName, EntityFactory<T> factory) {
 		EntityDispatcher.getInstance().addMapping(
 			entityClass,
@@ -68,8 +57,7 @@ public final class MMEntities {
 	}
 
 	public static void initEntities() {
-		// Append-only: reordering these silently swaps mobs in worlds saved before the change.
-		// MMAudit's fingerprint exists to catch exactly that.
+
 		register(MobBear.class, "bear", MobBear::new);
 		register(MobBird.class, "bird", MobBird::new);
 		register(MobFox.class, "fox", MobFox::new);
@@ -97,8 +85,7 @@ public final class MMEntities {
 		register(MobWerewolfWolf.class, "werewolf_wolf", "werewolf_wolf", MobWerewolfWolf::new);
 		register(MobWraith.class, "wraith", MobWraith::new);
 		register(MobWraithFlame.class, "wraith_flame", "wraith_flame", MobWraithFlame::new);
-		// The three bred horses. Appended rather than filed with the other horses above, because the
-		// order here is what worlds saved before this release recorded their mobs against.
+
 		register(MobHorsePack.class, "horse_pack", "horse_pack", MobHorsePack::new);
 		register(MobHorseNightmare.class, "horse_nightmare", "horse_nightmare", MobHorseNightmare::new);
 		register(MobHorsePegasusBlack.class, "horse_pegasus_black", "horse_pegasus_black",

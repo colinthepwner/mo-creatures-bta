@@ -20,8 +20,7 @@ public class MoreMobsClient implements ClientModInitializer {
 
 	public void afterClientStart() {
 		SoundRepository.namespaceAdded(MoreMobs.MOD_ID);
-		// Restores the original mob textures and models from a copy of Mo' Creatures the player
-		// supplies. No-op when they have not provided one; this mod ships none of that art itself.
+
 		MMAssetBridge.run();
 		MMAudit.reportBridges();
 	}

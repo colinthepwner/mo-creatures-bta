@@ -6,10 +6,6 @@ import net.minecraft.client.render.entity.MobRenderer;
 import org.useless.dragonfly.models.entity.StaticEntityModel;
 import teamport.creatures.core.entity.mob.MobSharkEgg;
 
-/**
- * An egg case does not move, so there is nothing to pose — the entity pins its own rotation and
- * this just draws the geometry where it lies.
- */
 @Environment(EnvType.CLIENT)
 public class MobRendererSharkEgg extends MobRenderer<MobSharkEgg> {
 	private static final String MODEL_KEY = "main";

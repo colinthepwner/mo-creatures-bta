@@ -5,11 +5,6 @@ import net.fabricmc.api.Environment;
 import org.useless.dragonfly.models.entity.StaticEntityModel;
 import teamport.creatures.core.entity.mob.MobHorse;
 
-/**
- * The black pegasus is the only horse that wants both halves of the extra geometry: the wings it
- * flies on and the panniers it carries a chest in. It takes the wing beat from
- * {@link MobRendererHorsePegasus} and adds the pack horse's bag handling on top.
- */
 @Environment(EnvType.CLIENT)
 public class MobRendererHorsePegasusBlack extends MobRendererHorsePegasus {
 	public MobRendererHorsePegasusBlack() {

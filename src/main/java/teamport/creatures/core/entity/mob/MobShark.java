@@ -15,35 +15,21 @@ import teamport.creatures.MoreMobs;
 import teamport.creatures.core.MMHunting;
 import teamport.creatures.core.MMUtils;
 
-/**
- * The shark: the reason the original mod's install notes end with "punch the sharks in the nose".
- * <p>
- * It hunts anything alive in its water — players first, then whatever else is in range — and eats
- * the drops afterwards so a kill does not leave a slick of items behind. Only a shark raised from
- * an egg is tame; a tame one leaves players alone and never despawns. There is no way to gentle a
- * wild one, which is deliberate.
- * <p>
- * Two drops in the original have no equivalent here yet. Shark teeth were a mod item, so bone
- * stands in; shark eggs were an item that placed an entity, so the entity is dropped directly.
- */
 public class MobShark extends MobAquaticBase {
 	public static final int MASK_TAMED = 0b0000_0001;
 	public static final int DATA_GENERIC_FLAGS = 17;
 
 	private static final float ADULT_GROWTH = 2.0F;
 	private static final float BABY_GROWTH = 0.3F;
-	/** Below this it is still a pup: too small to bite, too small to spawn eggs. */
+
 	private static final float FIGHTING_GROWTH = 1.0F;
-	/** Egg-laying size, so only a well-grown shark seeds the next generation. */
+
 	private static final float BREEDING_GROWTH = 1.5F;
 	private static final float REACH = 3.5F;
 	private static final int BITE_DAMAGE = 5;
-	/** Radius a shark clears drops within after a kill. */
+
 	private static final double DEVOUR_RADIUS = 3.0D;
-	/**
-	 * Only items this fresh count as part of the kill. Anything older was already floating there and
-	 * is very likely a player's, so the shark leaves it alone.
-	 */
+
 	private static final int DEVOUR_MAX_ITEM_AGE = 50;
 
 	public MobShark(World world) {
@@ -84,7 +70,6 @@ public class MobShark extends MobAquaticBase {
 		return BABY_GROWTH;
 	}
 
-	/** Grown enough to bite and to be worth being afraid of. */
 	public boolean isGrownEnoughToHunt() {
 		return getGrowth() >= FIGHTING_GROWTH;
 	}
@@ -109,10 +94,6 @@ public class MobShark extends MobAquaticBase {
 		return 20.0F;
 	}
 
-	/**
-	 * Players are checked first and at full range; everything else is a fallback. Other sharks and
-	 * shark eggs are off the menu — a nest that eats itself does not last long.
-	 */
 	@Override
 	protected Entity findSwimTarget() {
 		if (!isGrownEnoughToHunt() || !world.getDifficulty().canHostileMobsSpawn()) {
@@ -148,26 +129,18 @@ public class MobShark extends MobAquaticBase {
 		if (candidate instanceof MobShark || candidate instanceof MobSharkEgg) {
 			return false;
 		}
-		// Hunters.attackHorses / Hunters.attackWolves. A horse in deep water is a rare sight, but the
-		// original asked the same question here as it did on land, and a shark that ignores the
-		// setting is a shark that eats the horse you swam across the strait with.
+
 		if (!MMHunting.isHuntable(candidate)) {
 			return false;
 		}
-		// WaterMobs.dolphinsAttackSharks. Read from both sides of the fight, as the original did:
-		// EntityShark and EntityDolphin both consulted it, so turning it off calls the whole feud off
-		// rather than leaving the shark hunting a dolphin that will not hunt back.
+
 		if (!MMConfig.dolphinsAttackSharks && candidate instanceof MobDolphin) {
 			return false;
 		}
-		// Players are handled above so that they are always preferred and always at full range.
+
 		return !(candidate instanceof Player);
 	}
 
-	/**
-	 * {@code WaterMobs.sharkSpawnDifficulty} — the original's {@code sharkSpawnDifficulty}, which
-	 * defaults to Easy and so only ever keeps sharks out of a peaceful world.
-	 */
 	@Override
 	public boolean canSpawnHere() {
 		return MMConfig.spawnsAt(world.getDifficulty(), MMConfig.sharkSpawnDifficulty)
@@ -191,13 +164,6 @@ public class MobShark extends MobAquaticBase {
 		}
 	}
 
-	/**
-	 * A shark that kills a shoal would otherwise leave a raft of items floating on the surface, so
-	 * it takes the drops with it. Player drops are left alone, which the item's own age tells us:
-	 * anything a player threw has had time on the clock.
-	 *
-	 * <p>{@code Hunters.destroyDrops} turns this off — the original's {@code HuntersDestroyDrops}.
-	 */
 	private void eatNearbyDrops() {
 		MMHunting.devourDrops(this, DEVOUR_RADIUS, DEVOUR_MAX_ITEM_AGE);
 	}
@@ -213,16 +179,12 @@ public class MobShark extends MobAquaticBase {
 		return true;
 	}
 
-	/**
-	 * Teeth most of the time; occasionally a clutch of eggs instead, but only from a shark big
-	 * enough to have bred. The eggs are spawned as entities because this port has no egg item.
-	 */
 	@Override
 	protected void dropDeathItems() {
 		super.dropDeathItems();
 
 		if (random.nextInt(100) < 90) {
-			// Shark teeth were a mod item in the original; bone is the closest thing that exists here.
+
 			dropItem(Items.BONE.id, 1 + random.nextInt(3));
 			return;
 		}
@@ -253,11 +215,6 @@ public class MobShark extends MobAquaticBase {
 		return "/assets/creatures/textures/entity/shark/0.png";
 	}
 
-	/**
-	 * The original gave the shark no voice at all, so everything here is vanilla: the idle is the
-	 * water it displaces rather than a call, and being struck sounds like flesh because a shark has
-	 * no recorded hurt line to play instead.
-	 */
 	@Override
 	public String getLivingSound() {
 		return "liquid.splash";

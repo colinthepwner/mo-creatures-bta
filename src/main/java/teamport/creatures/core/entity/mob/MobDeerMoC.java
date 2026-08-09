@@ -13,32 +13,18 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Mo' Creatures' deer.
- * <p>
- * Named {@code MobDeerMoC} rather than {@code MobDeer} because BTA 8.0.1 ships its own
- * {@link net.minecraft.core.entity.animal.MobDeer}; this one replaces it in the biome spawn lists
- * (see {@code BiomeMixin}), so both classes are on the classpath at once and an unqualified name
- * clash would be needlessly confusing.
- * <p>
- * Buck/doe and the spooked state live in {@code entityData} rather than plain fields: the renderer
- * picks the texture and hides the antlers off the buck flag, and plain fields never leave the
- * server, so the client would render every deer as a doe.
- */
 public class MobDeerMoC extends MobAnimal {
 	public static final int MASK_BUCK = 0b0000_0001;
 	public static final int MASK_SCARED = 0b0000_0010;
 	public static final int DATA_GENERIC_FLAGS = 16;
 
-	/** Swapped in for {@link #mobDrops} when the deer dies on fire. */
 	public final List<WeightedRandomLootObject> burningMobDrops = new ArrayList<>();
 
 	private int scaredTick;
 
 	public MobDeerMoC(World world) {
 		super(world);
-		// The original's own box. What was here before was 0.3 wide and 2.0 tall -- a deer that
-		// could walk through its own antlers and stood in a column narrower than one leg.
+
 		setSize(0.9F, 1.3F);
 
 		if (random.nextInt(2) == 0) setBuck(true);
@@ -83,8 +69,7 @@ public class MobDeerMoC extends MobAnimal {
 
 	@Override
 	public String getLivingSound() {
-		// The original mod shipped a separate buck grunt (deerbgrunt) and doe grunt (deerfgrunt);
-		// the buck's is the deeper bellow, so it follows the same flag the renderer picks antlers off.
+
 		return isBuck() ? "creatures:mob.deer.buck" : "creatures:mob.deer";
 	}
 
@@ -103,9 +88,6 @@ public class MobDeerMoC extends MobAnimal {
 		super.updateAI();
 		Player player = world.getClosestPlayerToEntity(this, 16.0);
 
-		// Just a simple flee system;
-		// Checks if the player isn't null, isn't sneaking, and isn't in creative
-		// or if it's in a fear state
 		if (player != null && !player.isSneaking() && player.gamemode.hasHostileMobs()) {
 			lookAt(player, 0.0F, 0.0F);
 
@@ -118,8 +100,6 @@ public class MobDeerMoC extends MobAnimal {
 			moveSpeed = 0.1f;
 		}
 
-		// Inherited from the 7.2 entity: the flag latches on and is never cleared again, so a deer
-		// that has been hurt once stays jumpy for the rest of its life.
 		if (scaredTick > 0) {
 			setScared(true);
 			scaredTick--;

@@ -33,8 +33,6 @@ public class MobRendererBunny extends MobRenderer<MobBunny> {
 			head.rotY = headYaw * MathHelper.DEG_TO_RAD;
 		}
 
-		// The bunny model has no separate leg bones, so movement is sold as a hop:
-		// the whole body arcs up and pitches forward over the stride.
 		BoneTransform body = model.getTransform("body");
 		if (body != null && limbYaw > 0.0F) {
 			float hop = MathHelper.sin(limbSwing * 0.6662F);

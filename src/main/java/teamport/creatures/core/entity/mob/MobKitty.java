@@ -31,7 +31,7 @@ public class MobKitty extends MobAnimal {
 
 	public MobKitty(World world) {
 		super(world);
-		// A cat is longer than it is tall; the original had these the way round they are here.
+
 		setSize(0.7F, 0.5F);
 
 		heartsHalvesLife = 10;
@@ -40,10 +40,6 @@ public class MobKitty extends MobAnimal {
 		potty = random.nextInt(6000) + 6000;
 	}
 
-	/**
-	 * The original's figure. Taming does not change it; only the tail droop reads off the ratio.
-	 * Matches {@code EntityKitty} in v2.12.2 — without it this inherited the base mob's default of 10.
-	 */
 	@Override
 	public int getMaxHealth() {
 		return 15;
@@ -171,10 +167,6 @@ public class MobKitty extends MobAnimal {
 	protected void updateAI() {
 		super.updateAI();
 
-		// String search code for when the kitty is bored.
-		// When the boredom is below 0 and above -400 it will find for nearby item entities.
-		// If it isn't null and the item is string, start 'playing' with it.
-		// Once the boredom reaches -400 it will reset.
 		if (target == null && boredom-- <= 0) {
 			List<EntityItem> nearbyEntities = world.getEntitiesWithinAABB(EntityItem.class, MMUtils.grow(bb, 16.0, 4.0, 16.0));
 
@@ -197,7 +189,6 @@ public class MobKitty extends MobAnimal {
 			}
 		}
 
-		// Same AI as above, just with birds instead.
 		if (target == null && boredom-- <= 0) {
 			List<MobBird> nearbyBirds = world.getEntitiesWithinAABB(MobBird.class, MMUtils.grow(bb, 16.0, 4.0, 16.0));
 
@@ -206,7 +197,6 @@ public class MobKitty extends MobAnimal {
 			}
 		}
 
-
 		if (isTamed) {
 			if (isSitting) {
 				moveForward = 0.0f;
@@ -214,7 +204,6 @@ public class MobKitty extends MobAnimal {
 				isJumping = false;
 			}
 
-			// Potty system - use a litter box once? a day.
 			if (potty-- <= 0) {
 				List<TileEntity> tileEntities = world.getLoadedTileEntityList();
 
@@ -243,8 +232,6 @@ public class MobKitty extends MobAnimal {
 			}
 		}
 
-		// EXPERIMENTAL //
-		// Player follow code for the upcoming 7.3 release. Follow items are: Fish.
 		Player player = world.getClosestPlayerToEntity(this, 16.0);
 		if (player != null && player.distanceToSqr(x, y, z) > 4.0) {
 			ItemStack heldStack = player.getCurrentEquippedItem();

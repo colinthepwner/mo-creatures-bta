@@ -8,13 +8,6 @@ import org.useless.dragonfly.models.entity.BoneTransform;
 import org.useless.dragonfly.models.entity.StaticEntityModel;
 import teamport.creatures.core.entity.mob.MobRat;
 
-/**
- * Rats run on the shared quadruped cycle. What is theirs is the tail, which whips about far more than
- * a fox's, and the way the body pitches up when the rat is climbing a wall.
- * <p>
- * {@link MobRendererRatHell} reuses all of this against its own geometry, so the model path is a
- * constructor argument rather than a constant.
- */
 @Environment(EnvType.CLIENT)
 public class MobRendererRat extends MobRendererQuadrupedBase<MobRat> {
 	private static final String[] LEGS = {"legLeftFront", "legRightFront", "legLeftBack", "legRightBack"};
@@ -30,11 +23,6 @@ public class MobRendererRat extends MobRendererQuadrupedBase<MobRat> {
 		this.renderScale = renderScale;
 	}
 
-	/**
-	 * How much of its modelled size a rat is actually drawn at. The geometry is a shared sheet the
-	 * original scaled per mob at draw time — a rat at 0.8 and a hell rat at 1.3 off the same boxes —
-	 * so without this every rat comes out at the hell rat's size.
-	 */
 	private final float renderScale;
 
 	@Override
@@ -50,7 +38,7 @@ public class MobRendererRat extends MobRendererQuadrupedBase<MobRat> {
 
 	@Override
 	protected float limbSwingAmplitude(MobRat entity, float partialTick) {
-		// Rats scurry: short, very quick steps rather than a long stride.
+
 		return 2.0F;
 	}
 
@@ -61,7 +49,6 @@ public class MobRendererRat extends MobRendererQuadrupedBase<MobRat> {
 			tail.rotY = MathHelper.cos(limbSwing * 0.6662F) * 0.6F;
 		}
 
-		// Climbing a wall tips the whole body up so the rat is not running along in mid-air.
 		if (entity.canClimb()) {
 			BoneTransform body = model.getTransform("body");
 			if (body != null) {

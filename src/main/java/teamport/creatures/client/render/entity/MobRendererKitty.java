@@ -6,15 +6,6 @@ import org.useless.dragonfly.models.entity.BoneTransform;
 import org.useless.dragonfly.models.entity.StaticEntityModel;
 import teamport.creatures.core.entity.mob.MobKitty;
 
-/**
- * The kitty walks on the shared quadruped cycle; everything specific to it is the tail and the
- * sitting pose.
- * <p>
- * The 7.2 {@code KittyModel} posed sitting by hand against the old {@code BenchEntityModel} bone
- * API, which BTA 8.0 replaced with {@link BoneTransform}. The offsets below are taken from
- * {@code assets/creatures/animation/kitty.animation.json} — the team's own Bedrock-space version of
- * that same pose — rather than the old Java rotation points, whose Y axis pointed the other way.
- */
 @Environment(EnvType.CLIENT)
 public class MobRendererKitty extends MobRendererQuadrupedBase<MobKitty> {
 	private static final String[] LEGS = {"legLeftFront", "legRightFront", "legLeftBack", "legRightBack"};
@@ -47,7 +38,6 @@ public class MobRendererKitty extends MobRendererQuadrupedBase<MobKitty> {
 			body.rotX = SIT_BODY_PITCH;
 		}
 
-		// The back legs fold forward and drop so the kitty settles onto its haunches.
 		tuckBackLeg(model, "legLeftBack");
 		tuckBackLeg(model, "legRightBack");
 

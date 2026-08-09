@@ -17,38 +17,22 @@ import org.jetbrains.annotations.NotNull;
 import teamport.creatures.MMConfig;
 import teamport.creatures.MoreMobs;
 
-/**
- * The wraith: a spirit that drifts through the dark and, being a spirit, through walls.
- * <p>
- * The original built this on its own flying-mob base and then never actually gave it noclip; walls
- * still stopped it, which rather undercut the idea. Here it genuinely passes through blocks —
- * {@code setNoPhysics(true)} on {@link Entity}'s shared flags, which is synched, so the client draws
- * it inside the wall too. There is no pathfinding to speak of: it simply steers at whatever it is
- * haunting, and wanders on a waypoint when it has nobody.
- * <p>
- * Daylight is still fatal ("Fixed bug with Wraiths surviving daylight"), so it catches fire in the
- * open sun in the same way BTA's zombies do.
- */
 public class MobWraith extends MobFlying implements Enemy {
-	/** How far away it notices a player. */
+
 	public static final double HUNT_RANGE = 20.0D;
-	/**
-	 * Target drift speed, in blocks per tick. {@code MobFlying} bleeds 9% of the velocity off every
-	 * tick, so the speed it actually settles at is a good deal lower than this.
-	 */
+
 	public static final double DRIFT_SPEED = 0.2D;
-	/** How sharply it corrects course; low values give the floating, unhurried feel. */
+
 	public static final double DRIFT_ACCELERATION = 0.12D;
-	/** Reach of its cold touch. */
+
 	public static final float ATTACK_REACH = 2.5F;
-	/** Ticks it burns for when caught in the sun. */
+
 	public static final int DAYLIGHT_BURN_TICKS = 300;
-	/** How far above the floor beneath it a wandering wraith will drift. */
+
 	public static final int HAUNT_CEILING = 6;
-	/** How far below that floor it will sink. It passes through rock, so caves are fair game. */
+
 	public static final int HAUNT_DEPTH = 20;
 
-	/** {@code MobFlying} sits outside the monster hierarchy, so it carries its own attack strength. */
 	protected int attackStrength;
 	protected Entity hauntTarget;
 	private int retargetCooldown;
@@ -67,7 +51,6 @@ public class MobWraith extends MobFlying implements Enemy {
 		scoreValue = 200;
 		heartsHalvesLife = 20;
 
-		// A wraith is not solid. This is a synched shared flag, so the client agrees.
 		setNoPhysics(true);
 
 		mobDrops.add(new WeightedRandomLootObject(Items.BONE.getDefaultStack(), 0, 2));
@@ -83,13 +66,10 @@ public class MobWraith extends MobFlying implements Enemy {
 		return false;
 	}
 
-	/** Nothing shoves a ghost. */
 	@Override
 	public boolean isPushable() {
 		return false;
 	}
-
-	// --- Textures ---------------------------------------------------------------------------------
 
 	protected String textureFolder() {
 		return "wraith";
@@ -104,8 +84,6 @@ public class MobWraith extends MobFlying implements Enemy {
 	public String getDefaultEntityTexture() {
 		return "/assets/creatures/textures/entity/" + textureFolder() + "/0.png";
 	}
-
-	// --- Sounds -----------------------------------------------------------------------------------
 
 	@Override
 	public String getLivingSound() {
@@ -127,9 +105,6 @@ public class MobWraith extends MobFlying implements Enemy {
 		return 0.6F;
 	}
 
-	// --- Life cycle -------------------------------------------------------------------------------
-
-	/** {@code MobFlying} does not inherit the monster base, so peaceful clean-up is done here. */
 	@Override
 	public void tick() {
 		super.tick();
@@ -147,12 +122,10 @@ public class MobWraith extends MobFlying implements Enemy {
 		super.onLivingUpdate();
 	}
 
-	/** The original re-derived the wraith's bite from the difficulty on every tick. */
 	protected void updateAttackStrength() {
 		attackStrength = world.getDifficulty() == Difficulty.EASY ? 2 : 3;
 	}
 
-	/** Split out so the flame wraith, which is fire immune, can burn down differently. */
 	protected void handleDaylight() {
 		if (!world.isDaytime()) {
 			return;
@@ -176,8 +149,6 @@ public class MobWraith extends MobFlying implements Enemy {
 
 		remainingFireTicks = DAYLIGHT_BURN_TICKS;
 	}
-
-	// --- AI ---------------------------------------------------------------------------------------
 
 	@Override
 	protected void updateAI() {
@@ -208,7 +179,6 @@ public class MobWraith extends MobFlying implements Enemy {
 		wander();
 	}
 
-	/** Straight-line steering. Walls are not consulted; that is the whole point of a wraith. */
 	protected void driftTowards(double tx, double ty, double tz) {
 		double dx = tx - x;
 		double dy = ty - y;
@@ -243,24 +213,6 @@ public class MobWraith extends MobFlying implements Enemy {
 		}
 	}
 
-	/**
-	 * Holds a wandering wraith near the ground.
-	 *
-	 * <p>Each waypoint used to be picked relative to wherever the wraith happened to be, clamped only
-	 * against the top and bottom of the world. That is an unbiased random walk in a column with a
-	 * reflecting floor and no restoring force anywhere, and {@code MobFlying} damps vertical velocity
-	 * without ever applying gravity — so nothing pulled a wraith back down and they climbed away into
-	 * the sky over a few minutes.
-	 *
-	 * <p>The original had no such problem because it did not steer this way at all: {@code
-	 * EntityFlyerMob} asked the world for a path to its quarry and followed it, which kept it on the
-	 * terrain and also let walls stop it. This port deliberately traded that for free drift and real
-	 * noclip, so the tether has to be put back by hand.
-	 *
-	 * <p>The floor is found by scanning down from the waypoint rather than from the height map,
-	 * because a height map in the Nether reports the ceiling — which would have herded flame wraiths
-	 * up against the roof instead of holding them down.
-	 */
 	private double tetherToFloor(double wx, double wy, double wz) {
 		int bx = MathHelper.floor(wx);
 		int bz = MathHelper.floor(wz);
@@ -279,7 +231,6 @@ public class MobWraith extends MobFlying implements Enemy {
 		return Math.max(lowest, Math.min(highest, wy));
 	}
 
-
 	protected void attackEntity(@NotNull Entity entity, float distance) {
 		if (attackTime > 0 || distance >= ATTACK_REACH) {
 			return;
@@ -293,7 +244,6 @@ public class MobWraith extends MobFlying implements Enemy {
 		onHitTarget(entity);
 	}
 
-	/** Hook for the flame variant. */
 	protected void onHitTarget(@NotNull Entity entity) {
 	}
 
@@ -309,15 +259,9 @@ public class MobWraith extends MobFlying implements Enemy {
 		return true;
 	}
 
-	// --- Spawning ---------------------------------------------------------------------------------
-
-	/**
-	 * {@code MobFlying} has no monster spawn rules of its own, so the usual dark-and-unlit test is
-	 * reproduced here.
-	 */
 	@Override
 	public boolean canSpawnHere() {
-		// HostileMobs.wraithSpawnDifficulty -- the original's wraithSpawnDifficulty.
+
 		if (!MMConfig.spawnsAt(world.getDifficulty(), MMConfig.wraithSpawnDifficulty)) {
 			return false;
 		}

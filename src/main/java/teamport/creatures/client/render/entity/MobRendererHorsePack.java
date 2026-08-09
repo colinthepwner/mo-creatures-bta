@@ -6,11 +6,6 @@ import org.useless.dragonfly.models.entity.BoneTransform;
 import org.useless.dragonfly.models.entity.StaticEntityModel;
 import teamport.creatures.core.entity.mob.MobHorse;
 
-/**
- * The pack horse differs from a plain horse in its coat and in its panniers, which the original
- * builds into the same head model every horse uses and only draws once the horse has been given a
- * chest — {@code Bag1} and {@code Bag2}, dropped on every other horse in the manifest and kept here.
- */
 @Environment(EnvType.CLIENT)
 public class MobRendererHorsePack extends MobRendererHorse {
 	public MobRendererHorsePack() {

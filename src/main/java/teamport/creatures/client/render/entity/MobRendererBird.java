@@ -33,7 +33,6 @@ public class MobRendererBird extends MobRenderer<MobBird> {
 			head.rotY = headYaw * MathHelper.DEG_TO_RAD;
 		}
 
-		// Interpolated flap so wing motion stays smooth independent of tick rate.
 		float flap = entity.oFlap + (entity.flap - entity.oFlap) * partialTick;
 		boolean flying = entity.isBirdFlying();
 
@@ -45,7 +44,7 @@ public class MobRendererBird extends MobRenderer<MobBird> {
 				wingLeft.rotZ = -beat;
 				wingRight.rotZ = beat;
 			} else {
-				// Folded against the body while perched.
+
 				wingLeft.rotZ = -0.15F;
 				wingRight.rotZ = 0.15F;
 			}
@@ -55,7 +54,7 @@ public class MobRendererBird extends MobRenderer<MobBird> {
 		BoneTransform legRight = model.getTransform("legRight");
 		if (legLeft != null && legRight != null) {
 			if (flying) {
-				// Tucked back in flight.
+
 				legLeft.rotX = 0.8F;
 				legRight.rotX = 0.8F;
 			} else {

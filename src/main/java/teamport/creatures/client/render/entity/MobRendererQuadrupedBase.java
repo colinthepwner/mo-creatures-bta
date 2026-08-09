@@ -8,25 +8,6 @@ import net.minecraft.core.util.helper.MathHelper;
 import org.useless.dragonfly.models.entity.BoneTransform;
 import org.useless.dragonfly.models.entity.StaticEntityModel;
 
-/**
- * Shared base for the mod's four-legged mobs.
- * <p>
- * BTA 8.0 dropped the old {@code ModelBase}/{@code Cube} system entirely; entity models are now
- * Bedrock-format geometry loaded through Dragonfly and posed by mutating {@link BoneTransform}s.
- * The bone names differ between the models inherited from the 7.2 branch (some use
- * {@code legLeftFront}, others {@code legFrontLeft}), so subclasses supply their own names
- * rather than this class assuming a single convention.
- * <p>
- * <b>A model is named by its geometry identifier, not by its file.</b> {@code setModel} hands its
- * second argument straight to {@code EntityGeometryMojangData.Cache.getModel}, which is a lookup in
- * a map keyed by the {@code "identifier"} declared inside the geometry JSON — so the argument is
- * {@code "geometry.bear"}, never {@code "/assets/creatures/models/entity/bear.json"}. The file path
- * belongs in {@code models/entity/models.json}, which is what tells Dragonfly where to read the
- * file from in the first place. Passing a path here misses the map, and the miss is nearly silent:
- * the renderer is handed {@code geometry.missing} — a single 1x1x1 cube — every bone lookup after
- * that returns null, every caller null-checks it, and the mob draws as a textured block with no
- * exception and no further log line.
- */
 @Environment(EnvType.CLIENT)
 public abstract class MobRendererQuadrupedBase<T extends Mob> extends MobRenderer<T> {
 	protected static final String MODEL_KEY = "main";
@@ -36,10 +17,8 @@ public abstract class MobRendererQuadrupedBase<T extends Mob> extends MobRendere
 		setModel(MODEL_KEY, modelId, inflation);
 	}
 
-	/** Front-left, front-right, back-left, back-right, in that order. */
 	protected abstract String[] legBones();
 
-	/** Amplitude of the leg swing; angrier/faster mobs override this. */
 	protected float limbSwingAmplitude(T entity, float partialTick) {
 		return 1.4F;
 	}
@@ -52,7 +31,6 @@ public abstract class MobRendererQuadrupedBase<T extends Mob> extends MobRendere
 		}
 	}
 
-	/** Applies the standard alternating four-leg walk cycle. */
 	protected void poseLegs(StaticEntityModel model, T entity, float limbSwing, float limbYaw, float partialTick) {
 		String[] legs = legBones();
 		float amplitude = limbSwingAmplitude(entity, partialTick);
@@ -70,7 +48,6 @@ public abstract class MobRendererQuadrupedBase<T extends Mob> extends MobRendere
 		}
 	}
 
-	/** Hook for subclasses to pose extra bones (tails, wings, ears) after the shared pass. */
 	protected void poseExtra(StaticEntityModel model, T entity, float limbSwing, float limbYaw, float partialTick) {
 	}
 

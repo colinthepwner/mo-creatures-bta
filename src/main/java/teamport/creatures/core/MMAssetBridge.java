@@ -33,44 +33,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
-/**
- * Bridges entity art out of a copy of the original Mo' Creatures that the <em>player</em> supplies.
- * <p>
- * This mod ships no art from the original. Mo' Creatures is DrZhark's work and its licence does not
- * permit redistribution, so the textures cannot live in this repository. Instead, if the player drops
- * their own copy of the original mod into the game directory, this reads the images out of it and
- * writes a generated texture pack that BTA then loads like any other pack. Nothing is downloaded and
- * nothing is redistributed — the file has to already be on the player's disk.
- * <p>
- * {@link MMGeometryBridge} rides along on the same archive walk and converts the original's
- * <em>models</em> the same way, because the original textures are painted against the original box
- * layout and only look right on it.
- * <p>
- * Mapping is driven by {@code /assets/creatures/asset-bridge.properties} rather than hardcoded, so
- * adding a mob is a one-line manifest edit. Original archives differ in internal layout between
- * versions, so entries are matched on the file's <em>base name</em> and the directory structure
- * inside the archive is ignored — including the zip-inside-a-zip that the original's own installer
- * download ships, whose class and image files all live one level down in {@code mods/}.
- * <p>
- * <b>Where the copy has to be: anywhere under the game directory.</b> Nothing about the search
- * depends on the file being called the right thing or sitting in the right folder, because after
- * fifteen years of being passed around the original turns up in every shape there is — as
- * {@code DrZharks_MoCreatures_Mod_v2.12.2_1.zip}, as the {@code MoCreatures.zip} nested inside that,
- * as a {@code .jar}, renamed to whatever, or unpacked into a folder. So:
- * <ul>
- *   <li>The whole game directory is walked, not just {@code mods/}, to {@value #MAX_SCAN_DEPTH}
- *       levels, skipping only places nothing could sensibly be ({@code saves/}, {@code logs/} and
- *       friends, plus the pack this bridge writes).</li>
- *   <li>A container is recognised by its zip header, not its extension, so {@code .zip},
- *       {@code .jar}, {@code .disabled} and no extension at all are the same thing.</li>
- *   <li>An <em>unpacked</em> copy works too: loose {@code .png} and {@code .class} files lying in a
- *       folder are picked up individually, so a folder and an archive are equally good.</li>
- *   <li>Nesting is followed either way, to {@value #MAX_NESTING} levels of archive-inside-archive.</li>
- * </ul>
- * The name is not ignored, but it only decides <em>order</em>: see {@link #findSources}. Several
- * sources can contribute, first-ranked wins per file, so a partial copy is topped up rather than
- * rejected.
- */
 public final class MMAssetBridge {
 	private MMAssetBridge() {}
 
@@ -78,16 +40,10 @@ public final class MMAssetBridge {
 	private static final String MANIFEST = "/assets/creatures/asset-bridge.properties";
 	private static final String STAMP = "bridge-source.txt";
 
-	/**
-	 * Bumped whenever a manifest or the converter changes shape, so an existing pack is rebuilt even
-	 * though the player's archive has not moved.
-	 */
-	private static final int BRIDGE_REVISION = 14;
+	private static final int BRIDGE_REVISION = 15;
 
-	/** How deep to follow zips inside zips. The original's download nests exactly one level. */
 	private static final int MAX_NESTING = 3;
 
-	/** Set once the bridge has run, so the audit can report on it. */
 	public static int bridgedCount = -1;
 	public static int missingCount = -1;
 	public static String sourceArchive = null;
@@ -99,7 +55,7 @@ public final class MMAssetBridge {
 		try {
 			gameDir = Minecraft.getMinecraft().getMinecraftDir();
 		} catch (Throwable t) {
-			// Dedicated server, or called before the client exists. Nothing to bridge.
+
 			return;
 		}
 		if (gameDir == null) return;
@@ -112,8 +68,6 @@ public final class MMAssetBridge {
 
 		File packDir = new File(gameDir, "texturepacks/" + PACK_NAME);
 
-		// Asked before anything is searched for. The stamp names the files the pack was built from, so
-		// a warm launch costs a handful of stat calls and no directory walk at all.
 		Stamp previous = Stamp.read(packDir);
 		if (previous != null && previous.stillValid(gameDir)) {
 			usedCache = true;
@@ -124,7 +78,6 @@ public final class MMAssetBridge {
 			return;
 		}
 
-		// One walk of each source serves both halves, so a nested zip is only unpacked once.
 		Set<String> wanted = new LinkedHashSet<>(manifest.keySet());
 		wanted.addAll(MMGeometryBridge.wantedEntries());
 
@@ -151,8 +104,7 @@ public final class MMAssetBridge {
 					missing.add(mapping.getKey());
 					continue;
 				}
-				// One original can serve several paths, where this port splits a mob into states the
-				// original drew with a single skin.
+
 				for (String path : mapping.getValue()) {
 					write(new File(packDir, path), bytes);
 					written++;
@@ -219,19 +171,11 @@ public final class MMAssetBridge {
 		return all;
 	}
 
-	// ----------------------------------------------------------------------------------------------
-	// Finding the original
-	// ----------------------------------------------------------------------------------------------
-
-	/**
-	 * One place the original's files might be: either a container to look inside, or a single loose
-	 * file that is already one of the things being looked for.
-	 */
 	private static final class Source implements Comparable<Source> {
 		final File file;
-		/** True if the first bytes are a zip header, whatever the name says. */
+
 		final boolean container;
-		/** Base name, lower case. For a loose file this is the manifest key it satisfies. */
+
 		final String name;
 		final int rank;
 		final int depth;
@@ -244,7 +188,6 @@ public final class MMAssetBridge {
 			this.depth = depth;
 		}
 
-		/** Best first: by how much the path looks like the original, then shallowest, then by name. */
 		@Override
 		public int compareTo(Source other) {
 			if (rank != other.rank) return Integer.compare(rank, other.rank);
@@ -253,57 +196,27 @@ public final class MMAssetBridge {
 		}
 	}
 
-	/** Named outright: {@code mocreatures-assets.<anything>}, the one filename this mod documents. */
 	private static final int RANK_EXPLICIT = 0;
-	/** Some part of the path says Mo' Creatures. */
+
 	private static final int RANK_NAMED = 1;
-	/** Somewhere under {@code mods/}, which is where the install notes say to put it. */
+
 	private static final int RANK_MODS = 2;
-	/** Found by looking, with nothing in the name to recommend it. */
+
 	private static final int RANK_ANYWHERE = 3;
 
-	/**
-	 * How many directory levels below the game directory to look.
-	 * {@code mods/pack/unpacked/MoCreatures.zip} is three, and doubling that leaves room to spare.
-	 */
 	private static final int MAX_SCAN_DEPTH = 6;
-	/** Ceiling on files examined during the walk, so a pathological tree cannot stall startup. */
+
 	private static final int MAX_SCAN_FILES = 20000;
-	/**
-	 * Ceiling on containers actually opened. Ranking means the likely ones are opened first, and this
-	 * is set well above any real mods folder: it is a runaway guard, not a search budget. Setting it
-	 * anywhere near the number of installed mods would let sixty unrelated jars use up the allowance
-	 * before an unhelpfully named copy of the original further down the list ever got opened.
-	 */
+
 	private static final int MAX_CONTAINERS_READ = 400;
 
-	/**
-	 * Directory names never worth descending into: large, and none of them is anywhere a copy of the
-	 * original would sensibly be. Everything else is fair game, {@code mods/} or not.
-	 */
 	private static final Set<String> SKIPPED_DIRS = new HashSet<>(Arrays.asList(
 		"saves", "logs", "crash-reports", "screenshots", "stats", "assets", "libraries", "versions",
 		"bin", "natives", "server-resource-packs", "backups", "shaderpacks", ".git", ".fabric", ".mixin.out"));
 
-	/**
-	 * Everywhere the original's files might be, best candidate first.
-	 *
-	 * <p>Deliberately not a filename match. The original has been passed around for fifteen years as
-	 * {@code DrZharks_MoCreatures_Mod_v2.12.2_1.zip}, as {@code MoCreatures.zip} nested inside that, as
-	 * a {@code .jar}, renamed to anything at all, and unpacked into a folder — so what identifies it
-	 * here is <em>what it contains</em>, not what it is called. A zip is recognised by its header
-	 * rather than its extension, a folder full of loose {@code .png} and {@code .class} files works as
-	 * well as an archive, and nesting is followed either way.
-	 *
-	 * <p>The name still counts for something: it decides the <em>order</em> candidates are read in, so
-	 * an obviously-named archive is opened before an unrelated mod jar that happens to contain a
-	 * {@code bear.png}. First source to supply a given file wins.
-	 */
 	private static List<Source> findSources(File gameDir, File packDir, Set<String> wanted) {
 		List<Source> sources = new ArrayList<>();
-		// Resolved once and carried down. Every canonical path costs a filesystem round trip, and this
-		// one is otherwise re-resolved for each candidate found -- pure waste on the cold cache that a
-		// game launch always starts from.
+
 		String rootPath = safePath(gameDir);
 		String packPath = safePath(packDir);
 		int[] budget = {MAX_SCAN_FILES};
@@ -325,8 +238,7 @@ public final class MMAssetBridge {
 
 			if (child.isDirectory()) {
 				String name = child.getName().toLowerCase(Locale.ROOT);
-				// Never walk into the pack this bridge writes: it is full of the very files being
-				// looked for, under their new names, and rereading it would be a slow no-op at best.
+
 				if (SKIPPED_DIRS.contains(name) || safePath(child).equals(packPath)) continue;
 				scan(child, rootPath, packPath, wanted, sources, depth + 1, budget);
 				continue;
@@ -342,12 +254,6 @@ public final class MMAssetBridge {
 		}
 	}
 
-	/**
-	 * How much the path itself suggests this is the original, which decides read order only.
-	 *
-	 * <p>Judged on the whole path below the game directory, not just the file name, so an unpacked
-	 * {@code mods/MoCreatures/mob/bear.png} ranks as well as the zip it came out of.
-	 */
 	private static int rank(String rootPath, File file) {
 		String relative = relativeTo(rootPath, safePath(file)).toLowerCase(Locale.ROOT);
 		if (baseName(file.getName()).startsWith("mocreatures-assets")) return RANK_EXPLICIT;
@@ -360,20 +266,11 @@ public final class MMAssetBridge {
 		return RANK_ANYWHERE;
 	}
 
-	/**
-	 * This mod's own jar, which carries some of the same file names under {@code assets/creatures} and
-	 * would otherwise be read back into the pack it just wrote.
-	 */
 	private static boolean isOwnJar(String name) {
 		return name.contains("creatures") && !name.contains("mocreature")
 			&& !name.contains("mo_creature") && !name.contains("mo-creature");
 	}
 
-	/**
-	 * Whether a file opens with a zip header, which is the only reliable way to tell. Extensions do
-	 * not survive the trip: the same payload turns up as {@code .zip}, {@code .jar}, {@code .mod},
-	 * {@code .disabled} and with no extension at all.
-	 */
 	private static boolean isZip(File file) {
 		if (file.length() < 4) return false;
 		try (InputStream in = new FileInputStream(file)) {
@@ -390,7 +287,6 @@ public final class MMAssetBridge {
 		}
 	}
 
-	/** {@code PK} followed by a local-file, central-directory or spanning marker. */
 	private static boolean isZipHeader(byte[] header, int length) {
 		if (length < 4 || header[0] != 'P' || header[1] != 'K') return false;
 		int third = header[2] & 0xFF;
@@ -400,17 +296,6 @@ public final class MMAssetBridge {
 			|| (third == 0x07 && fourth == 0x08);
 	}
 
-	// ----------------------------------------------------------------------------------------------
-	// Reading the sources
-	// ----------------------------------------------------------------------------------------------
-
-	/**
-	 * Flattens every source down to the entries the manifests asked for, keyed by lower-case base
-	 * name, best-ranked source first. Directory structure is ignored throughout — it differs between
-	 * versions of the original and is not worth depending on.
-	 *
-	 * @param used filled in with the sources that actually supplied something, in the order read
-	 */
 	private static Map<String, byte[]> collect(List<Source> sources, Set<String> wanted, List<Source> used) {
 		Map<String, byte[]> found = new HashMap<>();
 		int containersRead = 0;
@@ -425,7 +310,7 @@ public final class MMAssetBridge {
 				try {
 					collectFromZipFile(source.file, wanted, found);
 				} catch (IOException e) {
-					// A jar that cannot be read is almost always somebody else's and not interesting.
+
 					MoreMobs.LOGGER.debug("Asset bridge: skipped '{}': {}", source.file.getPath(), e.toString());
 					continue;
 				}
@@ -443,11 +328,6 @@ public final class MMAssetBridge {
 		return found;
 	}
 
-	/**
-	 * Reads one archive. Uses {@link ZipFile} rather than a stream so the entry list comes off the
-	 * central directory: names can be checked without decompressing anything, which is what makes it
-	 * affordable to look inside unrelated mod jars at all.
-	 */
 	private static void collectFromZipFile(File file, Set<String> wanted, Map<String, byte[]> found)
 		throws IOException {
 		try (ZipFile zip = new ZipFile(file)) {
@@ -468,21 +348,17 @@ public final class MMAssetBridge {
 				}
 			}
 
-			// The original's own download is a zip whose payload is mods/MoCreatures.zip, so reading
-			// only the outer layer finds nothing at all. Descending is left until the flat pass is done
-			// so that a hit at this level is preferred, and skipped entirely once nothing is missing.
 			for (ZipEntry entry : nested) {
 				if (found.size() >= wanted.size()) break;
 				try (InputStream in = zip.getInputStream(entry)) {
 					collectFromStream(in, wanted, found, 1);
 				} catch (IOException ignored) {
-					// A corrupt member inside an otherwise readable archive: keep the rest.
+
 				}
 			}
 		}
 	}
 
-	/** Reads an archive that is itself inside an archive, which has to be streamed rather than indexed. */
 	private static void collectFromStream(InputStream raw, Set<String> wanted, Map<String, byte[]> found, int depth)
 		throws IOException {
 		if (depth > MAX_NESTING) return;
@@ -502,38 +378,11 @@ public final class MMAssetBridge {
 		}
 	}
 
-	/**
-	 * Whether an entry <em>inside</em> an archive is worth opening as an archive itself.
-	 *
-	 * <p>Named-based, unlike {@link #isZip} on disk, and deliberately so. A file the player handles
-	 * gets renamed — that is the whole reason the on-disk test reads the header instead of the
-	 * extension — but an entry sealed inside an archive keeps the name whoever built the archive gave
-	 * it, and the case that matters, {@code mods/MoCreatures.zip} inside the original's own download,
-	 * is properly named. Sniffing headers here instead would mean decompressing the first bytes of
-	 * every entry of every jar in {@code mods/}, which measured at three seconds of startup for a
-	 * sixty-mod install and found nothing that this does not.
-	 */
 	private static boolean isNestedArchiveName(String name) {
 		return name.endsWith(".zip") || name.endsWith(".jar") || name.endsWith(".mod")
 			|| name.endsWith(".pk3") || name.endsWith(".litemod") || name.endsWith(".disabled");
 	}
 
-	// ----------------------------------------------------------------------------------------------
-	// Cache
-	// ----------------------------------------------------------------------------------------------
-
-	/**
-	 * What the pack was last built from, so a second launch does not pay for the extraction again.
-	 *
-	 * <p>Records every file that actually contributed, by path, length and modification time. Written
-	 * that way rather than as a fingerprint of everything that was <em>searched</em> so that updating
-	 * an unrelated mod does not invalidate the pack — with the search now covering the whole game
-	 * directory, that would mean rebuilding on almost every launch.
-	 *
-	 * <p>The flip side is that adding a <em>better</em> copy of the original somewhere else goes
-	 * unnoticed while the recorded one is still in place. Deleting the generated pack forces the
-	 * search to run again, which is what the log says to do.
-	 */
 	private static final class Stamp {
 		final String label;
 		final List<String> lines = new ArrayList<>();
@@ -564,7 +413,6 @@ public final class MMAssetBridge {
 			}
 		}
 
-		/** True while every file the pack was built from is still there, unchanged. */
 		boolean stillValid(File gameDir) {
 			if (lines.isEmpty()) return false;
 			for (String recorded : lines) {
@@ -579,7 +427,7 @@ public final class MMAssetBridge {
 		}
 
 		void write(File packDir) {
-			// Nothing to check against later means no valid stamp, so do not write a misleading one.
+
 			if (lines.isEmpty()) return;
 			StringBuilder out = new StringBuilder();
 			out.append(BRIDGE_REVISION).append('\n').append(label).append('\n');
@@ -592,13 +440,6 @@ public final class MMAssetBridge {
 		}
 	}
 
-	/**
-	 * Short human-readable name for what was read, for the log and the startup audit.
-	 *
-	 * <p>An unpacked copy contributes one source per file — ninety-odd of them — so naming the first
-	 * and counting the rest would report a folder full of the original as "'ModelBear1.class' and 96
-	 * more". Where the sources share a folder, that folder is the honest answer.
-	 */
 	private static String describe(File gameDir, List<Source> used) {
 		if (used.isEmpty()) return "nothing";
 		if (used.size() == 1) return "'" + used.get(0).file.getName() + "'";
@@ -610,7 +451,6 @@ public final class MMAssetBridge {
 		return "'" + used.get(0).file.getName() + "' and " + (used.size() - 1) + " more";
 	}
 
-	/** Deepest directory every source sits under, or null if they share nothing at all. */
 	private static File commonAncestor(List<Source> used) {
 		File shared = null;
 		for (Source source : used) {
@@ -622,7 +462,6 @@ public final class MMAssetBridge {
 		return shared;
 	}
 
-	/** Walks {@code a} up until it is {@code b} or contains it. */
 	private static File commonAncestor(File a, File b) {
 		String candidate = safePath(a);
 		String target = safePath(b);
@@ -634,7 +473,6 @@ public final class MMAssetBridge {
 		return new File(candidate);
 	}
 
-	/** How many source paths to spell out before summarising; an unpacked copy has dozens. */
 	private static final int MAX_PATHS_LOGGED = 8;
 
 	private static String paths(File gameDir, List<Source> used) {
@@ -649,12 +487,10 @@ public final class MMAssetBridge {
 		return String.join(", ", shown);
 	}
 
-	/** Path below the game directory, with forward slashes, so a stamp survives a moved install. */
 	private static String relativePath(File root, File file) {
 		return relativeTo(safePath(root), safePath(file));
 	}
 
-	/** As {@link #relativePath}, for callers that already hold the root's resolved path. */
 	private static String relativeTo(String rootPath, String filePath) {
 		String relative = filePath.startsWith(rootPath + File.separator)
 			? filePath.substring(rootPath.length() + 1)
@@ -662,7 +498,6 @@ public final class MMAssetBridge {
 		return relative.replace(File.separatorChar, '/');
 	}
 
-	/** {@code getCanonicalPath} where it works, absolute where it does not — it throws on odd names. */
 	private static String safePath(File file) {
 		try {
 			return file.getCanonicalPath();
@@ -671,17 +506,6 @@ public final class MMAssetBridge {
 		}
 	}
 
-	// ----------------------------------------------------------------------------------------------
-	// Turning the pack on
-	// ----------------------------------------------------------------------------------------------
-
-	/**
-	 * Selects the generated pack so the player has nothing to do in Options. BTA treats a directory
-	 * holding a {@code pack.txt} as a texture pack, so it only has to be rescanned and selected.
-	 * <p>
-	 * Guarded rather than assumed: if any of this throws, the pack is still on disk and can be
-	 * enabled by hand, which is what the log then says.
-	 */
 	private static void enablePack(File packDir) {
 		if (!packDir.isDirectory()) return;
 		try {
@@ -709,26 +533,9 @@ public final class MMAssetBridge {
 		}
 	}
 
-	/**
-	 * Re-reads entity geometry after the generated pack is enabled.
-	 * <p>
-	 * Without this the bridge writes 31 correct models and none of them appear. Textures survive the
-	 * ordering because {@code TextureManager} resolves them lazily at bind time, but geometry does not:
-	 * BTA fills its model cache from the selected packs once, in {@code Minecraft.startGame()}, which
-	 * has already run by the time this bridge gets to write anything. Worse, an
-	 * {@link net.minecraft.client.render.entity.EntityRenderer} resolves its model in its
-	 * <em>constructor</em>, so refreshing the cache alone would still leave every renderer holding the
-	 * model it captured at startup.
-	 * <p>
-	 * So both halves have to be redone, in order: reload the cache from the pack list, then rebuild the
-	 * renderers so they pick the new models up. The dispatcher's reload re-emits renderer registration,
-	 * which is what puts this mod's own renderers back.
-	 */
 	private static void reloadGeometry(TexturePackList packs) {
 		try {
-			// Dragonfly only looks for /assets/<namespace>/models/entity/models.json for namespaces in
-			// this registry, so an unregistered namespace means the manifest is never even opened and
-			// every model silently falls back. Registering is idempotent enough to do defensively.
+
 			boolean known = Registries.NAMESPACES.getItem(MoreMobs.MOD_ID) != null;
 			MoreMobs.LOGGER.info("Asset bridge: namespace '{}' registered with Dragonfly: {}",
 				MoreMobs.MOD_ID, known);
@@ -746,10 +553,6 @@ public final class MMAssetBridge {
 				+ "restart the game to see them", t.toString());
 		}
 	}
-
-	// ----------------------------------------------------------------------------------------------
-	// Plumbing
-	// ----------------------------------------------------------------------------------------------
 
 	private static void write(File target, byte[] bytes) throws IOException {
 		File parent = target.getParentFile();
@@ -771,10 +574,6 @@ public final class MMAssetBridge {
 		return path.substring(slash + 1).toLowerCase(Locale.ROOT);
 	}
 
-	/**
-	 * @return archive base name -> every path in the pack it supplies. The value side is a
-	 *         comma-separated list so one original can serve several paths; see the manifest header.
-	 */
 	private static Map<String, List<String>> readManifest() {
 		Map<String, List<String>> map = new HashMap<>();
 		try (InputStream in = MMAssetBridge.class.getResourceAsStream(MANIFEST)) {

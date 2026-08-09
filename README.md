@@ -40,6 +40,10 @@ same walls.
 jar, so there is nothing to install for it. If you already have HalpLibe in `mods/`, the loader keeps
 whichever version is newer — a copy you installed yourself is never downgraded by this one.
 
+**Servers** want the same jar in their own `mods/`. The asset bridge is client-side only, so a server
+needs no copy of the original — the art is each player's own business, and a player without one still
+connects fine.
+
 Mods of that era shipped as zips, and the original's own download nests the payload one level down in
 `mods/MoCreatures.zip` — the bridge descends into that by itself, so hand the whole zip over as-is.
 Tested against **v2.12.2 for Beta 1.7.3**, mirrored at

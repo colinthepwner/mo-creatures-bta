@@ -130,11 +130,6 @@ public class MobBunny extends MobAnimal {
 		return "creatures:mob.bunny.lift";
 	}
 
-	/**
-	 * Deliberately silent. A bunny's idle voice is the hop itself — {@link #updateAI} plays the lift
-	 * and land clips through every jump in a burst — and the original never recorded a call to layer
-	 * on top of that.
-	 */
 	@Override
 	public String getLivingSound() {
 		return null;
@@ -159,8 +154,6 @@ public class MobBunny extends MobAnimal {
 			yd += 0.15f;
 		}
 
-		// Reduces and checks the 'whenToJump' timer. If below zero then choose a random amount of times to jump
-		// and reset the timer.
 		if (whenBunnyShouldJump-- <= 0 && timesBunnyShouldJump <= 0) {
 			whenBunnyShouldJump = random.nextInt(80) + 80;
 			timesBunnyShouldJump = random.nextInt(8) + 1;
@@ -191,7 +184,6 @@ public class MobBunny extends MobAnimal {
 
 		moveForward = onGround ? 0 : 1;
 
-		// Randomly turn and look around.
 		if (random.nextFloat() < 0.05F) {
 			randomYawVelocity = (random.nextFloat() - 0.5F) * 20.0F;
 		}

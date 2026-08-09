@@ -8,14 +8,6 @@ import org.useless.dragonfly.models.entity.BoneTransform;
 import org.useless.dragonfly.models.entity.StaticEntityModel;
 import teamport.creatures.core.entity.mob.MobBigCat;
 
-/**
- * The big cats all share one body; the species only changes the texture and how big the cat is drawn.
- * <p>
- * The exception is the grown male lion, which in the original was a second model drawn over the top
- * as an extra render pass — that is the mane. It is kept as a second geometry selected per layer, the
- * way vanilla's {@code MobRendererWolf} picks between its body and its armour, rather than trying to
- * hide and show bones inside one model.
- */
 @Environment(EnvType.CLIENT)
 public class MobRendererBigCat extends MobRendererQuadrupedBase<MobBigCat> {
 	private static final String[] LEGS = {"legLeftFront", "legRightFront", "legLeftBack", "legRightBack"};
@@ -36,17 +28,11 @@ public class MobRendererBigCat extends MobRendererQuadrupedBase<MobBigCat> {
 		return LEGS;
 	}
 
-	/** Only the maned lion needs the second pass; every other cat stops at the base layer. */
 	@Override
 	protected int maxRenderLayer(MobBigCat entity) {
 		return entity.hasMane() ? LAYER_MANE : 0;
 	}
 
-	/**
-	 * Cubs are drawn smaller than adults and the species differ in build, so the whole model is scaled
-	 * rather than each bone being nudged. This goes through the model matrix rather than {@code GL11},
-	 * which is how {@link net.minecraft.client.render.entity.MobRenderer} does its own scaling in 8.0.
-	 */
 	@Override
 	protected void preRenderTransform(MobBigCat entity, double x, double y, double z, float rot, float partialTick) {
 		super.preRenderTransform(entity, x, y, z, rot, partialTick);
@@ -60,7 +46,7 @@ public class MobRendererBigCat extends MobRendererQuadrupedBase<MobBigCat> {
 
 	@Override
 	protected float limbSwingAmplitude(MobBigCat entity, float partialTick) {
-		// A cat that is hunting something runs; one that is wandering saunters.
+
 		return entity.getTarget() != null ? 1.6F : 0.9F;
 	}
 
@@ -85,7 +71,7 @@ public class MobRendererBigCat extends MobRendererQuadrupedBase<MobBigCat> {
 	protected void poseExtra(StaticEntityModel model, MobBigCat entity, float limbSwing, float limbYaw, float partialTick) {
 		BoneTransform tail = model.getTransform("tail");
 		if (tail != null) {
-			// Idle flick, wider when the cat is worked up about something.
+
 			float sway = entity.getTarget() != null ? 0.5F : 0.25F;
 			tail.rotY = MathHelper.cos(limbSwing * 0.3331F) * sway;
 		}

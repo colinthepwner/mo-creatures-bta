@@ -7,16 +7,8 @@ import net.minecraft.core.world.World;
 import org.jetbrains.annotations.NotNull;
 import teamport.creatures.MoreMobs;
 
-/**
- * A clutch of fishy roe. Dropped by a lil' fish when it dies and hatches after long enough
- * underwater; this is what restocks a lake that the sharks have been working over.
- * <p>
- * The variety carries across from the parent, so a pond of one kind of fish stays that kind. Roe
- * dropped without a parent — spawned in, say — picks a variety at random, piranhas included unless
- * {@code WaterMobs.spawnPiranhas} says otherwise.
- */
 public class MobFishyEgg extends MobAquaticEggBase {
-	/** Which of {@link MobFishy#VARIETIES} will come out. Server-side; nothing renders it. */
+
 	private int variety;
 
 	public MobFishyEgg(World world) {

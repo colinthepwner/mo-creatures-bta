@@ -6,14 +6,6 @@ import net.minecraft.core.entity.Entity;
 import net.minecraft.core.world.IVehicle;
 import net.minecraft.core.world.pos.TilePos;
 
-/**
- * The litter box's tile entity. It doubles as an {@link IVehicle} so a tamed kitty can "sit" in it
- * while it does its business — see {@code MobKitty}'s potty timer.
- * <p>
- * BTA 8.0 moved a tile entity's position off of loose {@code x}/{@code y}/{@code z} fields and onto
- * {@link TileEntity#tilePos}, and {@code World.isBlockNormalCube} now takes a position object, so the
- * neighbour checks below build {@link TilePos}es rather than passing raw coordinates.
- */
 public class LitterboxEntity extends TileEntity implements IVehicle {
 	private Entity passenger = null;
 	public boolean isFilthy = false;
@@ -94,10 +86,6 @@ public class LitterboxEntity extends TileEntity implements IVehicle {
 		}
 	}
 
-	/**
-	 * {@link TileEntity} made its NBT hooks abstract in BTA 8.0, so the filth flag — which the 7.2
-	 * version simply lost on reload — is now persisted.
-	 */
 	@Override
 	public void readAdditionalData(CompoundTag tag) {
 		isFilthy = tag.getBoolean("IsFilthy");

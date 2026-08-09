@@ -24,7 +24,7 @@ public class MobRendererFox extends MobRendererQuadrupedBase<MobFox> {
 	protected void poseExtra(StaticEntityModel model, MobFox entity, float limbSwing, float limbYaw, float partialTick) {
 		BoneTransform tail = model.getTransform("tail");
 		if (tail != null) {
-			// Lazy side-to-side sway so the tail still reads as alive when the fox is standing still.
+
 			tail.rotY = MathHelper.cos(limbSwing * 0.3331F) * 0.3F;
 		}
 	}

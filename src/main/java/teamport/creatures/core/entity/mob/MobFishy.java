@@ -20,27 +20,15 @@ import teamport.creatures.core.MMUtils;
 import java.util.List;
 import java.util.Random;
 
-/**
- * The lil' fish: ten varieties, nine of which want nothing to do with anyone, and one that does.
- * As the original's install notes put it — if a lil' fish looks like a piranha, it is a piranha,
- * and they are usually not friendly.
- * <p>
- * Fishies are the bottom of this batch's food chain: sharks hunt them, dolphins scatter them, and
- * they drop either a fish or a clutch of eggs, which is how the population sustains itself.
- * <p>
- * The schooling is an addition rather than a port. The original fishies swam entirely
- * independently, which reads as scattered debris rather than a shoal once there are more than two
- * or three of them on screen.
- */
 public class MobFishy extends MobAquaticBase {
 	public static final int VARIETIES = 10;
-	/** The one variety that bites. */
+
 	public static final int PIRANHA = 9;
 
 	private static final float ADULT_GROWTH = 1.0F;
 	private static final float BABY_GROWTH = 0.3F;
 	private static final float REACH = 2.0F;
-	/** Radius a fishy will look within for others of its own kind to line up with. */
+
 	private static final double SCHOOL_RANGE = 6.0;
 
 	public MobFishy(World world) {
@@ -68,14 +56,6 @@ public class MobFishy extends MobAquaticBase {
 		return getVariety() == PIRANHA;
 	}
 
-	/**
-	 * Rolls a variety for a fish nobody asked for a colour of, honouring
-	 * {@code WaterMobs.spawnPiranhas} — the original's {@code SpawnPiranhas}.
-	 *
-	 * <p>The piranha is the last of the ten, so leaving it out is just a shorter roll. This only
-	 * covers the random case: a fish hatched from roe takes its parent's variety, and one asked for
-	 * by id keeps whatever it was given, both of which the original left alone too.
-	 */
 	public static int rollVariety(Random random) {
 		return random.nextInt(MMConfig.spawnPiranhas ? VARIETIES : PIRANHA);
 	}
@@ -120,10 +100,6 @@ public class MobFishy extends MobAquaticBase {
 		return 12.0F;
 	}
 
-	/**
-	 * Piranhas only. Other fishies and both kinds of egg are ignored — a shoal that eats itself is
-	 * a bug the original had to fix, and there is no reason to reintroduce it.
-	 */
 	@Override
 	protected Entity findSwimTarget() {
 		if (!isPiranha() || !isAdult() || !world.getDifficulty().canHostileMobsSpawn()) {
@@ -141,7 +117,7 @@ public class MobFishy extends MobAquaticBase {
 			if (candidate == this || !candidate.isAlive() || candidate instanceof MobAquaticBase
 				|| candidate instanceof MobSharkEgg || candidate instanceof MobFishyEgg
 				|| candidate instanceof Player
-				// Hunters.attackHorses / Hunters.attackWolves: EntityFishy read both.
+
 				|| !MMHunting.isHuntable(candidate)) {
 				continue;
 			}
@@ -154,10 +130,6 @@ public class MobFishy extends MobAquaticBase {
 		return nearest;
 	}
 
-	/**
-	 * Shoaling: fall in behind the average heading of nearby fishies of the same variety and drift
-	 * towards the middle of the group. Piranhas hunt rather than shoal.
-	 */
 	@Override
 	protected boolean steerSpecial() {
 		if (isPiranha()) {
@@ -181,7 +153,7 @@ public class MobFishy extends MobAquaticBase {
 			centreX += other.x;
 			centreY += other.y;
 			centreZ += other.z;
-			// Averaged as a vector, so that headings either side of due north do not cancel out.
+
 			headingSin += MathHelper.sin(other.yRot * MathHelper.DEG_TO_RAD);
 			headingCos += MathHelper.cos(other.yRot * MathHelper.DEG_TO_RAD);
 			counted++;
@@ -198,8 +170,6 @@ public class MobFishy extends MobAquaticBase {
 		float shoalYaw = (float) Math.toDegrees(Math.atan2(headingSin, headingCos));
 		float towardsCentre = (float) Math.toDegrees(Math.atan2(centreZ - z, centreX - x)) - 90.0F;
 
-		// Alignment holds the shoal's shape; cohesion stops it drifting apart. Cohesion only gets a
-		// say once a fishy has actually fallen behind.
 		double spread = distanceToSqr(centreX, centreY, centreZ);
 		float desired = spread > 9.0 ? towardsCentre : shoalYaw;
 
@@ -222,11 +192,6 @@ public class MobFishy extends MobAquaticBase {
 		entity.hurt(this, 1, DamageType.COMBAT);
 	}
 
-	/**
-	 * Usually worth a fish, sometimes worth a clutch of eggs instead — the eggs are what keeps a
-	 * lake stocked once the sharks find it. The original had an egg <em>item</em> that placed the
-	 * entity; without that item the entity is dropped straight into the water.
-	 */
 	@Override
 	protected void dropDeathItems() {
 		if (isAdult() && random.nextInt(100) < 70) {
@@ -258,11 +223,6 @@ public class MobFishy extends MobAquaticBase {
 		return "/assets/creatures/textures/entity/fishy/0.png";
 	}
 
-	/**
-	 * No fish audio was ever recorded for the original mod, so these are vanilla: a flick of water
-	 * for the idle and a flesh hit for the rest. Better a small splash than a fish that can be
-	 * speared without a sound.
-	 */
 	@Override
 	public String getLivingSound() {
 		return "liquid.splash";

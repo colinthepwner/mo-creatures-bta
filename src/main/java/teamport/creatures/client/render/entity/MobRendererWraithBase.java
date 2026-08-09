@@ -8,24 +8,16 @@ import org.useless.dragonfly.models.entity.BoneTransform;
 import org.useless.dragonfly.models.entity.StaticEntityModel;
 import teamport.creatures.core.entity.mob.MobWraith;
 
-/**
- * Shared posing for the wraiths.
- * <p>
- * A wraith has no walk cycle — it never touches the ground — so instead of a limb swing it gets a
- * slow vertical bob and a trailing sway on whatever hangs below it. The original biped geometry has
- * legs, so those are angled back rather than left standing.
- */
 @Environment(EnvType.CLIENT)
 public abstract class MobRendererWraithBase<T extends MobWraith> extends MobRenderer<T> {
 	protected static final String MODEL_KEY = "main";
 
-	/** Blocks of vertical drift, peak to peak. */
 	protected static final double BOB_AMOUNT = 0.12D;
-	/** Ticks per full bob. */
+
 	protected static final float BOB_PERIOD = 40.0F;
 
 	protected MobRendererWraithBase(String modelId) {
-		// No shadow: it is not resting on anything.
+
 		super(0.0F);
 		setModel(MODEL_KEY, modelId, 0.0D);
 	}
@@ -57,12 +49,9 @@ public abstract class MobRendererWraithBase<T extends MobWraith> extends MobRend
 			body.rotZ = sway * 0.5F;
 		}
 
-		// Only the drift: the geometry already holds the arms straight out in front, which is the
-		// rest pose the original set every frame, and Dragonfly adds a bone's animation angle on top
-		// of the one the geometry declares rather than replacing it.
 		setRot(model, "armLeft", sway, 0.4F);
 		setRot(model, "armRight", -sway, -0.4F);
-		// Trailing legs, as if it were being pulled along.
+
 		setRot(model, "legLeft", 0.35F + sway, 0.0F);
 		setRot(model, "legRight", 0.35F - sway, 0.0F);
 

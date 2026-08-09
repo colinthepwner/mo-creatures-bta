@@ -28,9 +28,7 @@ public class MobBoar extends MobAnimal {
 
 	public MobBoar(World world) {
 		super(world);
-		// Wires up basePath/defaultTexture/variantJsonPath together; assigning textureIdentifier on its
-		// own leaves basePath pointing at the default player skin. The boar has a single skin, so the
-		// missing variants.json resolves back to "0".
+
 		setTextureIdentifier(MoreMobs.MOD_ID, "boar");
 
 		setSize(0.9F, 0.9F);
@@ -39,11 +37,6 @@ public class MobBoar extends MobAnimal {
 		burningMobDrops.add(new WeightedRandomLootObject(Items.FOOD_PORKCHOP_COOKED.getDefaultStack(), 1, 2));
 	}
 
-	/**
-	 * The 7.2 mob kept "angry" as a plain field, which the renderer cannot see now that posing happens
-	 * client-side. It is tracked through {@code entityData} instead, the same way {@link MobBear} does,
-	 * so the charge stride shows up on the client. The anger countdown itself stays server-side.
-	 */
 	@Override
 	protected void defineSynchedData() {
 		super.defineSynchedData();
@@ -76,8 +69,7 @@ public class MobBoar extends MobAnimal {
 	@Override
 	public void tick() {
 		super.tick();
-		// The counter always ticks down, exactly as in 7.2; peaceful play just suppresses the anger.
-		// Server-side only now that the flag is synched; the client just reads what it is told.
+
 		if (!world.isClientSide) {
 			setBoarAngry(angerCounter-- > 0 && world.getDifficulty().canHostileMobsSpawn());
 		}
@@ -105,11 +97,11 @@ public class MobBoar extends MobAnimal {
 			if (!(distance > 2.0F) || !(distance < 6.0F) || random.nextInt(10) != 0) {
 				if ((double) distance < 1.5 && entity.bb.maxY > bb.minY && entity.bb.minY < bb.maxY) {
 					attackTime = 20;
-					// EntityBoar.attackEntity passes its force field straight through, and force is 1.
+
 					entity.hurt(this, 1, DamageType.COMBAT);
 				}
 			} else if (onGround) {
-				// The charge: a short leap towards the target rather than a plain melee swing.
+
 				double d = entity.x - x;
 				double d1 = entity.z - z;
 				float f1 = MathHelper.sqrt(d * d + d1 * d1);
@@ -124,8 +116,7 @@ public class MobBoar extends MobAnimal {
 	protected void updateAI() {
 		super.updateAI();
 		if (target == null && !hasPath() && world.getDifficulty().canHostileMobsSpawn() && world.rand.nextInt(200) == 0) {
-			// AABB.getBoundingBoxFromPool(...).expand(...) is gone in 8.0 and JOML has no grow, so the
-			// search volume is built explicitly and widened through MMUtils.
+
 			List<Player> nearbyPlayers = world.getEntitiesWithinAABB(
 				Player.class, MMUtils.grow(new AABBd(x, y, z, x + 1.0, y + 1.0, z + 1.0), 16.0, 4.0, 16.0)
 			);

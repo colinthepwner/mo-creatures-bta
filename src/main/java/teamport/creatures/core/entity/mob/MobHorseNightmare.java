@@ -12,24 +12,15 @@ import net.minecraft.core.world.World;
 import net.minecraft.core.world.pos.TilePos;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Genetic value 7, out of a pairing that adds to 9 — a unicorn and a pegasus. Fast, tough and fire
- * proof, and it will lay a trail of fire behind it once its ability has been charged.
- * <p>
- * The ability is not free and does not last: feeding the nightmare redstone sets a counter of 500,
- * and every second tick it is ridden with charge left it drops fire where its hooves were and takes
- * a tick off the counter. The rider does not burn — the original puts their fire out on the same
- * pass, which its changelog records as a deliberate fix rather than an accident.
- */
 public class MobHorseNightmare extends MobHorse {
-	/** Ticks of fire-laying a single feed buys, and the ceiling past which it will not eat more. */
+
 	private static final int CHARGE = 500;
 
 	private int fireCharge = 0;
 
 	public MobHorseNightmare(World world) {
 		super(world);
-		// HorseSpeed 1.3 in the original, the same as a unicorn's, so it takes the unicorn's figure.
+
 		moveSpeed = 1.4F;
 		fireImmune = true;
 	}
@@ -46,11 +37,10 @@ public class MobHorseNightmare extends MobHorse {
 
 	@Override
 	public String getDefaultEntityTexture() {
-		// No built-in art for the bred horses; the black coat is the closest this repo ships.
+
 		return "/assets/creatures/textures/entity/horse/2.png";
 	}
 
-	/** Temper 700: harder to break than anything short of a black pegasus. */
 	@Override
 	protected int annoyanceLimit() {
 		return 700;
@@ -89,10 +79,6 @@ public class MobHorseNightmare extends MobHorse {
 		return super.interact(player);
 	}
 
-	/**
-	 * Fire where the hooves were, on every second tick it is ridden. Placed only where fire will
-	 * actually take, so a nightmare ridden over water or across bare stone leaves nothing behind.
-	 */
 	private void layFire() {
 		TilePos pos = new TilePos(
 			MathHelper.floor(x), MathHelper.floor(bb.minY), MathHelper.floor(z));

@@ -7,28 +7,15 @@ import net.minecraft.core.item.ItemStack;
 import net.minecraft.core.world.World;
 import teamport.creatures.MoreMobs;
 
-/**
- * A duck is a chicken that swims. Egg laying, feather drops and the fall-damage exemption all come
- * from {@link MobChicken}; this adds the duck's own skin, voice, buoyancy and seed-following.
- */
 public class MobDuck extends MobChicken {
 	public MobDuck(World world) {
 		super(world);
-		// MobChicken's constructor points the texture identifier at minecraft:chicken, so it has to be
-		// re-pointed after super(). This also rebases defaultTexture and variantJsonPath; the duck has
-		// a single skin, so the missing variants.json resolves back to "0".
+
 		setTextureIdentifier(MoreMobs.MOD_ID, "duck");
-		// MobChicken's box, inherited through super(), is BTA's chicken at 0.4x0.8. The original set
-		// its duck's own box to 0.3x0.4 even though it drew the bird on ModelChicken, so the duck was
-		// standing in a hitbox twice its own height.
+
 		setSize(0.3F, 0.4F);
 	}
 
-	/**
-	 * EntityDuck's own 4, not the 10 a mob has by default. The box was taken from the original when
-	 * the stats were last swept; this was missed alongside it, so a duck has been taking two and a
-	 * half times the punishment it should.
-	 */
 	@Override
 	public int getMaxHealth() {
 		return 4;
@@ -59,11 +46,6 @@ public class MobDuck extends MobChicken {
 		return "creatures:mob.duck.hurt";
 	}
 
-	/**
-	 * Chickens sink; the base swim handling bleeds 0.02 off {@code yd} every tick a mob is submerged.
-	 * Pushing back slightly harder than that leaves the duck riding the surface rather than walking
-	 * along the bottom, which is the one thing that visibly separates it from its ancestor.
-	 */
 	@Override
 	public void moveEntityWithHeading(float moveStrafing, float moveForward) {
 		super.moveEntityWithHeading(moveStrafing, moveForward);
@@ -80,13 +62,12 @@ public class MobDuck extends MobChicken {
 	@Override
 	protected void updateAI() {
 		super.updateAI();
-		// EXPERIMENTAL //
-		// Player follow code for the upcoming 7.3 release. Follow items are: Seeds.
+
 		Player player = world.getClosestPlayerToEntity(this, 16.0);
 		if (player != null && (player.distanceToSqr(x, y, z) > 4.0)) {
 			ItemStack heldStack = player.getCurrentEquippedItem();
 			if (heldStack != null && heldStack.getItem() instanceof ItemSeeds) {
-				// faceEntity is gone in BTA 8.0; lookAt is the same yaw/pitch-clamped turn.
+
 				lookAt(player, 30.0F, 30.0F);
 				moveForward = 1.0F;
 

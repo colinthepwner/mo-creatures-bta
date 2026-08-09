@@ -17,29 +17,16 @@ import teamport.creatures.core.MMUtils;
 
 import java.util.List;
 
-/**
- * The wolf that runs with the werewolves — the original's {@code EntityWWolf}, and the shape a
- * {@link MobWerewolf} wears once it has turned. It shares the {@code werewolf_wolf} model.
- * <p>
- * Unlike BTA's tameable wolf this one is a monster: it stalks players in the dark, and when there is
- * nobody to hunt it goes after livestock instead. Its bite gets worse with the difficulty, which is
- * how the original scaled it. Having eaten, it wolfs down whatever the kill dropped — bounded to
- * items that have only just hit the ground, so a player's own dropped inventory is never on the menu.
- */
 public class MobWerewolfWolf extends MobMonster {
-	/** How far it will notice a player, in the dark. */
+
 	public static final double HUNT_RANGE = 16.0D;
-	/** How far it will look for something smaller to eat. */
+
 	public static final double PREY_RANGE = 10.0D;
-	/** Chance per tick of looking for prey when there is no player to chase. */
+
 	public static final int PREY_SEARCH_CHANCE = 80;
 
-	/** Radius it will clear drops within. */
 	public static final double DEVOUR_RADIUS = 2.0D;
-	/**
-	 * Only items this fresh count as part of the kill. Anything older was already lying there and is
-	 * very likely a player's, so the wolf leaves it alone.
-	 */
+
 	public static final int DEVOUR_MAX_ITEM_AGE = 40;
 
 	public MobWerewolfWolf(World world) {
@@ -70,7 +57,6 @@ public class MobWerewolfWolf extends MobMonster {
 		return "/assets/creatures/textures/entity/werewolf_wolf/0.png";
 	}
 
-	// Vanilla wolf sounds; this mod ships no wolf audio of its own and BTA's are a good match.
 	@Override
 	public String getLivingSound() {
 		return "mob.wolf.growl";
@@ -94,8 +80,7 @@ public class MobWerewolfWolf extends MobMonster {
 	@Override
 	protected void updateAI() {
 		if (!world.isClientSide) {
-			// The original re-read the difficulty every tick rather than at spawn, so a wolf that was
-			// already loaded gets nastier the moment the world is turned up.
+
 			Difficulty difficulty = world.getDifficulty();
 			if (difficulty == Difficulty.HARD || difficulty == Difficulty.NORMAL) {
 				attackStrength = 5;
@@ -118,14 +103,12 @@ public class MobWerewolfWolf extends MobMonster {
 			return null;
 		}
 
-		// Daylight: no interest in players, but a sheep is a sheep.
 		if (random.nextInt(PREY_SEARCH_CHANCE) == 0) {
 			return findPrey();
 		}
 		return null;
 	}
 
-	/** Nearest visible animal that is not itself a predator. */
 	protected Entity findPrey() {
 		List<MobAnimal> nearby = world.getEntitiesWithinAABB(MobAnimal.class,
 			MMUtils.grow(bb, PREY_RANGE, PREY_RANGE, PREY_RANGE));
@@ -134,8 +117,7 @@ public class MobWerewolfWolf extends MobMonster {
 		double closestDistance = -1.0D;
 
 		for (MobAnimal candidate : nearby) {
-			// Hunters.attackHorses / Hunters.attackWolves -- EntityWWolf read both, and the second one
-			// is what stops a pack of these tearing through a player's dogs.
+
 			if (!candidate.isAlive() || isPackMate(candidate) || isTooBigToHunt(candidate)
 				|| !MMHunting.isHuntable(candidate)) {
 				continue;
@@ -158,7 +140,6 @@ public class MobWerewolfWolf extends MobMonster {
 		return entity instanceof MobWerewolfWolf || entity instanceof MobWerewolf;
 	}
 
-	/** Bears and boars fight back hard enough that the original's wolves left them alone. */
 	private boolean isTooBigToHunt(Entity entity) {
 		return entity instanceof MobBear || entity instanceof MobBoar;
 	}
@@ -180,11 +161,6 @@ public class MobWerewolfWolf extends MobMonster {
 		}
 	}
 
-	/**
-	 * Clears the freshly dropped remains of a kill. Never touches anything that was already lying
-	 * about, and does nothing at all when {@code Hunters.destroyDrops} is off — the original's
-	 * {@code HuntersDestroyDrops}.
-	 */
 	protected void devourDrops() {
 		MMHunting.devourDrops(this, DEVOUR_RADIUS, DEVOUR_MAX_ITEM_AGE);
 	}

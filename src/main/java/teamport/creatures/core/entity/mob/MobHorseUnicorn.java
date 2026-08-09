@@ -6,10 +6,6 @@ import net.minecraft.core.item.Items;
 import net.minecraft.core.world.World;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Faster and considerably more stubborn than a plain horse; only a golden apple makes real progress
- * towards taming one, and it will follow anyone holding one.
- */
 public class MobHorseUnicorn extends MobHorse {
 	public MobHorseUnicorn(World world) {
 		super(world);

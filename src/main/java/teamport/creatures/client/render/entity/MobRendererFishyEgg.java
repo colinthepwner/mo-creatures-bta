@@ -6,10 +6,6 @@ import net.minecraft.client.render.entity.MobRenderer;
 import org.useless.dragonfly.models.entity.StaticEntityModel;
 import teamport.creatures.core.entity.mob.MobFishyEgg;
 
-/**
- * Roe sits where it lands. Like the shark's egg case there is nothing to animate, so this only
- * resolves the geometry.
- */
 @Environment(EnvType.CLIENT)
 public class MobRendererFishyEgg extends MobRenderer<MobFishyEgg> {
 	private static final String MODEL_KEY = "main";

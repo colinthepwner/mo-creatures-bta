@@ -8,27 +8,8 @@ import net.minecraft.core.world.World;
 import teamport.creatures.MMConfig;
 import teamport.creatures.MoreMobs;
 
-/**
- * The cave ogre: tougher than its green cousin, and strictly a thing of the deep.
- * <p>
- * The original gave it 50 health against the others' 35, kept it underground ("cave ogres no longer
- * spawn outdoors", "Cave Ogres no longer spawn on dark areas of the surface") by requiring both no
- * line of sight to the sky and a low y, and still had it burn if it ever surfaced in daylight.
- */
 public class MobOgreCave extends MobOgre {
-	/**
-	 * Highest y a cave ogre will spawn at.
-	 *
-	 * <p>The original's {@code EntityCaveOgre.getCanSpawnHere} used a flat {@code posY < 50}, and this
-	 * port had been carrying that number over unchanged. It does not survive the move: beta 1.7.3 is
-	 * 128 blocks tall with its sea at 64, so 50 meant a mere fourteen blocks under water level — the
-	 * top of the cave layer. BTA doubled both ({@code World.HEIGHT_BLOCKS} is 256 and the sea sits at
-	 * 128, measured), so a literal 50 asks for seventy-eight blocks below sea level and pins cave
-	 * ogres to the bottom fifth of the world. In the original's own terms that is {@code posY < 25}.
-	 *
-	 * <p>Doubled to match the world it now lives in, which puts it back at fourteen blocks below the
-	 * waterline.
-	 */
+
 	public static final int MAX_SPAWN_HEIGHT = 100;
 
 	public MobOgreCave(World world) {

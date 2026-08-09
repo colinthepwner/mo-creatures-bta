@@ -37,15 +37,9 @@ public class MobFox extends MobAnimal {
 		entityCheck = 1800 + random.nextInt(1800);
 		heartsHalvesLife = 10;
 
-		// EntityFox's own box. It is the same 0.9 x 1.3 the original gives the bear, the big cat and
-		// the deer -- a generous box for a fox, but it is the one the original fights and dies in.
 		setSize(0.9F, 1.3F);
 	}
 
-	/**
-	 * v2.12.2 gives a fox 15 whether or not it is arctic -- there is no arctic fox in that version at all.
-	 * Matches {@code EntityFox} in v2.12.2; without it this inherited the base mob's default.
-	 */
 	@Override
 	public int getMaxHealth() {
 		return 15;
@@ -158,7 +152,6 @@ public class MobFox extends MobAnimal {
 		super.updateAI();
 		checkForEntitiesNearFox();
 
-
 		setFoxAngry(target != null && target.isAlive());
 	}
 
@@ -187,21 +180,8 @@ public class MobFox extends MobAnimal {
 		return true;
 	}
 
-	/** The original's own bite range — {@code EntityFox.attackEntity} opens with {@code distance < 2.5}. */
 	private static final float BITE_RANGE = 2.5F;
 
-	/**
-	 * Bites at {@link #BITE_RANGE}, and pounces the gap before that.
-	 * <p>
-	 * The bite is checked on its own rather than as the {@code else} of the pounce. Written the other
-	 * way round the pounce's own dice roll decided whether the bite was even considered, so a fox
-	 * standing in range did nothing at all on the nine ticks out of ten the roll failed — it could
-	 * only land a hit in the frame it happened to leap.
-	 * <p>
-	 * The range is the original's: {@code EntityFox.attackEntity} opens with {@code if (distance <
-	 * 2.5)}. This port had 2, which is half a block short, and a fox settles at about 1.9 to 2.1 from
-	 * a player — right on that edge, which is why it so often stood there without connecting.
-	 */
 	@Override
 	protected void attackEntity(@NotNull Entity entity, float distance) {
 		boolean canReach = distance < BITE_RANGE

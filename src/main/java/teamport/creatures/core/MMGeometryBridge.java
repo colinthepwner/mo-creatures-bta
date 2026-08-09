@@ -5,6 +5,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldInsnNode;
+import org.objectweb.asm.tree.IincInsnNode;
 import org.objectweb.asm.tree.IntInsnNode;
 import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
@@ -34,131 +35,46 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 
-/**
- * Converts entity models out of a copy of the original Mo' Creatures that the <em>player</em>
- * supplies into the Bedrock geometry BTA 8.0 renders, and writes them beside the bridged textures.
- * <p>
- * Companion to {@link MMAssetBridge}, and for the same reason: the original textures are painted
- * against the original box layout, so bridged textures only look right on the box layout they were
- * painted for. Geometry and textures have to come from the same source. Nothing here ships the
- * original's model data — only the converter — and it reads a file the player already owns.
- *
- * <h2>How the originals are read</h2>
- * The model classes are compiled against Minecraft Beta 1.7.3, whose types do not exist in BTA, so
- * they can never be loaded or instantiated. They are read as <em>bytecode</em> with ASM (already on
- * the classpath via fabric-loader/Mixin) and their constructors are interpreted symbolically: a
- * small abstract interpreter tracks constants, locals and object identity well enough to recover
- * every {@code new ModelRenderer(u,v)}, {@code addBox(...)}, {@code setRotationPoint(...)} and
- * rotation-angle assignment. Calls are matched on <em>descriptor</em>, never on name — the method
- * names are obfuscated single letters and differ between versions.
- *
- * <h2>The coordinate transform</h2>
- * Java model space hangs downward from a 24-unit origin; Bedrock is Y-up. Reading a point out of one
- * and into the other is therefore
- * <pre>
- *     pivot  = ( rpX, 24 - rpY, rpZ )
- *     origin = ( pivotX + offX, pivotY - offY - height, pivotZ + offZ )
- * </pre>
- * with size, texture offset and the {@code addBox} scale carrying over unchanged as {@code size},
- * {@code uv} and {@code inflate}, and rotation angles carrying over verbatim in degrees.
- * <p>
- * These constants are not guessed. BTA ships Bedrock geometry converted from the same Beta 1.7.3
- * models it inherited — {@code assets/minecraft/models/entity/{pig,wolf,sheep,cow,player}} — and
- * every bone in those files reproduces exactly under the formula above. Dragonfly's own
- * {@code StaticEntityModelMojang.boneTransform} confirms the rotation half: it applies
- * {@code rotateZ(-(rotZ + rad(rotation[2])))}, {@code rotateY(+(rotY + rad(rotation[1])))},
- * {@code rotateX(-(rotX + rad(rotation[0])))}, so a geometry {@code rotation} entry and a runtime
- * {@link org.useless.dragonfly.models.entity.BoneTransform} angle share one sign convention — and
- * this mod's renderers already feed Beta 1.7.3 angles straight into those fields.
- *
- * <h2>Inherited boxes</h2>
- * Most originals extend {@code ModelBase} and are self-contained. A few extend Minecraft's own
- * {@code ModelQuadruped} or {@code ModelBiped}, which are not in the archive and build boxes in a
- * constructor this cannot see. Those base layers are <em>vanilla Minecraft shapes, not the original
- * author's work</em>, so they are reconstructed here from the geometry BTA already ships (see
- * {@link #quadrupedBase} and {@link #bipedBase}) and the subclass's own boxes are composed on top.
- * A model whose base layer is unknown is reported and skipped rather than emitted half-built.
- * <p>
- * Two mobs take that to its conclusion: the original gave its boar and its duck no class at all and
- * rendered them straight on {@code ModelPig} and {@code ModelChicken}. There is nothing to read, so
- * the <em>whole</em> model is reconstructed the same way — see {@link #vanillaModel} — and paired
- * with the {@code boar.png} and {@code duck.png} that were painted for those layouts.
- */
 public final class MMGeometryBridge {
 	private MMGeometryBridge() {}
 
 	private static final String MANIFEST = "/assets/creatures/model-bridge.properties";
 
-	/** Java model space hangs from this many units; Bedrock counts up from the ground. */
 	private static final float JAVA_ORIGIN_Y = 24.0F;
 
-	/** Set once the bridge has run, so the audit can report on it. */
 	public static int convertedCount = -1;
 	public static int composedCount = -1;
 	public static int skippedCount = -1;
 	public static List<String> problems = new ArrayList<>();
 
-	// ------------------------------------------------------------------------------------------
-	// Manifest
-	// ------------------------------------------------------------------------------------------
-
-	/** One output model: which original class to read, what to call its bones, where to write it. */
 	static final class ModelEntry {
 		String id;
 		String sourceClass;
-		/** A second class the original renders as an extra layer over the first, sharing its texture. */
+
 		String overlayClass;
 		String base;
-		/**
-		 * One of Minecraft's own models, when the original had no class of its own at all and simply
-		 * rendered the mob on a vanilla one. There is nothing in the archive to read, so the whole
-		 * model is reconstructed the same way {@link #base} layers are — see {@link #vanillaModel}.
-		 */
+
 		String vanilla;
-		/**
-		 * Every texture this mob's renderers load, as original file name -> the paths in the pack it
-		 * supplies. The converted UVs only line up with the art they were painted for, so the geometry
-		 * ships if and only if all of these came out of the same archive.
-		 * <p>
-		 * One original can feed several paths: where this port splits a mob into states the original
-		 * drew with one skin — a tamed kitty is the same cat — naming the source twice is the honest
-		 * mapping, and the alternative is either an unrelated skin or no art at all.
-		 */
+
 		final Map<String, List<String>> textures = new LinkedHashMap<>();
-		/**
-		 * The UV space the original's texture offsets are expressed in — {@code ModelBase}'s own
-		 * defaults unless the original overrode them. Deliberately not read from the PNG: Mo'
-		 * Creatures ships double-resolution art, so a 128x64 file is still a 64x32 UV layout.
-		 */
+
 		int uvWidth = 64;
 		int uvHeight = 32;
-		/** Arguments the original's own renderer passes the model's constructor. */
+
 		double[] args = new double[0];
-		/** source slot (original field name) -> output bone name, or {@code null} to drop the bone. */
+
 		final Map<String, String> renames = new LinkedHashMap<>();
-		/** output bone name -> parent bone name. */
+
 		final Map<String, String> parents = new LinkedHashMap<>();
-		/**
-		 * Output bone names whose cubes take Bedrock's {@code mirror} flag.
-		 * <p>
-		 * BTA's own conversion of Minecraft's models sets this on the bones that sit at {@code +x}
-		 * even where the Java model never touched its mirror field — vanilla {@code ModelQuadruped}
-		 * sets no mirror at all, yet BTA's {@code cow.geo.json} carries {@code "mirror": true} on
-		 * {@code leg1} and {@code leg3}, the two legs at {@code midX = 4}. Bedrock unwraps those
-		 * faces the other way round, and the flag is what puts them back.
-		 * <p>
-		 * The converter otherwise only mirrors what the original explicitly asked for, so a model
-		 * that relies on the convention rather than the flag comes out with its {@code +x} side
-		 * reversed. Invisible on symmetric fur; obvious on an asymmetric detail like a bird's toes.
-		 */
+
 		final Set<String> mirrorBones = new LinkedHashSet<>();
 	}
 
 	static final class Manifest {
 		final List<ModelEntry> models = new ArrayList<>();
-		/** base layer id -> the base class's field slots, in declaration order. */
+
 		final Map<String, String[]> baseSlots = new HashMap<>();
-		/** ModelRenderer field name -> what it means. */
+
 		final Map<String, String> rendererFields = new HashMap<>();
 	}
 
@@ -171,7 +87,7 @@ public final class MMGeometryBridge {
 		try (InputStream in = MMGeometryBridge.class.getResourceAsStream(MANIFEST)) {
 			if (in != null) props.load(in);
 		} catch (IOException e) {
-			// Left empty; the caller reports an empty manifest.
+
 		}
 		Map<String, ModelEntry> byId = new LinkedHashMap<>();
 		for (String key : new java.util.TreeSet<>(props.stringPropertyNames())) {
@@ -184,7 +100,7 @@ public final class MMGeometryBridge {
 				continue;
 			}
 			if (key.startsWith("renderer.")) {
-				// Inverted on purpose: the manifest reads "field-in-the-archive = meaning".
+
 				m.rendererFields.put(value, key.substring("renderer.".length()));
 				continue;
 			}
@@ -252,11 +168,10 @@ public final class MMGeometryBridge {
 		return parts;
 	}
 
-	/** Archive entry base names the bridge needs, so the archive is only walked once. */
 	public static List<String> wantedEntries() {
 		List<String> wanted = new ArrayList<>();
 		for (ModelEntry entry : manifest().models) {
-			// A vanilla-derived entry has no class to look for; only its art comes out of the archive.
+
 			if (entry.sourceClass != null) wanted.add(entry.sourceClass.toLowerCase(Locale.ROOT) + ".class");
 			if (entry.overlayClass != null) wanted.add(entry.overlayClass.toLowerCase(Locale.ROOT) + ".class");
 			for (String texture : entry.textures.keySet()) wanted.add(texture.toLowerCase(Locale.ROOT));
@@ -264,24 +179,16 @@ public final class MMGeometryBridge {
 		return wanted;
 	}
 
-	// ------------------------------------------------------------------------------------------
-	// Entry point
-	// ------------------------------------------------------------------------------------------
-
 	public static final class Result {
-		/** Fully recovered from the original class alone. */
+
 		public final List<String> converted = new ArrayList<>();
-		/** Recovered, but with a vanilla Minecraft base layer composed underneath. */
+
 		public final List<String> composed = new ArrayList<>();
-		/** Not written: source missing, or something in the constructor could not be read. */
+
 		public final List<String> skipped = new ArrayList<>();
 		public final List<String> problems = new ArrayList<>();
 	}
 
-	/**
-	 * @param archive entry base name (lower case) to bytes, as flattened out of the player's copy
-	 * @param packDir the generated texture pack the textures already go to
-	 */
 	public static Result run(Map<String, byte[]> archive, File packDir) {
 		Result result = new Result();
 		Manifest m = manifest();
@@ -292,11 +199,7 @@ public final class MMGeometryBridge {
 		}
 
 		for (ModelEntry entry : m.models) {
-			// Converted UVs are painted against the original art. Shipping the geometry without it
-			// would land the original's box layout on this repo's own textures, which is worse than
-			// leaving both alone, so this is all or nothing. It holds for a vanilla-derived model too:
-			// the boar and the duck are painted for Minecraft's own pig and chicken layouts, and this
-			// repo's own boxes are not those either.
+
 			if (entry.textures.isEmpty()) {
 				result.skipped.add(entry.id);
 				result.problems.add(entry.id + ": the manifest lists no textures for it, so there is nothing "
@@ -317,8 +220,7 @@ public final class MMGeometryBridge {
 			List<Bone> recovered;
 			boolean composedBase;
 			if (entry.vanilla != null) {
-				// No class of its own in the archive: the original rendered this mob straight on one of
-				// Minecraft's own models, so the whole thing is reconstructed rather than read.
+
 				recovered = vanillaModel(entry.vanilla);
 				if (recovered == null) {
 					result.skipped.add(entry.id);
@@ -397,8 +299,7 @@ public final class MMGeometryBridge {
 
 			String json = toGeometryJson(entry.id, bones, entry.uvWidth, entry.uvHeight);
 			try {
-				// The art goes with it, so a half-written pack can never pair one mob's geometry
-				// with another source's textures.
+
 				for (Map.Entry<String, List<String>> art : entry.textures.entrySet()) {
 					byte[] image = archive.get(art.getKey().toLowerCase(Locale.ROOT));
 					for (String path : art.getValue()) write(new File(packDir, path), image);
@@ -423,20 +324,6 @@ public final class MMGeometryBridge {
 		return result;
 	}
 
-	/**
-	 * Declares the converted geometry to Dragonfly.
-	 * <p>
-	 * Writing the model files is not enough on its own, and the failure is silent. Dragonfly's
-	 * {@code getGeometry} only ever reads its in-memory cache — it does no file I/O and never loads a
-	 * path on demand — and that cache is filled exclusively by {@code Cache.reload}, which walks the
-	 * selected packs reading {@code /assets/<namespace>/models/entity/models.json} and loading the
-	 * paths listed under {@code model_paths}. Anything not named there is simply never read, and
-	 * {@code getModel} hands back the fallback cube instead. This mirrors what BTA ships for its own
-	 * namespace.
-	 * <p>
-	 * The built-in models are listed too. This pack shadows the namespace, and a pack that named only
-	 * the converted models would leave every un-converted mob with nothing to load.
-	 */
 	private static void writeModelManifest(Result result, File packDir) {
 		List<String> ids = new ArrayList<>(result.converted);
 		ids.addAll(result.composed);
@@ -464,7 +351,6 @@ public final class MMGeometryBridge {
 		}
 	}
 
-	/** Models shipped in the mod's own jar, which the generated pack's manifest must not drop. */
 	private static final List<String> BUILTIN_MODEL_IDS = Arrays.asList(
 		"bear", "bird", "boar", "bunny", "deer", "fox",
 		"horse", "horse_pegasus", "horse_unicorn", "kitty", "litterbox");
@@ -476,11 +362,6 @@ public final class MMGeometryBridge {
 		problems = result.problems;
 	}
 
-	// ------------------------------------------------------------------------------------------
-	// Model representation
-	// ------------------------------------------------------------------------------------------
-
-	/** One {@code addBox} call, still in Java model space. */
 	static final class Cube {
 		float offX, offY, offZ;
 		int width, height, depth;
@@ -489,9 +370,8 @@ public final class MMGeometryBridge {
 		boolean mirror;
 	}
 
-	/** One {@code ModelRenderer}, still in Java model space. */
 	static final class Bone {
-		/** The field the original assigned it to, or {@code #n} when it went nowhere named. */
+
 		String slot;
 		String name;
 		String parent;
@@ -506,19 +386,13 @@ public final class MMGeometryBridge {
 		List<Bone> bones = new ArrayList<>();
 		String superName;
 		boolean superIsPlainBase;
-		/** Constant arguments the constructor handed its superclass, when they were constant. */
+
 		double[] superArgs = new double[0];
 		final List<String> problems = new ArrayList<>();
 	}
 
-	// ------------------------------------------------------------------------------------------
-	// Bytecode extraction
-	// ------------------------------------------------------------------------------------------
-
-	/** Marks {@code this} on the interpreter's stack. */
 	private static final Object THIS = new Object();
 
-	/** A {@code ModelRenderer[]} field, so array-held bones keep a usable slot name. */
 	private static final class BoneArray {
 		String field = "array";
 		final Bone[] elements;
@@ -544,9 +418,7 @@ public final class MMGeometryBridge {
 			out.problems.add("no constructor found");
 			return out;
 		}
-		// The no-arg constructor is what the original's own renderer usually calls, and the others are
-		// reached from it by delegation with the arguments it passes. When the manifest records that
-		// the original passes something else, start from the constructor that takes those instead.
+
 		MethodNode entry = null;
 		if (args.length > 0) {
 			for (MethodNode ctor : ctors.values()) {
@@ -568,12 +440,6 @@ public final class MMGeometryBridge {
 		return out;
 	}
 
-	/**
-	 * Descriptors of the methods a Beta 1.7.3 model poses itself in — {@code setRotationAngles} and
-	 * {@code render}, both of which take the six animation floats, plus {@code ModelBiped}'s variant
-	 * that also takes the "is riding" flag. Matched on descriptor, like everything else here: the
-	 * names are obfuscated and differ between the base class and its subclasses.
-	 */
 	private static boolean isPoseMethod(MethodNode method) {
 		return !"<init>".equals(method.name) && !"<clinit>".equals(method.name)
 			&& ("(FFFFFF)V".equals(method.desc) || "(FFFFFFZ)V".equals(method.desc));
@@ -587,17 +453,11 @@ public final class MMGeometryBridge {
 		private final Map<String, Object> fields = new HashMap<>();
 		private String rendererType;
 		private int depth;
-		/**
-		 * Set while a pose method is being read rather than a constructor. In this mode nothing is
-		 * built and nothing is reported: the only thing taken out is a constant rotation angle, and
-		 * anything the reader does not understand ends that method quietly instead of failing the
-		 * model. See {@link #readRestPose}.
-		 */
+
 		private boolean pose;
-		/** Set by {@link #step} when the instruction it read was a jump it decided to take. */
+
 		private AbstractInsnNode jumped;
 
-		/** The six animation floats plus the trailing flag, all at rest. See {@link #readRestPose}. */
 		private static final double[] REST_ARGUMENTS = {0, 0, 0, 0, 0, 0, 0};
 
 		Interpreter(ClassNode owner, Map<String, MethodNode> ctors, Manifest manifest, Extraction out) {
@@ -607,42 +467,17 @@ public final class MMGeometryBridge {
 			this.out = out;
 		}
 
-		/**
-		 * The rest pose a model puts itself in, for the models that build a box in one frame and turn
-		 * it into another when they pose rather than when they construct.
-		 * <p>
-		 * Minecraft's own {@code ModelQuadruped} is the pattern: it builds a body box standing on end
-		 * and lays it along the spine with {@code body.rotateAngleX = PI/2} inside
-		 * {@code setRotationAngles}, every frame, unconditionally. A subclass that copies that shape
-		 * without extending the class — the original's {@code ModelBigCat2} is exactly this — carries
-		 * the same assignment in its own pose method, and a converter that only reads constructors
-		 * emits a cat standing on its tail. So the pose methods are read too.
-		 * <p>
-		 * Rotation points are read the same way, and matter just as much: the original's
-		 * {@code ModelOgre2} builds its feet about y = 0 and moves them to y = 12 in its pose method,
-		 * exactly as {@code ModelBiped} does, so a converter that only reads constructors leaves an
-		 * ogre's feet at knee height. See {@link #writeRestPose} for which of the two wins when the
-		 * constructor and the pose method disagree.
-		 * <p>
-		 * Only <em>constant</em> writes count, so a value computed from the animation arguments is
-		 * skipped rather than frozen at whatever the reader made of it. Conditional bodies are stepped
-		 * over — the branch a flag this can evaluate takes with the flag clear, and the branch an
-		 * undecidable test is assumed to take — which reads the pose a model puts itself in with
-		 * nothing applying: its rest pose, rather than its sitting, sneaking or swinging variant.
-		 */
 		void readRestPose(ClassNode node) {
 			pose = true;
 			try {
 				for (MethodNode method : node.methods) {
 					if (!isPoseMethod(method)) continue;
 					depth = 0;
-					// Every animation argument at zero: no stride, no head turn, nothing held. That is
-					// what "rest pose" means, and it is what makes the constant beside an animation
-					// term readable rather than unknown.
+
 					run(method, REST_ARGUMENTS);
 				}
 			} catch (RuntimeException e) {
-				// A pose method is a bonus, never a requirement: the model is already built.
+
 			} finally {
 				pose = false;
 			}
@@ -665,8 +500,7 @@ public final class MMGeometryBridge {
 
 			List<Object> stack = new ArrayList<>();
 			AbstractInsnNode insn = method.instructions.getFirst();
-			// A jump can only be taken so many times before something is looping; a model that loops is
-			// not one this reads, and the budget is what stops it hanging rather than failing.
+
 			int budget = method.instructions.size() * 4 + 64;
 			try {
 				while (insn != null && budget-- > 0) {
@@ -679,7 +513,6 @@ public final class MMGeometryBridge {
 			}
 		}
 
-		/** @return true when {@code target} comes after {@code from}; a backwards jump is a loop. */
 		private static boolean isForward(AbstractInsnNode from, AbstractInsnNode target) {
 			for (AbstractInsnNode at = from.getNext(); at != null; at = at.getNext()) {
 				if (at == target) return true;
@@ -687,44 +520,30 @@ public final class MMGeometryBridge {
 			return false;
 		}
 
-		/**
-		 * Takes, skips or gives up on a jump.
-		 *
-		 * @param taken {@code TRUE} to jump, {@code FALSE} to fall through, {@code null} when the test
-		 *              could not be decided — which ends the method rather than guessing a branch
-		 * @return false when the walk must stop
-		 */
 		private boolean branch(AbstractInsnNode insn, Boolean taken) {
 			if (taken == null) {
-				// A constructor is the model, so a branch this cannot decide has to fail it rather
-				// than leave half the boxes out and call the result converted.
+
 				if (!pose) {
 					out.problems.add("constructor branches on something this cannot evaluate");
 					return false;
 				}
-				// A pose method is read for its rest pose, and javac compiles 'if (x) { body }' as a
-				// jump over the body. So an undecidable test skips its block and carries on, rather
-				// than abandoning the method: that is the same answer every flag this can evaluate
-				// already gives — none of the optional poses apply — and it is what reaches the
-				// unconditional tail. ModelBiped's swing block guards on a float the base class
-				// initialises outside the archive; stopping there loses everything after it.
-				taken = Boolean.TRUE;
+
+				taken = isForward(insn, ((org.objectweb.asm.tree.JumpInsnNode) insn).label);
 			}
 			if (!taken) return true;
 			AbstractInsnNode label = ((org.objectweb.asm.tree.JumpInsnNode) insn).label;
-			// Forwards only: a backwards jump is a loop, and this reads straight-line code.
-			if (!isForward(insn, label)) {
-				if (!pose) out.problems.add("constructor jumps backwards, which this cannot follow");
+
+			if (!isForward(insn, label) && !pose) {
+				out.problems.add("constructor jumps backwards, which this cannot follow");
 				return false;
 			}
 			jumped = label;
 			return true;
 		}
 
-		/** @return whether the jump is taken, or {@code null} when its operands are not both known. */
 		private static Boolean decide(int op, Object left, Object right) {
 			if (op == Opcodes.IFNULL || op == Opcodes.IFNONNULL) {
-				// Only a tracked object proves non-null; an unknown could be either.
+
 				if (left == null) return null;
 				return op == Opcodes.IFNONNULL;
 			}
@@ -753,30 +572,13 @@ public final class MMGeometryBridge {
 			};
 		}
 
-		/** Java's own default for a field or parameter this has no recorded value for. */
 		private static Object defaultValue(String descriptor) {
 			return switch (descriptor) {
 				case "Z", "B", "C", "S", "I", "J" -> 0.0;
-				default -> null;   // floats stay unknown: an animated angle must not read as zero
+				default -> null;
 			};
 		}
 
-		/**
-		 * Takes a rest pose out of a pose method — where a bone is turned to, and where it is hung
-		 * from, before anything is animated. Only a constant counts: a value built from the animation
-		 * arguments is a movement, not a shape.
-		 * <p>
-		 * Rotation and rotation point are taken on different terms, because the originals treat them
-		 * differently. An angle is <em>added to</em> across a frame, so one the constructor already
-		 * declared is the model's own and wins; a pose method only fills in an angle left at zero.
-		 * A rotation point is <em>assigned</em>, unconditionally, immediately before the box is drawn,
-		 * so the pose method's value is the one the original renders with and it replaces whatever the
-		 * constructor set. Minecraft's own {@code ModelBiped} is the pattern: it builds its legs about
-		 * y = 12 and then writes {@code rotationPointY = 12} again every frame — harmless there, but
-		 * the original's {@code ModelOgre2} builds its feet about y = 0 and writes 12 in the pose
-		 * method, so a converter that only reads constructors hangs an ogre's feet at knee height.
-		 * The boxes are held as offsets from the point, so moving it carries them along.
-		 */
 		private void writeRestPose(Bone bone, FieldInsnNode field, Object value) {
 			if (!(value instanceof Double d) || Double.isNaN(d)) return;
 			switch (meaning(field.name)) {
@@ -794,12 +596,18 @@ public final class MMGeometryBridge {
 			return bone.angleX == 0 && bone.angleY == 0 && bone.angleZ == 0;
 		}
 
-		/** @return false when the constructor cannot be read any further. */
+		private void movePoint(Bone bone, double[] args) {
+			if (args.length < 3) return;
+			if (!Double.isNaN(args[0])) bone.pointX = (float) args[0];
+			if (!Double.isNaN(args[1])) bone.pointY = (float) args[1];
+			if (!Double.isNaN(args[2])) bone.pointZ = (float) args[2];
+		}
+
 		private boolean step(AbstractInsnNode insn, List<Object> stack, Object[] locals) {
 			int op = insn.getOpcode();
 			switch (op) {
 				case -1 -> {
-					return true; // labels, line numbers, frames
+					return true;
 				}
 				case Opcodes.ACONST_NULL -> push(stack, null);
 				case Opcodes.ICONST_M1, Opcodes.ICONST_0, Opcodes.ICONST_1, Opcodes.ICONST_2,
@@ -814,6 +622,12 @@ public final class MMGeometryBridge {
 				}
 				case Opcodes.ILOAD, Opcodes.FLOAD, Opcodes.ALOAD -> push(stack, locals[((VarInsnNode) insn).var]);
 				case Opcodes.ISTORE, Opcodes.FSTORE, Opcodes.ASTORE -> locals[((VarInsnNode) insn).var] = pop(stack);
+				case Opcodes.IINC -> {
+
+					IincInsnNode increment = (IincInsnNode) insn;
+					Object current = locals[increment.var];
+					locals[increment.var] = current instanceof Double d ? (Object) (d + increment.incr) : null;
+				}
 				case Opcodes.DUP -> push(stack, peek(stack));
 				case Opcodes.POP -> pop(stack);
 				case Opcodes.FADD, Opcodes.IADD -> binary(stack, '+');
@@ -825,7 +639,7 @@ public final class MMGeometryBridge {
 					push(stack, value instanceof Double d ? (Object) (-d) : null);
 				}
 				case Opcodes.I2F, Opcodes.F2I, Opcodes.I2D, Opcodes.F2D, Opcodes.D2F, Opcodes.CHECKCAST -> {
-					// Identity for the values this interpreter tracks.
+
 				}
 				case Opcodes.NEW -> {
 					String type = ((TypeInsnNode) insn).desc;
@@ -858,9 +672,7 @@ public final class MMGeometryBridge {
 					FieldInsnNode field = (FieldInsnNode) insn;
 					Object target = pop(stack);
 					if (target == THIS) {
-						// A field nothing has assigned still has a value: Java's own default. That is
-						// what makes reading a pose method mean something -- every flag a model tests
-						// is false, so the branch taken is the one it rests in.
+
 						push(stack, fields.containsKey(field.name) ? fields.get(field.name)
 							: defaultValue(field.desc));
 					} else if (target instanceof Bone bone) {
@@ -874,9 +686,7 @@ public final class MMGeometryBridge {
 					Object value = pop(stack);
 					Object target = pop(stack);
 					if (pose) {
-						// A pose method only ever tells this one thing: the rest pose a bone is put
-						// in before anything is animated. Its own fields are left alone -- rewriting
-						// them here would replace a bone the constructor already built.
+
 						if (target instanceof Bone bone) writeRestPose(bone, field, value);
 					} else if (target == THIS) {
 						if (value instanceof Bone bone) {
@@ -893,8 +703,7 @@ public final class MMGeometryBridge {
 					}
 				}
 				case Opcodes.INVOKESTATIC -> {
-					// Nothing static this reads returns a constant -- MathHelper.cos and friends take
-					// the animation arguments -- so the arguments come off and an unknown comes back.
+
 					MethodInsnNode call = (MethodInsnNode) insn;
 					popArgs(stack, Type.getArgumentTypes(call.desc));
 					if (!Type.VOID_TYPE.equals(Type.getReturnType(call.desc))) push(stack, null);
@@ -924,8 +733,7 @@ public final class MMGeometryBridge {
 					if (pose) return true;
 					if (!"<init>".equals(call.name)) return true;
 					if (target instanceof PendingNew && "(II)V".equals(call.desc) && rendererType == null) {
-						// The first two-int constructor in a model constructor is ModelRenderer(u,v).
-						// Matched on descriptor: the class and method names are obfuscated.
+
 						rendererType = ((PendingNew) target).type;
 						Bone bone = new Bone();
 						replace(stack, target, bone);
@@ -952,13 +760,17 @@ public final class MMGeometryBridge {
 					double[] args = popArgs(stack, params);
 					Object target = pop(stack);
 					if (!Type.VOID_TYPE.equals(Type.getReturnType(call.desc))) push(stack, null);
-					if (pose) return true;
+					if (pose) {
+
+						if (target instanceof Bone bone && "(FFF)V".equals(call.desc)) movePoint(bone, args);
+						return true;
+					}
 					if (!(target instanceof Bone bone)) return true;
 					switch (call.desc) {
-						// Matched on descriptor, never on name.
-						case "(FFFIIIF)V" -> addBox(bone, args, (float) args[6]);   // addBox + scale
-						case "(FFFIII)V" -> addBox(bone, args, 0.0F);               // addBox
-						case "(FFF)V" -> {                                          // setRotationPoint
+
+						case "(FFFIIIF)V" -> addBox(bone, args, (float) args[6]);
+						case "(FFFIII)V" -> addBox(bone, args, 0.0F);
+						case "(FFF)V" -> {
 							bone.pointX = (float) args[0];
 							bone.pointY = (float) args[1];
 							bone.pointZ = (float) args[2];
@@ -1076,11 +888,7 @@ public final class MMGeometryBridge {
 			Object right = pop(stack);
 			Object left = pop(stack);
 			if (operator == '*' && (isZero(left) || isZero(right))) {
-				// Anything finite times zero is zero, and everything a model multiplies is finite.
-				// This is what makes a rest pose readable: an animation term is a trigonometric
-				// function of arguments this does not track, scaled by the limb-swing amount, and at
-				// rest that amount is zero -- so the term vanishes and the constant beside it is the
-				// value the original actually draws with.
+
 				push(stack, 0.0);
 				return;
 			}
@@ -1097,12 +905,7 @@ public final class MMGeometryBridge {
 		}
 	}
 
-	/** A {@code new} that has not been identified as a ModelRenderer yet. */
 	private record PendingNew(String type) {}
-
-	// ------------------------------------------------------------------------------------------
-	// Vanilla base layers
-	// ------------------------------------------------------------------------------------------
 
 	private static List<Bone> baseLayer(String id, Extraction extraction, Manifest m, Result result, String modelId) {
 		String[] slots = m.baseSlots.get(id);
@@ -1130,14 +933,6 @@ public final class MMGeometryBridge {
 		return index < args.length && !Double.isNaN(args[index]) ? args[index] : fallback;
 	}
 
-	/**
-	 * Minecraft's own {@code ModelQuadruped(legLength, inflate)} — the pig/cow/sheep box layout.
-	 * <p>
-	 * Read back out of the Bedrock geometry BTA already ships rather than from memory:
-	 * {@code pig.geo.json} is this class unmodified at {@code legLength = 6} and {@code sheep.geo.json}
-	 * overrides only head and body, so its legs pin the layout again at {@code legLength = 12}. Every
-	 * value below reproduces those files exactly through {@link #toGeometryJson}.
-	 */
 	static List<Bone> quadrupedBase(double legLength, float inflate) {
 		int leg = (int) legLength;
 		List<Bone> bones = new ArrayList<>();
@@ -1152,13 +947,6 @@ public final class MMGeometryBridge {
 		return bones;
 	}
 
-	/**
-	 * Minecraft's own {@code ModelBiped(inflate, yOffset)} — the player box layout.
-	 * <p>
-	 * Read back out of BTA's {@code player.geo.json} and {@code humanoid.geo.json}, whose head,
-	 * hat (the {@code inflate + 0.5} one), chest, arm and leg cubes all reproduce exactly from the
-	 * values below.
-	 */
 	static List<Bone> bipedBase(float inflate, float yOffset) {
 		List<Bone> bones = new ArrayList<>();
 		bones.add(bone("head", 0, 0, 0, yOffset, 0, box(-4, -8, -4, 8, 8, 8, inflate)));
@@ -1174,18 +962,6 @@ public final class MMGeometryBridge {
 		return bones;
 	}
 
-	/**
-	 * A whole model of Minecraft's own, for the two mobs the original never gave a class to: it
-	 * rendered its boar on {@code ModelPig} and its duck on {@code ModelChicken}, so there is nothing
-	 * in the archive to read and the art is painted for the vanilla box layout.
-	 * <p>
-	 * These are reconstructed exactly the way {@link #quadrupedBase} and {@link #bipedBase} are, and
-	 * from the same source: the Bedrock geometry BTA already ships. That matters more here than for a
-	 * base layer, because it is the <em>whole</em> model — a boar drawn on anything but BTA's own pig
-	 * boxes would put {@code boar.png} in the wrong places.
-	 *
-	 * @return {@code null} when the manifest names a model with no reconstruction here
-	 */
 	private static List<Bone> vanillaModel(String id) {
 		return switch (id) {
 			case "pig" -> pigBase();
@@ -1194,15 +970,6 @@ public final class MMGeometryBridge {
 		};
 	}
 
-	/**
-	 * Minecraft's own {@code ModelPig} — {@code ModelQuadruped(6, 0)} plus the snout, which the pig
-	 * adds as a second cube on the inherited head rather than as a bone of its own.
-	 * <p>
-	 * Reproduces {@code assets/minecraft/models/entity/pig/pig.geo.json} exactly, mirrored legs
-	 * included: BTA's conversion mirrors the two legs on {@code +x} and the plain quadruped base does
-	 * not, so this sets it here rather than in {@link #quadrupedBase}, where it would also change the
-	 * bear and the lion's mane.
-	 */
 	static List<Bone> pigBase() {
 		List<Bone> bones = quadrupedBase(6, 0);
 		Cube snout = box(-2, 0, -9, 4, 3, 1, 0);
@@ -1215,16 +982,6 @@ public final class MMGeometryBridge {
 		return bones;
 	}
 
-	/**
-	 * Minecraft's own {@code ModelChicken}.
-	 * <p>
-	 * Read back out of BTA's {@code chicken/chicken.geo.json} the same way the other bases are, and it
-	 * is that file rather than Beta 1.7.3's class that is authoritative: BTA moved the wing pivots one
-	 * unit inboard, and the duck has to hang on the boxes BTA actually draws a chicken with. Every
-	 * texture offset is untouched, which is what {@code duck.png} is painted against.
-	 * <p>
-	 * Sides follow the manifest's convention rather than vanilla's field names — {@code -x} is left.
-	 */
 	static List<Bone> chickenBase() {
 		List<Bone> bones = new ArrayList<>();
 		Bone body = bone("body", 0, 9, 0, 16, 0, box(-3, -4, -3, 6, 8, 6, 0));
@@ -1267,11 +1024,6 @@ public final class MMGeometryBridge {
 		return cube;
 	}
 
-	/**
-	 * Composes the subclass's own boxes onto the base layer. A subclass that assigns to a field slot
-	 * the base class already owns is replacing that bone, so it keeps the base's position and name;
-	 * anything else is appended.
-	 */
 	private static List<Bone> merge(List<Bone> base, List<Bone> own) {
 		List<Bone> merged = new ArrayList<>(base);
 		for (Bone bone : own) {
@@ -1285,9 +1037,7 @@ public final class MMGeometryBridge {
 			if (existing >= 0) {
 				Bone replaced = merged.get(existing);
 				bone.name = replaced.name;
-				// The base class still poses whatever ends up in its slot, so a rest rotation it
-				// applies there survives the replacement. ModelQuadruped stands its body upright
-				// this way, and a bear whose body forgot that is a bear lying on its face.
+
 				if (bone.angleX == 0 && bone.angleY == 0 && bone.angleZ == 0) {
 					bone.angleX = replaced.angleX;
 					bone.angleY = replaced.angleY;
@@ -1301,25 +1051,6 @@ public final class MMGeometryBridge {
 		return merged;
 	}
 
-	/**
-	 * Sets Bedrock's {@code mirror} flag on the {@code +x} half of every mirrored pair of bones.
-	 * <p>
-	 * This is BTA's own convention rather than an invention here, and it is not something the Java
-	 * models carry. Vanilla {@code ModelQuadruped} never touches its mirror field, yet BTA's converted
-	 * {@code cow.geo.json} sets {@code "mirror": true} on {@code leg1} and {@code leg3} — the two legs
-	 * at {@code midX = 4} — and leaves {@code leg0} and {@code leg2} at {@code midX = -4} alone.
-	 * Bedrock unwraps those faces the opposite way round, and the flag is what puts them back.
-	 * <p>
-	 * Without it a mirrored pair drawn from one texture region comes out with the right-hand member
-	 * reversed. Invisible on symmetric fur, obvious on an asymmetric detail: the bird's two legs share
-	 * {@code uv[26,0]} and its toes read back to front on the {@code +x} foot.
-	 * <p>
-	 * The test is deliberately narrow, because over-flagging would reverse art that is currently
-	 * right. A pair qualifies only when the names are a left/right counterpart, the first cubes share
-	 * a texture offset <em>and</em> a size, and the two sit mirrored about the centre line. That last
-	 * check is what keeps it off a bone like the cow's head, which carries both horns itself and is
-	 * not half of a pair — BTA does not flag that one either.
-	 */
 	private static void mirrorRightHandSide(List<Bone> bones) {
 		for (Bone bone : bones) {
 			if (bone.cubes.isEmpty()) continue;
@@ -1336,7 +1067,7 @@ public final class MMGeometryBridge {
 
 				double mine = midX(bone);
 				double theirs = midX(partner);
-				// Mirrored about x = 0, and only the half that sits on +x takes the flag.
+
 				if (Math.abs(mine + theirs) > 0.51 || mine <= 0.0) continue;
 
 				for (Cube cube : bone.cubes) {
@@ -1346,12 +1077,11 @@ public final class MMGeometryBridge {
 		}
 	}
 
-	/** The left/right counterpart of a bone name, or null when the name names no side. */
 	private static String counterpartName(String name) {
 		if (name == null) return null;
 		if (name.contains("Left")) return name.replace("Left", "Right");
 		if (name.contains("Right")) return name.replace("Right", "Left");
-		// LTail/RTail style, where the side is a single leading letter before a capital.
+
 		if (name.length() > 1 && Character.isUpperCase(name.charAt(1))) {
 			if (name.charAt(0) == 'L') return 'R' + name.substring(1);
 			if (name.charAt(0) == 'R') return 'L' + name.substring(1);
@@ -1359,11 +1089,6 @@ public final class MMGeometryBridge {
 		return null;
 	}
 
-	/**
-	 * Centre of a bone's boxes on the x axis, in the model space the bones are still in here — a
-	 * cube's offset is relative to its bone's rotation point, and x is the one axis the conversion
-	 * carries straight through, so this reads the same before and after.
-	 */
 	private static double midX(Bone bone) {
 		double min = Double.MAX_VALUE;
 		double max = -Double.MAX_VALUE;
@@ -1385,8 +1110,7 @@ public final class MMGeometryBridge {
 			}
 			bone.name = name;
 			bone.parent = entry.parents.get(name);
-			// Applied here rather than at extraction, because the manifest names bones by their
-			// output name and this is where that name is settled.
+
 			if (entry.mirrorBones.contains(name)) {
 				for (Cube cube : bone.cubes) {
 					cube.mirror = true;
@@ -1397,26 +1121,6 @@ public final class MMGeometryBridge {
 		return kept;
 	}
 
-	/**
-	 * Puts every bone the manifest reattached with {@code @parent} back where the original drew it.
-	 * <p>
-	 * Reattaching is not free. The originals have no hierarchy at all — each {@code ModelRenderer} is
-	 * drawn about its own rotation point, and never about another's — while Dragonfly composes a bone's
-	 * transform on top of its parent's. So a bone hung off a parent that has a rest rotation of its own
-	 * would pick that rotation up a second time and swing about the parent's pivot rather than its own.
-	 * A rat's snout at 90 degrees to its face, or a werewolf's shin bent 45 degrees out of its thigh.
-	 * <p>
-	 * Dragonfly builds a bone as {@code T(pivot) · Rz · Ry · Rx · T(-pivot)} and applies the parent's
-	 * first, so reproducing the original {@code M} needs {@code M' = M_parent⁻¹ · M}: the child's pivot
-	 * moves into the parent's unrotated frame and the parent's angles come off its own. Moving the pivot
-	 * carries the cubes with it — a cube's {@code origin} is derived from the pivot in
-	 * {@link #toGeometryJson} — which is exactly the shift the composition needs.
-	 * <p>
-	 * The pivot half is exact for any parent. The angle half subtracts componentwise, which is exact as
-	 * long as the parent turns about one axis and the child does not also turn about an axis Dragonfly
-	 * applies <em>outside</em> it — the order is Z, then Y, then X. Every pairing the manifest asks for
-	 * is a parent that turns about X alone or not at all; anything else is reported rather than bent.
-	 */
 	private static void reparent(List<Bone> bones, Result result, String modelId) {
 		Map<String, Bone> byName = new LinkedHashMap<>();
 		for (Bone bone : bones) byName.put(bone.name, bone);
@@ -1425,7 +1129,7 @@ public final class MMGeometryBridge {
 		for (Bone bone : bones) {
 			if (bone.parent != null) children.add(bone);
 		}
-		// Shallowest first, so a parent is already corrected by the time its own children are reached.
+
 		children.sort(Comparator.comparingInt(bone -> depth(bone, byName, bones.size())));
 
 		for (Bone bone : children) {
@@ -1462,18 +1166,12 @@ public final class MMGeometryBridge {
 		return depth;
 	}
 
-	/** @return true when subtracting the parent's angles is not exact; see {@link #reparent}. */
 	private static boolean turnsOutside(Bone bone, Bone parent) {
 		if (parent.angleZ != 0) return parent.angleY != 0 || parent.angleX != 0;
 		if (parent.angleY != 0) return parent.angleX != 0 || bone.angleZ != 0;
 		return bone.angleY != 0 || bone.angleZ != 0;
 	}
 
-	/**
-	 * A point read back out of the parent's rest rotation. Dragonfly turns a bone by
-	 * {@code Rz(-angleZ) · Ry(angleY) · Rx(-angleX)} about its pivot, so undoing that is
-	 * {@code Rx(angleX) · Ry(-angleY) · Rz(angleZ)} about the same point.
-	 */
 	private static float[] unrotate(Bone parent, float x, float y, float z) {
 		float pivotX = parent.pointX;
 		float pivotY = JAVA_ORIGIN_Y - parent.pointY;
@@ -1502,10 +1200,6 @@ public final class MMGeometryBridge {
 		double sin = Math.sin(angle);
 		return new double[]{v[0] * cos - v[1] * sin, v[0] * sin + v[1] * cos, v[2]};
 	}
-
-	// ------------------------------------------------------------------------------------------
-	// Java model space -> Bedrock geometry
-	// ------------------------------------------------------------------------------------------
 
 	static String toGeometryJson(String id, List<Bone> bones, int textureWidth, int textureHeight) {
 		float reach = 0;
@@ -1536,7 +1230,7 @@ public final class MMGeometryBridge {
 					float originX = pivotX + cube.offX;
 					float originY = pivotY - cube.offY - cube.height;
 					float originZ = pivotZ + cube.offZ;
-					// A single width covers both horizontal axes, so take the furthest reach on either.
+
 					reach = Math.max(reach, Math.abs(originX) + cube.inflate);
 					reach = Math.max(reach, Math.abs(originX + cube.width) + cube.inflate);
 					reach = Math.max(reach, Math.abs(originZ) + cube.inflate);
@@ -1581,7 +1275,6 @@ public final class MMGeometryBridge {
 		return json.toString();
 	}
 
-	/** Locale-independent, and integral values stay integral so the output reads like the hand-written models. */
 	private static String num(double value) {
 		if (Math.abs(value - Math.rint(value)) < 1.0E-6) return Long.toString((long) Math.rint(value));
 		return BigDecimal.valueOf(value).setScale(5, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString();
@@ -1595,7 +1288,6 @@ public final class MMGeometryBridge {
 		}
 	}
 
-	/** Reads a stream fully; shared with {@link MMAssetBridge}'s archive walk. */
 	static byte[] readFully(InputStream in) throws IOException {
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		byte[] buffer = new byte[8192];

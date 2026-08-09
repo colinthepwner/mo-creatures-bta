@@ -37,7 +37,6 @@ public class MobBear extends MobAnimal {
 		heartsHalvesLife = 40;
 		entityCheck = 1800 + random.nextInt(1800);
 
-		// The original's own box for a bear: longer than it is wide, and shorter than the model.
 		setSize(0.9F, 1.3F);
 	}
 
@@ -47,11 +46,6 @@ public class MobBear extends MobAnimal {
 		entityData.define(DATA_GENERIC_FLAGS, (byte) 0, Byte.class);
 	}
 
-	/**
-	 * The original's own figures: {@code EntityBear} carries 25 and {@code EntityPolarBear}, which
-	 * subclasses it, raises that to 30. Without this the bear inherited the base mob's 10 and was
-	 * dying to a third of what it should take.
-	 */
 	@Override
 	public int getMaxHealth() {
 		return isBearPolar() ? 30 : 25;
@@ -71,18 +65,6 @@ public class MobBear extends MobAnimal {
 		return (entityData.getByte(DATA_GENERIC_FLAGS) & MASK_ARCTIC) != 0;
 	}
 
-	/**
-	 * One skin per colour, angry or not.
-	 * <p>
-	 * This used to swap to a {@code bear_angry} sheet, on the reading that {@code bearb.png} was an
-	 * angry coat. It is not: {@code EntityBear} contains a single texture string, {@code
-	 * /mob/bear.png}, assigned in its constructor and never reassigned, and {@code bearb.png} is
-	 * 11% opaque against {@code bear.png}'s 63% — two ear shapes and one patch of fur on an
-	 * otherwise empty sheet. It is the overlay {@code RenderBear} draws {@code ModelBear1} with, and
-	 * {@link teamport.creatures.client.render.entity.MobRendererBear} draws it as a second layer.
-	 * <p>
-	 * Bound as a main skin it made an angry bear almost entirely transparent.
-	 */
 	@Override
 	public String getEntityTexture() {
 		return isBearPolar()
@@ -90,7 +72,6 @@ public class MobBear extends MobAnimal {
 			: "/assets/creatures/textures/entity/bear/" + getTextureReference() + ".png";
 	}
 
-	/** The overlay half, carrying the ears. Follows the coat colour, not the temper. */
 	public String getOverlayTexture() {
 		return isBearPolar()
 			? "/assets/creatures/textures/entity/bear_polar_angry/" + getTextureReference() + ".png"
@@ -171,7 +152,7 @@ public class MobBear extends MobAnimal {
 
 			if (!entitiesNearBear.isEmpty() && isAlive()) {
 				for (Entity entity : entitiesNearBear) {
-					// Hunters.attackHorses / Hunters.attackWolves -- EntityBear read both.
+
 					if (entity instanceof MobAnimal && !(entity instanceof MobBear) && target == null
 						&& MMHunting.isHuntable(entity)) {
 						setTarget(entity);
@@ -217,12 +198,10 @@ public class MobBear extends MobAnimal {
 
 	@Override
 	protected void attackEntity(@NotNull Entity entity, float distance) {
-		// Swing first and on its own. The charge's dice roll must not decide whether the swing is
-		// even considered — see MobBigCat, where the same shape left a band the cat could never
-		// bite from. A bear's ranges do not overlap, so this is a guard rather than a repair.
+
 		if (distance <= 3f && entity.bb.maxY > bb.minY && entity.bb.minY < bb.maxY) {
 			attackTime = 20;
-			// EntityBear.attackEntity passes its force field straight through, and force is 5.
+
 			byte damage = 5;
 
 			entity.hurt(this, damage, DamageType.COMBAT);

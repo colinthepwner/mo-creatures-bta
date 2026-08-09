@@ -21,7 +21,7 @@ public class MobRendererBoar extends MobRendererQuadrupedBase<MobBoar> {
 
 	@Override
 	protected float limbSwingAmplitude(MobBoar entity, float partialTick) {
-		// A provoked boar charges, so it covers ground with a much longer stride than one rooting around.
+
 		return entity.isBoarAngry() ? 2.0F : 1.4F;
 	}
 
@@ -31,7 +31,6 @@ public class MobRendererBoar extends MobRendererQuadrupedBase<MobBoar> {
 			return;
 		}
 
-		// Head down, tusks forward, so the charge reads as a charge even when the boar is standing still.
 		BoneTransform head = model.getTransform("head");
 		if (head != null) {
 			head.rotX += 0.35F;

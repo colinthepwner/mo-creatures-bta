@@ -34,13 +34,6 @@ import teamport.creatures.core.entity.mob.MobHorsePegasusBlack;
 import teamport.creatures.core.entity.mob.MobHorseUnicorn;
 import teamport.creatures.core.entity.mob.MobKitty;
 
-/**
- * Renderer registration for BTA 8.0.
- * <p>
- * Renderers are no longer passed to {@code EntityHelper.createEntity}; they are assigned on the
- * dispatcher and re-assigned whenever it reloads (resource pack swap, etc.), which is why this is
- * driven by {@code ClientEvents.ENTITY_RENDERER_RELOAD} rather than run once at startup.
- */
 @Environment(EnvType.CLIENT)
 public final class MMEntityRenderers {
 	private MMEntityRenderers() {}
