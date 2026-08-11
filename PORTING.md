@@ -46,33 +46,27 @@ These are the breaking changes that had to be worked through:
 
 ## Working
 
-Builds clean; four mobs registered and rendering: **Bear** (+ polar variant), **Bird**, **Bunny**, **Fox**
-(+ arctic variant). Polar bear and arctic fox are variant flags on the base mob rather than separate
-entity classes — that consolidation came from the 7.3 rewrite and was kept.
+The roster is complete: **all 30 mobs** of the original are registered, rendering and behaving. The
+README lists them. Polar bear and arctic fox are variant flags on the base mob rather than separate
+entity classes, as are the seven big cat species — that consolidation came from the 7.3 rewrite and
+was kept.
 
-## Not yet done
+The litter box is in, as a block with a tile entity. So are four of the original's items: big cat
+claw, shark teeth, sugar lump and pet food.
 
-`wip/entity-7.2-port/` holds six mobs carried over from the 7.2 branch — **Horse, Unicorn, Pegasus,
-Kitty, Boar, Duck**. They are converted to the `Mob*` naming convention and had the bulk API renames
-applied, but they are **excluded from the source set because they do not compile yet** (~44 errors). They
-came from the 1.7.7.x era and use pre-BTA-7 idioms that still need resolving:
+BTA 8.0.1 ships a deer of its own. This port's deer replaces it in every biome's spawn list by
+default; `Replacements.replaceVanillaDeer` turns that off.
 
-- `getBoundingBoxFromPool(...)` / `AABB` → JOML `AABBd`
-- `difficultySetting`, `areMobsHostile()` → `gamemode.hasHostileMobs()`
-- `faceEntity(...)`, various AI hooks renamed on `Mob`
-- `spawnParticle(...)` trailing-boolean arity (several sites)
-- `MobHorsePegasus` imports `org.useless.dragonfly.model.entity.AnimationState`, which no longer exists —
-  the flight animation needs rewriting against the current Dragonfly bone-transform API
-- `MobKitty` depends on `LitterboxEntity`; the litterbox and bee-hive **blocks/tile entities have not been
-  ported at all** yet, nor their items/recipes
+## Not ported
 
-Also still absent (present in the original b1.7.3 mod, never ported by Team Port): big cats, dolphin,
-shark, fishy, ogre, werewolf, wraith, ghost, scorpion, snake, turtle, rat, crocodile, elephant/mammoth,
-wyvern. Some of their **sounds already ship** in `assets/creatures/sound/` (dolphin, ogre, etc.), but no
-models or textures exist for them.
+- **Kitty bed** — the original's other piece of cat furniture, and the one entity of its roster that
+  is not here.
+- **Whip, medallion, rope, wool ball, hay stack, and the original's own saddle.** The whip and the
+  medallion drove commands and pet naming, neither of which this port has. Horses take the vanilla
+  saddle, and a pack horse carries a chest without needing an item of its own for it.
 
-Note: BTA 8.0.1 now ships a **vanilla `MobDeer`**, so porting Mo' Creatures' own deer would duplicate a
-base-game mob. Left out deliberately — worth a decision before adding.
+Later Mo' Creatures releases added snakes, turtles, crocodiles, elephants, wyverns and more. None of
+them are in scope: this port targets **v2.12.2 for Beta 1.7.3**, and none of them exist in it.
 
 ## Licensing
 
