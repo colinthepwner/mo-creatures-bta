@@ -15,6 +15,7 @@ import net.minecraft.core.world.World;
 import org.jetbrains.annotations.NotNull;
 import teamport.creatures.core.MMUtils;
 import teamport.creatures.core.block.LitterboxEntity;
+import teamport.creatures.core.item.MMItems;
 
 import java.util.List;
 import java.util.Objects;
@@ -85,7 +86,7 @@ public class MobKitty extends MobAnimal {
 		if (!world.isClientSide) {
 			ItemStack heldItem = player.getHeldItem();
 
-			if (heldItem != null && heldItem.itemID == Items.FOOD_FISH_RAW.id) {
+			if (heldItem != null && isFeed(heldItem)) {
 				if (!isTamed) {
 					world.playSoundEffect(player,
 						SoundCategory.ENTITY_SOUNDS,
@@ -118,6 +119,10 @@ public class MobKitty extends MobAnimal {
 		}
 
 		return true;
+	}
+
+	private static boolean isFeed(@NotNull ItemStack stack) {
+		return stack.itemID == Items.FOOD_FISH_RAW.id || stack.itemID == MMItems.PET_FOOD.id;
 	}
 
 	public float getTailRotation() {
@@ -235,7 +240,7 @@ public class MobKitty extends MobAnimal {
 		Player player = world.getClosestPlayerToEntity(this, 16.0);
 		if (player != null && player.distanceToSqr(x, y, z) > 4.0) {
 			ItemStack heldStack = player.getCurrentEquippedItem();
-			if (heldStack != null && !isSitting && heldStack.itemID == Items.FOOD_FISH_RAW.id) {
+			if (heldStack != null && !isSitting && isFeed(heldStack)) {
 				lookAt(player, 30.0F, 30.0F);
 				moveForward = 1.0F;
 

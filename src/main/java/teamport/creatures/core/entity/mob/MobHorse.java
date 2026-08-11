@@ -21,6 +21,7 @@ import teamport.creatures.MMConfig;
 import teamport.creatures.core.MMRiderControl;
 import teamport.creatures.core.MMUtils;
 import teamport.creatures.MoreMobs;
+import teamport.creatures.core.item.MMItems;
 
 import java.util.List;
 import java.util.Objects;
@@ -224,6 +225,12 @@ public class MobHorse extends MobAnimal {
 					item.consumeItem(player);
 					playEatingSound();
 				}
+
+				if (item.itemID == MMItems.SUGAR_LUMP.id) {
+					chanceForTame += random.nextInt(16) + 2;
+					item.consumeItem(player);
+					playEatingSound();
+				}
 			}
 
 			if (isOwnedBy(player)) {
@@ -240,6 +247,12 @@ public class MobHorse extends MobAnimal {
 					}
 					if (item.itemID == Items.FOOD_APPLE.id) {
 						heal(4);
+						item.consumeItem(player);
+						playEatingSound();
+					}
+
+					if (item.itemID == MMItems.SUGAR_LUMP.id) {
+						heal(6);
 						item.consumeItem(player);
 						playEatingSound();
 					}

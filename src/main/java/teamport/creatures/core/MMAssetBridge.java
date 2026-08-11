@@ -2,6 +2,7 @@ package teamport.creatures.core;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.render.EntityRendererDispatcher;
+import net.minecraft.client.render.item.model.ItemModelDispatcher;
 import net.minecraft.client.render.texturepack.TexturePack;
 import net.minecraft.client.render.texturepack.TexturePackList;
 import net.minecraft.core.data.registry.Registries;
@@ -40,7 +41,7 @@ public final class MMAssetBridge {
 	private static final String MANIFEST = "/assets/creatures/asset-bridge.properties";
 	private static final String STAMP = "bridge-source.txt";
 
-	private static final int BRIDGE_REVISION = 15;
+	private static final int BRIDGE_REVISION = 16;
 
 	private static final int MAX_NESTING = 3;
 
@@ -515,13 +516,13 @@ public final class MMAssetBridge {
 				if (!PACK_NAME.equals(pack.fileName)) continue;
 				if (packs.selectedPacks.contains(pack)) {
 					packAutoEnabled = true;
-					reloadGeometry(packs);
+					reloadPackAssets(packs);
 					return;
 				}
 				packs.setTexturePack(pack);
 				packs.refreshIfReady();
 				packAutoEnabled = true;
-				reloadGeometry(packs);
+				reloadPackAssets(packs);
 				MoreMobs.LOGGER.info("Asset bridge: texture pack '{}' enabled automatically", PACK_NAME);
 				return;
 			}
@@ -533,7 +534,16 @@ public final class MMAssetBridge {
 		}
 	}
 
-	private static void reloadGeometry(TexturePackList packs) {
+	private static void reloadPackAssets(TexturePackList packs) {
+		try {
+
+			ItemModelDispatcher.getInstance().reload();
+			Minecraft.getMinecraft().textureManager.refreshTexturesAndDisplayErrors();
+		} catch (Throwable t) {
+			MoreMobs.LOGGER.warn("Asset bridge: bridged item icons were written but the texture atlas "
+				+ "could not be restitched ({}); restart the game to see them", t.toString());
+		}
+
 		try {
 
 			boolean known = Registries.NAMESPACES.getItem(MoreMobs.MOD_ID) != null;

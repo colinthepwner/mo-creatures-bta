@@ -68,6 +68,10 @@ The full original roster — **30 mobs**:
 - **Aquatic** — Dolphin (tameable, rideable, breedable), Shark, Fishy, plus shark and fishy eggs
 - **Hostile** — Ogre, Fire Ogre, Cave Ogre, Werewolf (transforms at night), Wolf, Wraith, Flame Wraith, Rat, Hell Rat
 
+Plus four of the original's items — **Big Cat Claw**, **Shark Teeth**, **Sugar Lump** and **Pet
+Food**. The first two drop from big cats and sharks. The sugar lump is a horse treat that works on a
+tamed horse as well as a wild one, and pet food tames and feeds kitties and big cat cubs.
+
 **The Deer replaces BTA's built-in deer.** BTA's own deer is not a vanilla Minecraft mob, so this swaps
 it for the Mo' Creatures one. Set `Replacements.replaceVanillaDeer = false` in `config/creatures.cfg`
 to keep BTA's instead.

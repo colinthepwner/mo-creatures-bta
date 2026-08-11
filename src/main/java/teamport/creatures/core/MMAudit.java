@@ -1,6 +1,8 @@
 package teamport.creatures.core;
 
+import net.minecraft.core.data.registry.Registries;
 import net.minecraft.core.entity.EntityDispatcher;
+import net.minecraft.core.lang.I18n;
 import net.minecraft.core.util.collection.NamespaceID;
 import teamport.creatures.MoreMobs;
 import teamport.creatures.core.entity.MMEntities;
@@ -21,7 +23,8 @@ public final class MMAudit {
 
 	private static final String MODEL_DIR = "/assets/creatures/models/entity/";
 	private static final String TEXTURE_DIR = "/assets/creatures/textures/entity/";
-	private static final String LANG_FILE = "/lang/creatures/en_US/guidebook.lang";
+
+	private static final String LANG_DIR = "/assets/" + MoreMobs.MOD_ID + "/lang/en_US/";
 	private static final String MODEL_BRIDGE_MANIFEST = "/assets/creatures/model-bridge.properties";
 
 	public static void run() {
@@ -61,12 +64,14 @@ public final class MMAudit {
 					+ " and is not listed in " + MODEL_BRIDGE_MANIFEST);
 			}
 
-			String langId = id.contains("_") ? id.substring(id.indexOf('_') + 1) : id;
-			if (langKeys.contains("guidebook.section.mob." + id + ".name")
-				|| langKeys.contains("guidebook.section.mob." + langId + ".name")) {
+			String nameKey = MMEntities.REGISTERED_NAME_KEYS.get(id);
+			if (nameKey == null) {
+				problems.add("entity '" + id + "' was registered without a display-name key");
+			} else if (langKeys.contains(nameKey)) {
 				withLang++;
 			} else {
-				problems.add("entity '" + id + "' has no guidebook name key in " + LANG_FILE);
+				problems.add("entity '" + id + "' is registered as '" + nameKey
+					+ "' but no lang file in " + LANG_DIR + " defines that key");
 			}
 		}
 
@@ -156,21 +161,34 @@ public final class MMAudit {
 
 	private static Set<String> readLangKeys() {
 		Set<String> keys = new HashSet<>();
-		try (InputStream in = MMAudit.class.getResourceAsStream(LANG_FILE)) {
-			if (in == null) {
-				MoreMobs.LOGGER.warn("Creatures audit problem: lang file {} is missing entirely", LANG_FILE);
-				return keys;
-			}
-			BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
-			String line;
-			while ((line = reader.readLine()) != null) {
-				int eq = line.indexOf('=');
-				if (eq > 0 && !line.startsWith("#")) {
-					keys.add(line.substring(0, eq).trim());
+
+		if (Registries.NAMESPACES.getItem(MoreMobs.MOD_ID) == null) {
+			MoreMobs.LOGGER.warn("Creatures audit problem: namespace '{}' is not registered, so BTA will not "
+				+ "load {} and every key will show as its own name", MoreMobs.MOD_ID, LANG_DIR);
+			return keys;
+		}
+
+		String[] paths = I18n.getFilesInDirectory(LANG_DIR);
+		if (paths.length == 0) {
+			MoreMobs.LOGGER.warn("Creatures audit problem: BTA finds no lang files in {}", LANG_DIR);
+			return keys;
+		}
+
+		for (String path : paths) {
+			if (!path.endsWith(".lang")) continue;
+			try (InputStream in = I18n.getResourceAsStream(path)) {
+				if (in == null) continue;
+				BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
+				String line;
+				while ((line = reader.readLine()) != null) {
+					int eq = line.indexOf('=');
+					if (eq > 0 && !line.startsWith("#")) {
+						keys.add(line.substring(0, eq).trim());
+					}
 				}
+			} catch (IOException e) {
+				MoreMobs.LOGGER.warn("Creatures audit problem: could not read {}: {}", path, e.toString());
 			}
-		} catch (IOException e) {
-			MoreMobs.LOGGER.warn("Creatures audit problem: could not read {}: {}", LANG_FILE, e.toString());
 		}
 		return keys;
 	}

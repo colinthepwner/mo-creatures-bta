@@ -4,7 +4,7 @@ import com.mojang.nbt.tags.CompoundTag;
 import net.minecraft.core.entity.Entity;
 import net.minecraft.core.entity.Mob;
 import net.minecraft.core.entity.player.Player;
-import net.minecraft.core.item.Items;
+import teamport.creatures.core.item.MMItems;
 import net.minecraft.core.player.gamemode.Gamemodes;
 import net.minecraft.core.util.collection.NamespaceID;
 import net.minecraft.core.util.helper.DamageType;
@@ -185,7 +185,7 @@ public class MobShark extends MobAquaticBase {
 
 		if (random.nextInt(100) < 90) {
 
-			dropItem(Items.BONE.id, 1 + random.nextInt(3));
+			dropItem(MMItems.SHARK_TEETH.id, 1 + random.nextInt(3));
 			return;
 		}
 

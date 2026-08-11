@@ -39,7 +39,8 @@ public class MobFishy extends MobAquaticBase {
 
 		setSize(0.3F, 0.3F);
 		setVariety(rollVariety(random));
-		setGrowth(0.6F + random.nextFloat() * (ADULT_GROWTH - 0.6F));
+
+		setGrowth(ADULT_GROWTH);
 
 		mobDrops.add(new WeightedRandomLootObject(Items.FOOD_FISH_RAW.getDefaultStack(), 1));
 	}
@@ -181,7 +182,8 @@ public class MobFishy extends MobAquaticBase {
 
 	@Override
 	protected void attackEntity(@NotNull Entity entity, float distance) {
-		if (distance >= REACH || !isPiranha() || !isAdult()) {
+
+		if (distance >= REACH || !isPiranha()) {
 			return;
 		}
 		if (entity.bb.maxY <= bb.minY || entity.bb.minY >= bb.maxY) {

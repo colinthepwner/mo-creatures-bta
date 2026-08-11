@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import teamport.creatures.MoreMobs;
 import teamport.creatures.core.MMHunting;
 import teamport.creatures.core.MMUtils;
+import teamport.creatures.core.item.MMItems;
 
 import java.util.List;
 
@@ -85,6 +86,15 @@ public class MobBigCat extends MobAnimal {
 		super.defineSynchedData();
 		entityData.define(DATA_GENERIC_FLAGS, (byte) 0, Byte.class);
 		entityData.define(DATA_GROWTH, GROWTH_ADULT, Byte.class);
+	}
+
+	@Override
+	protected void dropDeathItems() {
+		super.dropDeathItems();
+
+		if (isAdult() && random.nextInt(3) != 0) {
+			dropItem(MMItems.BIGCAT_CLAW.id, 1 + random.nextInt(2));
+		}
 	}
 
 	@Override
@@ -394,7 +404,7 @@ public class MobBigCat extends MobAnimal {
 		ItemStack held = player.getHeldItem();
 
 		if (!world.isClientSide) {
-			if (held != null && (held.itemID == Items.FOOD_PORKCHOP_RAW.id || held.itemID == Items.FOOD_FISH_RAW.id)) {
+			if (held != null && isFeed(held)) {
 				held.consumeItem(player);
 				hungry = false;
 				world.playSoundAtEntity(null, this, "creatures:mob.bigcat.eat", 1.0F,
@@ -431,6 +441,12 @@ public class MobBigCat extends MobAnimal {
 		}
 
 		return super.interact(player);
+	}
+
+	private static boolean isFeed(@NotNull ItemStack held) {
+		return held.itemID == Items.FOOD_PORKCHOP_RAW.id
+			|| held.itemID == Items.FOOD_FISH_RAW.id
+			|| held.itemID == MMItems.PET_FOOD.id;
 	}
 
 	private void showTamingFX(boolean success) {

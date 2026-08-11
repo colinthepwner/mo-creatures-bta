@@ -42,14 +42,18 @@ public final class MMEntities {
 
 	public static final java.util.List<String> REGISTERED_IDS = new java.util.ArrayList<>();
 
+	public static final java.util.Map<String, String> REGISTERED_NAME_KEYS = new java.util.LinkedHashMap<>();
+
 	private static <T extends Entity> void register(Class<T> entityClass, String name, String langName, EntityFactory<T> factory) {
+		String nameKey = "guidebook.section.mob." + langName + ".name";
 		EntityDispatcher.getInstance().addMapping(
 			entityClass,
 			NamespaceID.getPermanent(MOD_ID, name),
 			factory,
-			"guidebook.section.mob." + langName + ".name"
+			nameKey
 		);
 		REGISTERED_IDS.add(name);
+		REGISTERED_NAME_KEYS.put(name, nameKey);
 	}
 
 	private static <T extends Entity> void register(Class<T> entityClass, String name, EntityFactory<T> factory) {

@@ -38,6 +38,8 @@ public class MobDolphin extends MobAquaticBase {
 	private static final float ADULT_GROWTH = 1.5F;
 	private static final float BABY_GROWTH = 0.35F;
 
+	private static final float FIGHTING_GROWTH = 1.0F;
+
 	private static final int GESTATION = 50;
 
 	private int temper;
@@ -56,7 +58,8 @@ public class MobDolphin extends MobAquaticBase {
 
 		setSize(1.5F, 0.8F);
 		setDolphinColour(rollColour(random));
-		setGrowth(0.8F + random.nextFloat() * (ADULT_GROWTH - 0.8F));
+
+		setGrowth(0.8F + random.nextFloat());
 
 		mobDrops.add(new WeightedRandomLootObject(Items.FOOD_FISH_RAW.getDefaultStack(), 1, 2));
 	}
@@ -442,7 +445,7 @@ public class MobDolphin extends MobAquaticBase {
 
 	@Override
 	protected void attackEntity(@NotNull Entity entity, float distance) {
-		if (distance >= 3.5F || !isAdult()) {
+		if (distance >= 3.5F || getGrowth() < FIGHTING_GROWTH) {
 			return;
 		}
 		if (entity.bb.maxY <= bb.minY || entity.bb.minY >= bb.maxY) {
