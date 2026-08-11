@@ -12,6 +12,7 @@ import net.minecraft.core.util.helper.UUIDHelper;
 import net.minecraft.core.world.World;
 import org.jetbrains.annotations.NotNull;
 import teamport.creatures.MoreMobs;
+import teamport.creatures.core.MMUtils;
 import teamport.creatures.core.item.MMItemTags;
 
 import java.util.UUID;
@@ -245,11 +246,7 @@ public class MobBunny extends MobAnimal {
 
 		if (!world.isClientSide) {
 			if (item != null && item.itemID == Items.WHEAT.id && !isBunnyTamed()) {
-				item.consumeItem(player);
-
-				if (item.stackSize <= 0) {
-					player.inventory.setItem(player.inventory.getCurrentSlot(), null);
-				}
+				MMUtils.consumeHeld(player, item);
 
 				if (random.nextInt(3) != 0) {
 					showHeartsOrSmokeFX(false);

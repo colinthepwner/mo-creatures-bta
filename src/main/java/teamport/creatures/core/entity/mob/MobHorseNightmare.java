@@ -11,6 +11,7 @@ import net.minecraft.core.util.helper.MathHelper;
 import net.minecraft.core.world.World;
 import net.minecraft.core.world.pos.TilePos;
 import org.jetbrains.annotations.NotNull;
+import teamport.creatures.core.MMUtils;
 
 public class MobHorseNightmare extends MobHorse {
 
@@ -71,7 +72,7 @@ public class MobHorseNightmare extends MobHorse {
 		ItemStack item = player.inventory.getCurrentItem();
 		if (item != null && isHorseTamed()
 			&& item.itemID == Items.DUST_REDSTONE.id && fireCharge <= CHARGE) {
-			item.consumeItem(player);
+			MMUtils.consumeHeld(player, item);
 			fireCharge = CHARGE;
 			playEatingSound();
 			return false;

@@ -186,12 +186,12 @@ public class MobDolphin extends MobAquaticBase {
 
 		if (!world.isClientSide && held != null) {
 			if (held.itemID == Items.FOOD_FISH_RAW.id) {
-				held.consumeItem(player);
+				MMUtils.consumeHeld(player, held);
 				eatFish(player);
 				return true;
 			}
 			if (held.itemID == Items.FOOD_FISH_COOKED.id && isDolphinTamed() && isAdult()) {
-				held.consumeItem(player);
+				MMUtils.consumeHeld(player, held);
 				heal(getMaxHealth());
 				fedForBreeding = true;
 				world.playSoundAtEntity(null, this, "creatures:mob.dolphin", getSoundVolume(), soundPitch());

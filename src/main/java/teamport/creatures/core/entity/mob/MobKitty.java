@@ -98,7 +98,7 @@ public class MobKitty extends MobAnimal {
 						soundPitch);
 
 					lookAt(player, 30.0F, 30.0F);
-					heldItem.consumeItem(player);
+					MMUtils.consumeHeld(player, heldItem);
 
 					if (random.nextInt(3) == 0) {
 						isTamed = true;
@@ -109,7 +109,7 @@ public class MobKitty extends MobAnimal {
 					}
 				} else {
 					heal(2);
-					heldItem.consumeItem(player);
+					MMUtils.consumeHeld(player, heldItem);
 				}
 			}
 

@@ -11,6 +11,7 @@ import net.minecraft.core.item.ItemStack;
 import net.minecraft.core.util.helper.Side;
 import net.minecraft.core.world.World;
 import net.minecraft.core.world.pos.TilePosc;
+import teamport.creatures.core.MMUtils;
 
 public class LitterboxBlockLogic extends BlockLogicRotatable {
 
@@ -27,7 +28,7 @@ public class LitterboxBlockLogic extends BlockLogicRotatable {
 		if (tileEntity instanceof LitterboxEntity && ((LitterboxEntity) tileEntity).isFilthy) {
 			if (heldItem != null && heldItem.itemID == Blocks.SAND.id()) {
 				((LitterboxEntity) tileEntity).isFilthy = false;
-				heldItem.consumeItem(player);
+				MMUtils.consumeHeld(player, heldItem);
 			}
 		}
 

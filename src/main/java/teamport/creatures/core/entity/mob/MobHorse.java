@@ -212,23 +212,23 @@ public class MobHorse extends MobAnimal {
 			if (!isHorseTamed()) {
 				if (item.itemID == Items.WHEAT.id) {
 					chanceForTame += 1;
-					item.consumeItem(player);
+					MMUtils.consumeHeld(player, item);
 					playEatingSound();
 				}
 				if (item.itemID == Items.FOOD_APPLE.id) {
 					chanceForTame += random.nextInt(4) + 1;
-					item.consumeItem(player);
+					MMUtils.consumeHeld(player, item);
 					playEatingSound();
 				}
 				if (item.itemID == Items.DUST_SUGAR.id) {
 					chanceForTame += random.nextInt(8) + 1;
-					item.consumeItem(player);
+					MMUtils.consumeHeld(player, item);
 					playEatingSound();
 				}
 
 				if (item.itemID == MMItems.SUGAR_LUMP.id) {
 					chanceForTame += random.nextInt(16) + 2;
-					item.consumeItem(player);
+					MMUtils.consumeHeld(player, item);
 					playEatingSound();
 				}
 			}
@@ -236,24 +236,24 @@ public class MobHorse extends MobAnimal {
 			if (isOwnedBy(player)) {
 				if (item.itemID == Items.SADDLE.id) {
 					setHorseSaddled(true);
-					item.consumeItem(player);
+					MMUtils.consumeHeld(player, item);
 				}
 
 				if (getHealth() < getMaxHealth()) {
 					if (item.itemID == Items.WHEAT.id) {
 						heal(2);
-						item.consumeItem(player);
+						MMUtils.consumeHeld(player, item);
 						playEatingSound();
 					}
 					if (item.itemID == Items.FOOD_APPLE.id) {
 						heal(4);
-						item.consumeItem(player);
+						MMUtils.consumeHeld(player, item);
 						playEatingSound();
 					}
 
 					if (item.itemID == MMItems.SUGAR_LUMP.id) {
 						heal(6);
-						item.consumeItem(player);
+						MMUtils.consumeHeld(player, item);
 						playEatingSound();
 					}
 				}
@@ -330,7 +330,7 @@ public class MobHorse extends MobAnimal {
 
 	protected void eatBreedingFood(Player player, ItemStack stack) {
 		boolean stew = stack.itemID == Items.FOOD_STEW_MUSHROOM.id;
-		stack.consumeItem(player);
+		MMUtils.consumeHeld(player, stack);
 		if (stew) {
 			player.inventory.insertItem(new ItemStack(Items.BOWL), true);
 		}
@@ -476,7 +476,7 @@ public class MobHorse extends MobAnimal {
 
 		if (isChestItem(item)) {
 			if (isChested()) return true;
-			item.consumeItem(player);
+			MMUtils.consumeHeld(player, item);
 			setChested(true);
 			world.playSoundAtEntity(null, this, "mob.chickenplop", 1.0F,
 				(random.nextFloat() - random.nextFloat()) * 0.2F + 1.0F);

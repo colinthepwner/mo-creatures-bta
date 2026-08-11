@@ -405,7 +405,7 @@ public class MobBigCat extends MobAnimal {
 
 		if (!world.isClientSide) {
 			if (held != null && isFeed(held)) {
-				held.consumeItem(player);
+				MMUtils.consumeHeld(player, held);
 				hungry = false;
 				world.playSoundAtEntity(null, this, "creatures:mob.bigcat.eat", 1.0F,
 					(random.nextFloat() - random.nextFloat()) * 0.2F + 1.0F);

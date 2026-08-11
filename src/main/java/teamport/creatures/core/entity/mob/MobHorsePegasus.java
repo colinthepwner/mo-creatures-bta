@@ -88,7 +88,8 @@ public class MobHorsePegasus extends MobHorse {
 
 		if (isHorseSaddled() && passenger instanceof PlayerLocal) {
 			PlayerInput passengerInput = ((PlayerLocal) passenger).input;
-			if (passengerInput.jump && y < (double) world.getHeightBlocks() / 2) jump();
+
+			if (passengerInput.jump && y < world.getHeightBlocks()) jump();
 			yRot = passenger.yRot;
 			if (isInWater() || isInLava()) ejectRider();
 
@@ -107,17 +108,15 @@ public class MobHorsePegasus extends MobHorse {
 
 	@Override
 	protected void jump() {
-		if (!world.isClientSide) {
-			if (passenger == null) {
-				super.jump();
-				yd = 0.52;
-			} else {
-				yd = 0.21;
-				if (isSprinting()) {
-					float f = yRot * 0.01745329F;
-					xd -= MathHelper.sin(f) * 0.2F;
-					zd += MathHelper.cos(f) * 0.2F;
-				}
+		if (passenger == null) {
+			super.jump();
+			yd = 0.52;
+		} else {
+			yd = 0.21;
+			if (isSprinting()) {
+				float f = yRot * 0.01745329F;
+				xd -= MathHelper.sin(f) * 0.2F;
+				zd += MathHelper.cos(f) * 0.2F;
 			}
 		}
 	}

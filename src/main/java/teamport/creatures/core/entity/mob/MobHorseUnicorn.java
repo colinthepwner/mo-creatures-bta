@@ -5,6 +5,7 @@ import net.minecraft.core.item.ItemStack;
 import net.minecraft.core.item.Items;
 import net.minecraft.core.world.World;
 import org.jetbrains.annotations.NotNull;
+import teamport.creatures.core.MMUtils;
 
 public class MobHorseUnicorn extends MobHorse {
 	public MobHorseUnicorn(World world) {
@@ -64,7 +65,7 @@ public class MobHorseUnicorn extends MobHorse {
 		if (item != null) {
 			if (item.itemID == Items.FOOD_APPLE_GOLD.id) {
 				chanceForTame += random.nextInt(100) + 1;
-				item.consumeItem(player);
+				MMUtils.consumeHeld(player, item);
 				playEatingSound();
 			}
 		}
