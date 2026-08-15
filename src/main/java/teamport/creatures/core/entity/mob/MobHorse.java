@@ -2,8 +2,6 @@ package teamport.creatures.core.entity.mob;
 
 import com.mojang.nbt.tags.CompoundTag;
 import com.mojang.nbt.tags.ListTag;
-import net.minecraft.client.entity.player.PlayerLocal;
-import net.minecraft.client.input.PlayerInput;
 import net.minecraft.core.block.Blocks;
 import net.minecraft.core.entity.Entity;
 import net.minecraft.core.entity.animal.MobAnimal;
@@ -19,6 +17,7 @@ import net.minecraft.core.world.World;
 import org.jetbrains.annotations.NotNull;
 import teamport.creatures.MMConfig;
 import teamport.creatures.core.MMRiderControl;
+import teamport.creatures.core.MMRiderInput;
 import teamport.creatures.core.MMUtils;
 import teamport.creatures.MoreMobs;
 import teamport.creatures.core.item.MMItems;
@@ -526,19 +525,19 @@ public class MobHorse extends MobAnimal {
 
 		if (isInWater() || isInLava()) ejectRider();
 
-		if (isHorseSaddled() && passenger instanceof PlayerLocal) {
-			PlayerInput passengerInput = ((PlayerLocal) passenger).input;
+		MMRiderInput passengerInput = isHorseSaddled() ? MMRiderInput.of(passenger) : null;
+		if (passengerInput != null) {
 			if (passengerInput.jump && !hasNoPhysics() && onGround) yd = 0.42;
 			yRot = passenger.yRot;
 			if (isInWater() || isInLava()) ejectRider();
 
 			if (!onGround) {
-				super.moveRelative(passengerInput.moveStrafe, passengerInput.moveForward, moveSpeed / 16);
+				super.moveRelative(passengerInput.strafe, passengerInput.forward, moveSpeed / 16);
 			} else {
-				super.moveRelative(passengerInput.moveStrafe, passengerInput.moveForward, moveSpeed / 6);
+				super.moveRelative(passengerInput.strafe, passengerInput.forward, moveSpeed / 6);
 			}
 
-			super.moveEntityWithHeading(passengerInput.moveStrafe, passengerInput.moveForward);
+			super.moveEntityWithHeading(passengerInput.strafe, passengerInput.forward);
 			return;
 		}
 

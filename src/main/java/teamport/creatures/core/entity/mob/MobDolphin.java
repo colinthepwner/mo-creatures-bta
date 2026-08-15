@@ -1,8 +1,6 @@
 package teamport.creatures.core.entity.mob;
 
 import com.mojang.nbt.tags.CompoundTag;
-import net.minecraft.client.entity.player.PlayerLocal;
-import net.minecraft.client.input.PlayerInput;
 import net.minecraft.core.WeightedRandomLootObject;
 import net.minecraft.core.entity.Entity;
 import net.minecraft.core.entity.EntityItem;
@@ -19,6 +17,7 @@ import org.jetbrains.annotations.NotNull;
 import teamport.creatures.MMConfig;
 import teamport.creatures.MoreMobs;
 import teamport.creatures.core.MMRiderControl;
+import teamport.creatures.core.MMRiderInput;
 import teamport.creatures.core.MMUtils;
 
 import java.util.List;
@@ -401,16 +400,16 @@ public class MobDolphin extends MobAquaticBase {
 			yBodyRot = yRot;
 			xRot = rider.xRot * 0.5F;
 
-			if (rider instanceof PlayerLocal) {
-				PlayerInput input = ((PlayerLocal) rider).input;
+			MMRiderInput input = MMRiderInput.of(rider);
+			if (input != null) {
 
-				climb = -MathHelper.sin(rider.xRot * MathHelper.DEG_TO_RAD) * input.moveForward * 0.08;
+				climb = -MathHelper.sin(rider.xRot * MathHelper.DEG_TO_RAD) * input.forward * 0.08;
 				if (input.jump) {
 					climb += 0.05;
 				}
 				climb = MathHelper.clamp(climb, -MAX_CLIMB * 2.0, MAX_CLIMB * 2.0);
 
-				super.moveEntityWithHeading(input.moveStrafe * 0.5F, input.moveForward);
+				super.moveEntityWithHeading(input.strafe * 0.5F, input.forward);
 				return;
 			}
 		}

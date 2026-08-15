@@ -1,10 +1,9 @@
 package teamport.creatures.core.entity.mob;
 
-import net.minecraft.client.entity.player.PlayerLocal;
-import net.minecraft.client.input.PlayerInput;
 import net.minecraft.core.entity.player.Player;
 import net.minecraft.core.util.helper.MathHelper;
 import net.minecraft.core.world.World;
+import teamport.creatures.core.MMRiderInput;
 
 public class MobHorsePegasus extends MobHorse {
 
@@ -86,20 +85,20 @@ public class MobHorsePegasus extends MobHorse {
 
 		if (isInWater() || isInLava()) ejectRider();
 
-		if (isHorseSaddled() && passenger instanceof PlayerLocal) {
-			PlayerInput passengerInput = ((PlayerLocal) passenger).input;
+		MMRiderInput passengerInput = isHorseSaddled() ? MMRiderInput.of(passenger) : null;
+		if (passengerInput != null) {
 
 			if (passengerInput.jump && y < world.getHeightBlocks()) jump();
 			yRot = passenger.yRot;
 			if (isInWater() || isInLava()) ejectRider();
 
 			if (!onGround) {
-				super.moveRelative(passengerInput.moveStrafe, passengerInput.moveForward, moveSpeed / 6);
+				super.moveRelative(passengerInput.strafe, passengerInput.forward, moveSpeed / 6);
 			} else {
-				super.moveRelative(passengerInput.moveStrafe, passengerInput.moveForward, moveSpeed / 10);
+				super.moveRelative(passengerInput.strafe, passengerInput.forward, moveSpeed / 10);
 			}
 
-			super.moveEntityWithHeading(passengerInput.moveStrafe, passengerInput.moveForward);
+			super.moveEntityWithHeading(passengerInput.strafe, passengerInput.forward);
 			return;
 		}
 
