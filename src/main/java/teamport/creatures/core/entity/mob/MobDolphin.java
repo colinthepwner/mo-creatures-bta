@@ -311,11 +311,9 @@ public class MobDolphin extends MobAquaticBase {
 
 			tickGrowth();
 			climb = 0.0;
-			if (!isDolphinTamed()) {
+
+			if (!isDolphinTamed() && !world.isClientSide) {
 				tickRodeo((Player) passenger);
-			}
-			if (!world.isClientSide) {
-				riderControl.apply(this);
 			}
 			return;
 		}
@@ -393,7 +391,36 @@ public class MobDolphin extends MobAquaticBase {
 	}
 
 	@Override
+	public void onLivingUpdate() {
+		if (passenger instanceof Player) {
+			Player rider = (Player) passenger;
+			if (!rider.lerpVehicleMotion()) {
+				newPosRotationIncrements = 0;
+				boolean wasRemote = isMultiplayerEntity;
+				boolean wasSimulated = locallySimulated;
+				isMultiplayerEntity = false;
+				locallySimulated = true;
+				try {
+					super.onLivingUpdate();
+				} finally {
+					isMultiplayerEntity = wasRemote;
+					locallySimulated = wasSimulated;
+				}
+				rider.sendSpecialVehiclePacket();
+				return;
+			}
+		}
+
+		super.onLivingUpdate();
+	}
+
+	@Override
 	public void moveEntityWithHeading(float strafe, float forward) {
+
+		if (!world.isClientSide && passenger instanceof Player && riderControl.apply(this)) {
+			return;
+		}
+
 		if (isInWater() && isDolphinTamed() && passenger instanceof Player) {
 			Player rider = (Player) passenger;
 			yRot = rider.yRot;

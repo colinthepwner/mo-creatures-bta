@@ -500,20 +500,41 @@ public class MobHorse extends MobAnimal {
 	@Override
 	protected void updateAI() {
 		super.updateAI();
-		if (passenger instanceof Player && !isHorseTamed()) {
+
+		if (passenger instanceof Player && !isHorseTamed() && !world.isClientSide) {
 			tickUntamedRider((Player) passenger);
 		}
 
 		if (!world.isClientSide) {
 			tickGrowth();
 			tickCourting();
+		}
 
-			if (riderControl.apply(this)) {
+		followPlayerHoldingItem();
+	}
+
+	@Override
+	public void onLivingUpdate() {
+		if (passenger instanceof Player) {
+			Player rider = (Player) passenger;
+			if (!rider.lerpVehicleMotion()) {
+				newPosRotationIncrements = 0;
+				boolean wasRemote = isMultiplayerEntity;
+				boolean wasSimulated = locallySimulated;
+				isMultiplayerEntity = false;
+				locallySimulated = true;
+				try {
+					super.onLivingUpdate();
+				} finally {
+					isMultiplayerEntity = wasRemote;
+					locallySimulated = wasSimulated;
+				}
+				rider.sendSpecialVehiclePacket();
 				return;
 			}
 		}
 
-		followPlayerHoldingItem();
+		super.onLivingUpdate();
 	}
 
 	@Override
@@ -540,6 +561,8 @@ public class MobHorse extends MobAnimal {
 			super.moveEntityWithHeading(passengerInput.strafe, passengerInput.forward);
 			return;
 		}
+
+		if (!world.isClientSide && riderControl.apply(this)) return;
 
 		super.moveEntityWithHeading(0.0F, 0.0F);
 	}

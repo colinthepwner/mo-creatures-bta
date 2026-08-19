@@ -352,7 +352,7 @@ public final class MMGeometryBridge {
 	}
 
 	private static final List<String> BUILTIN_MODEL_IDS = Arrays.asList(
-		"bear", "bird", "boar", "bunny", "deer", "fox",
+		"bear", "bird", "boar", "bunny", "deer_moc", "fox",
 		"horse", "horse_pegasus", "horse_unicorn", "kitty", "litterbox");
 
 	private static void publish(Result result) {

@@ -41,7 +41,7 @@ public final class MMAssetBridge {
 	private static final String MANIFEST = "/assets/creatures/asset-bridge.properties";
 	private static final String STAMP = "bridge-source.txt";
 
-	private static final int BRIDGE_REVISION = 16;
+	private static final int BRIDGE_REVISION = 17;
 
 	private static final int MAX_NESTING = 3;
 

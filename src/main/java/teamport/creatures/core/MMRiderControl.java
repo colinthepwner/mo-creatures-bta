@@ -26,12 +26,15 @@ public final class MMRiderControl {
 		}
 		pending = false;
 
-		mount.setPos(
-			mount.x + clamp(targetX - mount.x, MAX_HORIZONTAL_STEP),
-			mount.y + clamp(targetY - mount.y, MAX_VERTICAL_STEP),
-			mount.z + clamp(targetZ - mount.z, MAX_HORIZONTAL_STEP));
+		double footY = mount.bb.minY + mount.heightOffset;
+
+		mount.move(
+			clamp(targetX - mount.x, MAX_HORIZONTAL_STEP),
+			clamp(targetY - footY, MAX_VERTICAL_STEP),
+			clamp(targetZ - mount.z, MAX_HORIZONTAL_STEP));
 
 		mount.xd = 0.0;
+		mount.yd = 0.0;
 		mount.zd = 0.0;
 		return true;
 	}

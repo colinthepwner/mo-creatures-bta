@@ -16,7 +16,7 @@ public class MobRendererDeerMoC extends MobRendererQuadrupedBase<MobDeerMoC> {
 	private static final float DOE_SCALE = 1.3F;
 
 	public MobRendererDeerMoC() {
-		super("geometry.deer", 0.0D, 0.5F);
+		super("geometry.deer_moc", 0.0D, 0.5F);
 	}
 
 	@Override
