@@ -84,14 +84,14 @@ public final class MMAssetBridge {
 
 		List<Source> sources = findSources(gameDir, packDir, wanted);
 		if (sources.isEmpty()) {
-			reportNothingFound(gameDir, manifest.size());
+			reportNothingFound(gameDir, packDir, manifest.size());
 			return;
 		}
 
 		List<Source> used = new ArrayList<>();
 		Map<String, byte[]> entries = collect(sources, wanted, used);
 		if (entries.isEmpty()) {
-			reportNothingFound(gameDir, manifest.size());
+			reportNothingFound(gameDir, packDir, manifest.size());
 			return;
 		}
 		sourceArchive = describe(gameDir, used);
@@ -135,9 +135,21 @@ public final class MMAssetBridge {
 		enablePack(packDir);
 	}
 
-	private static void reportNothingFound(File gameDir, int manifestSize) {
+	private static void reportNothingFound(File gameDir, File packDir, int manifestSize) {
 		bridgedCount = 0;
 		missingCount = manifestSize;
+
+		if (new File(packDir, "assets").isDirectory()) {
+			usedCache = true;
+			Stamp previous = Stamp.read(packDir);
+			sourceArchive = previous != null ? previous.label : "a pack built elsewhere";
+			MoreMobs.LOGGER.info("Asset bridge: no copy of the original found under '{}', but texture pack '{}' "
+				+ "is already built from {} — using it as it stands. Nothing needs rebuilding unless you "
+				+ "want to.", gameDir.getPath(), PACK_NAME, sourceArchive);
+			enablePack(packDir);
+			return;
+		}
+
 		MoreMobs.LOGGER.info("Asset bridge: no Mo' Creatures files found anywhere under '{}' — mobs will use "
 			+ "built-in textures where they exist. Drop the original mod in (zip, jar or unpacked folder, "
 			+ "any name, any depth) to restore the original look.", gameDir.getPath());
