@@ -27,6 +27,13 @@ public final class MMAudit {
 	private static final String LANG_DIR = "/assets/" + MoreMobs.MOD_ID + "/lang/en_US/";
 	private static final String MODEL_BRIDGE_MANIFEST = "/assets/creatures/model-bridge.properties";
 
+	private static final java.util.Map<String, String> MODEL_ASSET_IDS =
+		java.util.Collections.singletonMap("deer", "deer_moc");
+
+	private static String modelAssetId(String entityId) {
+		return MODEL_ASSET_IDS.getOrDefault(entityId, entityId);
+	}
+
 	public static void run() {
 		List<String> ids = MMEntities.REGISTERED_IDS;
 		List<String> problems = new ArrayList<>();
@@ -47,13 +54,14 @@ public final class MMAudit {
 				problems.add("entity '" + id + "' is not in the dispatcher after registration");
 			}
 
-			boolean bridged = bridgeSupplied.contains(id);
+			String modelId = modelAssetId(id);
+			boolean bridged = bridgeSupplied.contains(modelId);
 			if (bridged) viaBridge++;
 
-			if (resourceExists(MODEL_DIR + id + ".json")) {
+			if (resourceExists(MODEL_DIR + modelId + ".json")) {
 				withModel++;
 			} else if (!bridged) {
-				problems.add("entity '" + id + "' has no model at " + MODEL_DIR + id + ".json"
+				problems.add("entity '" + id + "' has no model at " + MODEL_DIR + modelId + ".json"
 					+ " and is not listed in " + MODEL_BRIDGE_MANIFEST);
 			}
 

@@ -39,6 +39,12 @@ public class MoreMobs implements ModInitializer {
 	}
 
 	public void afterGameStart() {
-		MMSpawns.sweep();
+		try {
+			MMSpawns.sweep();
+		} catch (Throwable t) {
+			LOGGER.error("Spawn sweep failed; this mod's mobs may be missing from some biomes. "
+				+ "Deliberately swallowed: throwing here would cancel afterGameStart for every mod "
+				+ "loaded after this one.", t);
+		}
 	}
 }

@@ -90,6 +90,24 @@ public final class MMSpawns {
 			return;
 		}
 
+		try {
+			applyTo(biome, key);
+		} catch (UnsupportedOperationException locked) {
+
+			if (locked(key)) {
+				MoreMobs.LOGGER.info("Spawns: biome '{}' does not allow its spawn list to be added to, so this "
+					+ "mod's mobs are left out of it. Nothing else is affected.", key);
+			}
+		}
+	}
+
+	private static final java.util.Set<String> LOCKED_BIOMES = new java.util.HashSet<>();
+
+	private static boolean locked(String key) {
+		return LOCKED_BIOMES.add(key);
+	}
+
+	private static void applyTo(Biome biome, String key) {
 		if (isNether(key)) {
 			addMissing(biome.getSpawnableList(MobCategory.MONSTER), NETHER_MONSTERS, biome);
 			return;
