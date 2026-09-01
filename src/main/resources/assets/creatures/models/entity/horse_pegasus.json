@@ -71,7 +71,7 @@
 					]
 				},
 				{
-					"name": "wingLeft",
+					"name": "wingRight",
 					"pivot": [5, 22, 0],
 					"cubes": [
 						{"origin": [5, 14, -6], "size": [2, 8, 12], "uv": [61, 10], "mirror": true},
@@ -81,7 +81,7 @@
 					]
 				},
 				{
-					"name": "wingRight",
+					"name": "wingLeft",
 					"pivot": [-5, 22, 0],
 					"cubes": [
 						{"origin": [-7, 14, -6], "size": [2, 8, 12], "uv": [61, 10]},

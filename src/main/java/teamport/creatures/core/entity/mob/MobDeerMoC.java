@@ -29,8 +29,8 @@ public class MobDeerMoC extends MobAnimal {
 
 		if (random.nextInt(2) == 0) setBuck(true);
 
-		mobDrops.add(new WeightedRandomLootObject(Items.FOOD_PORKCHOP_RAW.getDefaultStack(), 1, 2));
-		burningMobDrops.add(new WeightedRandomLootObject(Items.FOOD_PORKCHOP_COOKED.getDefaultStack(), 1, 2));
+		mobDrops.add(new WeightedRandomLootObject(Items.FOOD_VENISON_RAW.getDefaultStack(), 1, 2));
+		burningMobDrops.add(new WeightedRandomLootObject(Items.FOOD_VENISON_COOKED.getDefaultStack(), 1, 2));
 	}
 
 	@Override

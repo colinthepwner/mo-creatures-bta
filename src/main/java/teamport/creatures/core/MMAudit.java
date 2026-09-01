@@ -15,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.zip.CRC32;
 
@@ -38,13 +39,15 @@ public final class MMAudit {
 		List<String> ids = MMEntities.REGISTERED_IDS;
 		List<String> problems = new ArrayList<>();
 
-		Set<String> langKeys = readLangKeys();
+		Map<String, String> langEntries = readLangEntries();
+		Set<String> langKeys = langEntries.keySet();
 
 		Set<String> bridgeSupplied = readBridgeSuppliedIds();
 
 		int withModel = 0;
 		int withTexture = 0;
 		int withLang = 0;
+		int withDesc = 0;
 		int viaBridge = 0;
 
 		for (String id : ids) {
@@ -81,17 +84,26 @@ public final class MMAudit {
 				problems.add("entity '" + id + "' is registered as '" + nameKey
 					+ "' but no lang file in " + LANG_DIR + " defines that key");
 			}
+
+			if (nameKey != null) {
+				String descKey = nameKey.substring(0, nameKey.length() - ".name".length()) + ".desc";
+				if (langKeys.contains(descKey)) {
+					withDesc++;
+				} else {
+					problems.add("entity '" + id + "' has no guidebook description at '" + descKey + "'");
+				}
+			}
 		}
 
 		if (problems.isEmpty()) {
 			MoreMobs.LOGGER.info("Creatures audit: {} entities registered, all accounted for "
 					+ "({} with built-in models, {} with built-in textures, {} supplied by the asset bridge, "
-					+ "{} with lang key)",
-				ids.size(), withModel, withTexture, viaBridge, withLang);
+					+ "{} with lang key, {} with guidebook description)",
+				ids.size(), withModel, withTexture, viaBridge, withLang, withDesc);
 		} else {
 			MoreMobs.LOGGER.warn("Creatures audit: {} entities registered, {} with model, {} with texture, "
-					+ "{} via asset bridge, {} with lang key",
-				ids.size(), withModel, withTexture, viaBridge, withLang);
+					+ "{} via asset bridge, {} with lang key, {} with guidebook description",
+				ids.size(), withModel, withTexture, viaBridge, withLang, withDesc);
 			for (String problem : problems) {
 				MoreMobs.LOGGER.warn("Creatures audit problem: {}", problem);
 			}
@@ -167,8 +179,35 @@ public final class MMAudit {
 		return ids;
 	}
 
-	private static Set<String> readLangKeys() {
-		Set<String> keys = new HashSet<>();
+	public static void reportLangShadowing() {
+		Map<String, String> ours = readLangEntries();
+		I18n i18n = I18n.getInstance();
+		if (i18n == null) {
+			MoreMobs.LOGGER.warn("Creatures audit: no language loaded, so {} lang key(s) were not "
+				+ "checked for shadowing", ours.size());
+			return;
+		}
+
+		List<String> shadowed = new ArrayList<>();
+		for (Map.Entry<String, String> entry : ours.entrySet()) {
+			String mine = entry.getValue().replace("\\n", "\n");
+			if (!mine.equals(i18n.translateKey(entry.getKey()))) {
+				shadowed.add(entry.getKey());
+			}
+		}
+
+		if (shadowed.isEmpty()) {
+			MoreMobs.LOGGER.info("Creatures audit: {} lang key(s), none shadowed by another namespace",
+				ours.size());
+		} else {
+			MoreMobs.LOGGER.warn("Creatures audit problem: {} of {} lang key(s) resolve to somebody "
+					+ "else's text -- another namespace defines them too and loaded after this one: {}",
+				shadowed.size(), ours.size(), String.join(", ", shadowed));
+		}
+	}
+
+	private static Map<String, String> readLangEntries() {
+		Map<String, String> keys = new java.util.LinkedHashMap<>();
 
 		if (Registries.NAMESPACES.getItem(MoreMobs.MOD_ID) == null) {
 			MoreMobs.LOGGER.warn("Creatures audit problem: namespace '{}' is not registered, so BTA will not "
@@ -191,7 +230,8 @@ public final class MMAudit {
 				while ((line = reader.readLine()) != null) {
 					int eq = line.indexOf('=');
 					if (eq > 0 && !line.startsWith("#")) {
-						keys.add(line.substring(0, eq).trim());
+
+						keys.put(line.substring(0, eq).trim(), line.substring(eq + 1));
 					}
 				}
 			} catch (IOException e) {

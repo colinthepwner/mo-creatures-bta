@@ -2,6 +2,7 @@ package teamport.creatures;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.minecraft.client.sound.SoundRepository;
+import teamport.creatures.client.MMGuidebook;
 import teamport.creatures.client.render.block.MMBlockRenderers;
 import teamport.creatures.client.render.entity.MMEntityRenderers;
 import teamport.creatures.client.render.item.MMItemModels;
@@ -25,5 +26,9 @@ public class MoreMobsClient implements ClientModInitializer {
 
 		MMAssetBridge.run();
 		MMAudit.reportBridges();
+
+		MMAudit.reportLangShadowing();
+
+		MMGuidebook.registerMobPages();
 	}
 }

@@ -10,8 +10,6 @@ import teamport.creatures.core.entity.mob.MobHorsePegasus;
 
 @Environment(EnvType.CLIENT)
 public class MobRendererHorsePegasus extends MobRendererHorse {
-	private static final float WING_SWEEP = 60.0F * MathHelper.DEG_TO_RAD;
-
 	public MobRendererHorsePegasus() {
 		super("geometry.horse_pegasus",
 			"geometry.horse_pegasus_head");
@@ -35,8 +33,8 @@ public class MobRendererHorsePegasus extends MobRendererHorse {
 		float flap = pegasus.oWingFlap + (pegasus.wingFlap - pegasus.oWingFlap) * partialTick;
 		float spread = pegasus.oWingSpread + (pegasus.wingSpread - pegasus.oWingSpread) * partialTick;
 
-		float beat = MathHelper.sin(flap * (float) Math.PI) * spread * WING_SWEEP;
-		wingLeft.rotZ = -beat;
-		wingRight.rotZ = beat;
+		float beat = (MathHelper.sin(flap) + 1.0F) * spread;
+		wingLeft.rotZ = beat;
+		wingRight.rotZ = -beat;
 	}
 }

@@ -120,7 +120,7 @@ public class MobMouse extends MobAnimal {
 
 	@Override
 	public double getRidingHeight() {
-		return isPassenger() ? heightOffset - 1.7 : heightOffset;
+		return vehicle instanceof Player ? heightOffset - 0.08 : heightOffset;
 	}
 
 	@Override
@@ -176,23 +176,28 @@ public class MobMouse extends MobAnimal {
 
 	@Override
 	public boolean interact(@NotNull Player player) {
-		if (!world.isClientSide) {
-			if (player.passenger == this) {
-				player.ejectRider();
-				setCarried(false);
-				world.playSoundAtEntity(null, this, "mob.chickenplop", 1.0F,
-					(random.nextFloat() - random.nextFloat()) * 0.2F + 1.0F);
-			} else if (player.passenger == null) {
-				yRot = player.yRot;
-				startRiding(player);
-				setCarried(isPassenger());
-			}
+		if (world.isClientSide) return true;
+
+		if (player.passenger == this) {
+			player.ejectRider();
+			setCarried(false);
+			world.playSoundAtEntity(null, this, "mob.chickenplop", 1.0F,
+				(random.nextFloat() - random.nextFloat()) * 0.2F + 1.0F);
 
 			xd = player.xd * 5.0;
 			yd = player.yd / 2.0 + 0.5;
 			zd = player.zd * 5.0;
+			return true;
 		}
-		return true;
+
+		if (player.passenger == null) {
+			yRot = player.yRot;
+			startRiding(player);
+			setCarried(isPassenger());
+			return true;
+		}
+
+		return super.interact(player);
 	}
 
 	@Override

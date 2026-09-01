@@ -29,7 +29,7 @@ public class MobRendererKitty extends MobRendererQuadrupedBase<MobKitty> {
 			tail.rotX = entity.getTailRotation() / 5.0F;
 		}
 
-		if (!entity.isSitting) {
+		if (!entity.isSitting()) {
 			return;
 		}
 

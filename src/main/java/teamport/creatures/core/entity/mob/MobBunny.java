@@ -21,6 +21,9 @@ public class MobBunny extends MobAnimal {
 	public static final int MASK_TAMED = 0b0000_0001;
 	public static final int DATA_GENERIC_FLAGS = 16;
 	public static final int DATA_OWNER_UUID = 17;
+
+	private static final byte EVENT_SMOKE = 6;
+	private static final byte EVENT_HEARTS = 7;
 	private int bunnyJumpTimer;
 	private int timesBunnyShouldJump;
 	private int whenBunnyShouldJump;
@@ -222,49 +225,70 @@ public class MobBunny extends MobAnimal {
 	}
 
 	@Override
+	public void handleEntityEvent(byte event, float value) {
+		if (event == EVENT_HEARTS) {
+			showHeartsOrSmokeFX(true);
+		} else if (event == EVENT_SMOKE) {
+			showHeartsOrSmokeFX(false);
+		} else {
+			super.handleEntityEvent(event, value);
+		}
+	}
+
+	@Override
 	public boolean interact(@NotNull Player player) {
+		if (world.isClientSide) return true;
+
 		ItemStack item = player.inventory.getCurrentItem();
-		if (item == null && player.passenger == null) {
-			startRiding(player);
-			world.playSoundAtEntity(null,
-				this,
-				getLandSound(),
-				1.0F,
-				(random.nextFloat() - random.nextFloat()) * 0.2F + 1.0F);
-		} else if (player.passenger != null) {
+
+		if (item != null && item.itemID == Items.WHEAT.id && !isBunnyTamed()) {
+			MMUtils.consumeHeld(player, item);
+
+			if (random.nextInt(3) != 0) {
+				world.sendTrackedEntityStatusUpdatePacket(this, EVENT_SMOKE);
+			} else {
+				world.sendTrackedEntityStatusUpdatePacket(this, EVENT_HEARTS);
+				setBunnyTamed(true);
+				setBunnyOwner(player.uuid);
+				setHealthRaw(getMaxHealth());
+			}
+			return true;
+		}
+
+		if (vehicle == player) {
 			player.ejectRider();
 			world.playSoundAtEntity(null,
 				this,
 				getLandSound(),
 				1.0F,
 				(random.nextFloat() - random.nextFloat()) * 0.2F + 1.0F);
-
-			setPos(player.x, player.y, player.z);
-			moveForward = 1.0F;
-			jump();
+			throwFrom(player);
+			return true;
 		}
 
-		if (!world.isClientSide) {
-			if (item != null && item.itemID == Items.WHEAT.id && !isBunnyTamed()) {
-				MMUtils.consumeHeld(player, item);
-
-				if (random.nextInt(3) != 0) {
-					showHeartsOrSmokeFX(false);
-				} else {
-					showHeartsOrSmokeFX(true);
-					setBunnyTamed(true);
-					setBunnyOwner(player.uuid);
-					setHealthRaw(getMaxHealth());
-				}
-			}
+		if (item == null && player.passenger == null) {
+			yRot = player.yRot;
+			startRiding(player);
+			world.playSoundAtEntity(null,
+				this,
+				getLiftSound(),
+				1.0F,
+				(random.nextFloat() - random.nextFloat()) * 0.2F + 1.0F);
+			return true;
 		}
 
 		return super.interact(player);
 	}
 
+	private void throwFrom(@NotNull Player player) {
+		xd = player.xd * 5.0;
+		yd = player.yd / 2.0 + 0.5;
+		zd = player.zd * 5.0;
+	}
+
 	@Override
 	public double getRidingHeight() {
-		return heightOffset - 1f;
+		return vehicle instanceof Player ? heightOffset + 0.47 : heightOffset;
 	}
 
 	@Override

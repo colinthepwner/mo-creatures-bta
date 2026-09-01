@@ -1,7 +1,7 @@
 package teamport.creatures.core.entity;
 
-import net.minecraft.core.entity.Entity;
 import net.minecraft.core.entity.EntityDispatcher;
+import net.minecraft.core.entity.Mob;
 import net.minecraft.core.entity.factories.EntityFactory;
 import net.minecraft.core.util.collection.NamespaceID;
 import teamport.creatures.core.entity.mob.MobBigCat;
@@ -44,7 +44,10 @@ public final class MMEntities {
 
 	public static final java.util.Map<String, String> REGISTERED_NAME_KEYS = new java.util.LinkedHashMap<>();
 
-	private static <T extends Entity> void register(Class<T> entityClass, String name, String langName, EntityFactory<T> factory) {
+	public static final java.util.Map<Class<? extends Mob>, String> REGISTERED_LANG_NAMES =
+		new java.util.LinkedHashMap<>();
+
+	private static <T extends Mob> void register(Class<T> entityClass, String name, String langName, EntityFactory<T> factory) {
 		String nameKey = "guidebook.section.mob." + langName + ".name";
 		EntityDispatcher.getInstance().addMapping(
 			entityClass,
@@ -54,9 +57,10 @@ public final class MMEntities {
 		);
 		REGISTERED_IDS.add(name);
 		REGISTERED_NAME_KEYS.put(name, nameKey);
+		REGISTERED_LANG_NAMES.put(entityClass, langName);
 	}
 
-	private static <T extends Entity> void register(Class<T> entityClass, String name, EntityFactory<T> factory) {
+	private static <T extends Mob> void register(Class<T> entityClass, String name, EntityFactory<T> factory) {
 		register(entityClass, name, name, factory);
 	}
 
@@ -72,7 +76,8 @@ public final class MMEntities {
 		register(MobHorseUnicorn.class, "horse_unicorn", "unicorn", MobHorseUnicorn::new);
 		register(MobHorsePegasus.class, "horse_pegasus", "pegasus", MobHorsePegasus::new);
 		register(MobKitty.class, "kitty", MobKitty::new);
-		register(MobDeerMoC.class, "deer", MobDeerMoC::new);
+
+		register(MobDeerMoC.class, "deer", "deer_moc", MobDeerMoC::new);
 		register(MobBigCat.class, "bigcat", MobBigCat::new);
 		register(MobRat.class, "rat", MobRat::new);
 		register(MobRatHell.class, "rat_hell", "rat_hell", MobRatHell::new);

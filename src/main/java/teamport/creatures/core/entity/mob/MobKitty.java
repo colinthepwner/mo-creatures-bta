@@ -11,6 +11,7 @@ import net.minecraft.core.item.Items;
 import net.minecraft.core.sound.SoundCategory;
 import net.minecraft.core.util.helper.DamageType;
 import net.minecraft.core.util.helper.MathHelper;
+import net.minecraft.core.util.helper.UUIDHelper;
 import net.minecraft.core.world.World;
 import org.jetbrains.annotations.NotNull;
 import teamport.creatures.core.MMUtils;
@@ -19,12 +20,19 @@ import teamport.creatures.core.item.MMItems;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 public class MobKitty extends MobAnimal {
-	public boolean isTamed = false;
-	public boolean isSitting = false;
-	public String ownerName;
-	private int skin;
+	public static final int MASK_TAMED = 0b0000_0001;
+	public static final int MASK_SITTING = 0b0000_0010;
+	public static final int DATA_GENERIC_FLAGS = 16;
+	public static final int DATA_OWNER_UUID = 17;
+
+	public static final int DATA_SKIN = 18;
+
+	private static final byte EVENT_SMOKE = 6;
+	private static final byte EVENT_HEARTS = 7;
+
 	private int potty;
 	private int usingPottyTime = 0;
 	private int boredom;
@@ -36,9 +44,63 @@ public class MobKitty extends MobAnimal {
 		setSize(0.7F, 0.5F);
 
 		heartsHalvesLife = 10;
-		skin = random.nextInt(4);
+		setSkin(random.nextInt(4));
 		boredom = random.nextInt(400) + 800;
 		potty = random.nextInt(6000) + 6000;
+	}
+
+	@Override
+	protected void defineSynchedData() {
+		super.defineSynchedData();
+		entityData.define(DATA_GENERIC_FLAGS, (byte) 0, Byte.class);
+		entityData.define(DATA_OWNER_UUID, null, UUID.class);
+		entityData.define(DATA_SKIN, (byte) 0, Byte.class);
+	}
+
+	public boolean isTamed() {
+		return (entityData.getByte(DATA_GENERIC_FLAGS) & MASK_TAMED) != 0;
+	}
+
+	public void setTamed(boolean flag) {
+		byte data = entityData.getByte(DATA_GENERIC_FLAGS);
+		entityData.set(DATA_GENERIC_FLAGS, flag ? (byte) (data | MASK_TAMED) : (byte) (data & ~MASK_TAMED));
+	}
+
+	public boolean isSitting() {
+		return (entityData.getByte(DATA_GENERIC_FLAGS) & MASK_SITTING) != 0;
+	}
+
+	public void setSitting(boolean flag) {
+		byte data = entityData.getByte(DATA_GENERIC_FLAGS);
+		entityData.set(DATA_GENERIC_FLAGS, flag ? (byte) (data | MASK_SITTING) : (byte) (data & ~MASK_SITTING));
+	}
+
+	public UUID getKittyOwner() {
+		return entityData.getUUID(DATA_OWNER_UUID);
+	}
+
+	public void setKittyOwner(UUID uuid) {
+		entityData.set(DATA_OWNER_UUID, uuid);
+	}
+
+	public int getSkin() {
+		int skin = entityData.getByte(DATA_SKIN);
+		return skin < 0 || skin > 3 ? 0 : skin;
+	}
+
+	public void setSkin(int skin) {
+		entityData.set(DATA_SKIN, (byte) skin);
+	}
+
+	@Override
+	public void handleEntityEvent(byte event, float value) {
+		if (event == EVENT_HEARTS) {
+			showHeartsOrSmokeFX(true);
+		} else if (event == EVENT_SMOKE) {
+			showHeartsOrSmokeFX(false);
+		} else {
+			super.handleEntityEvent(event, value);
+		}
 	}
 
 	@Override
@@ -48,7 +110,7 @@ public class MobKitty extends MobAnimal {
 
 	@Override
 	public String getEntityTexture() {
-		return isTamed ? "/assets/creatures/textures/entity/kitty/tamed_" + skin + ".png" : "/assets/creatures/textures/entity/kitty/" + skin + ".png";
+		return isTamed() ? "/assets/creatures/textures/entity/kitty/tamed_" + getSkin() + ".png" : "/assets/creatures/textures/entity/kitty/" + getSkin() + ".png";
 	}
 
 	@Override
@@ -87,7 +149,7 @@ public class MobKitty extends MobAnimal {
 			ItemStack heldItem = player.getHeldItem();
 
 			if (heldItem != null && isFeed(heldItem)) {
-				if (!isTamed) {
+				if (!isTamed()) {
 					world.playSoundEffect(player,
 						SoundCategory.ENTITY_SOUNDS,
 						x,
@@ -101,11 +163,11 @@ public class MobKitty extends MobAnimal {
 					MMUtils.consumeHeld(player, heldItem);
 
 					if (random.nextInt(3) == 0) {
-						isTamed = true;
-						showHeartsOrSmokeFX(true);
-						ownerName = player.username;
+						setTamed(true);
+						setKittyOwner(player.uuid);
+						world.sendTrackedEntityStatusUpdatePacket(this, EVENT_HEARTS);
 					} else {
-						showHeartsOrSmokeFX(false);
+						world.sendTrackedEntityStatusUpdatePacket(this, EVENT_SMOKE);
 					}
 				} else {
 					heal(2);
@@ -113,8 +175,8 @@ public class MobKitty extends MobAnimal {
 				}
 			}
 
-			if (isTamed && Objects.equals(player.username, ownerName) && player.getHeldItem() == null) {
-				isSitting = !isSitting;
+			if (isTamed() && Objects.equals(player.uuid, getKittyOwner()) && player.getHeldItem() == null) {
+				setSitting(!isSitting());
 			}
 		}
 
@@ -126,12 +188,12 @@ public class MobKitty extends MobAnimal {
 	}
 
 	public float getTailRotation() {
-		return isTamed ? (0.55F - (float) (getMaxHealth() - getHealth()) * 0.2F) * (float) Math.PI : (float) (Math.PI / 5);
+		return isTamed() ? (0.55F - (float) (getMaxHealth() - getHealth()) * 0.2F) * (float) Math.PI : (float) (Math.PI / 5);
 	}
 
 	@Override
 	protected boolean canDespawn() {
-		return !isTamed && super.canDespawn();
+		return !isTamed() && super.canDespawn();
 	}
 
 	@Override
@@ -146,7 +208,7 @@ public class MobKitty extends MobAnimal {
 
 	@Override
 	public String getLivingSound() {
-		return isTamed && random.nextInt(3) == 0 ? "creatures:mob.kitty.purr" : "creatures:mob.kitty";
+		return isTamed() && random.nextInt(3) == 0 ? "creatures:mob.kitty.purr" : "creatures:mob.kitty";
 	}
 
 	@Override
@@ -202,8 +264,8 @@ public class MobKitty extends MobAnimal {
 			}
 		}
 
-		if (isTamed) {
-			if (isSitting) {
+		if (isTamed()) {
+			if (isSitting()) {
 				moveForward = 0.0f;
 				moveStrafing = 0.0f;
 				isJumping = false;
@@ -240,7 +302,7 @@ public class MobKitty extends MobAnimal {
 		Player player = world.getClosestPlayerToEntity(this, 16.0);
 		if (player != null && player.distanceToSqr(x, y, z) > 4.0) {
 			ItemStack heldStack = player.getCurrentEquippedItem();
-			if (heldStack != null && !isSitting && isFeed(heldStack)) {
+			if (heldStack != null && !isSitting() && isFeed(heldStack)) {
 				lookAt(player, 30.0F, 30.0F);
 				moveForward = 1.0F;
 
@@ -253,20 +315,28 @@ public class MobKitty extends MobAnimal {
 	@Override
 	public void addAdditionalSaveData(@NotNull CompoundTag tag) {
 		super.addAdditionalSaveData(tag);
-		tag.putBoolean("IsTamed", isTamed);
-		tag.putBoolean("IsSitting", isSitting);
-		tag.putInt("Skin", skin);
+		tag.putBoolean("IsTamed", isTamed());
+		tag.putBoolean("IsSitting", isSitting());
+		tag.putInt("Skin", getSkin());
 
-		if (isTamed) tag.putString("Owner", ownerName);
+		UUIDHelper.writeToTag(tag, getKittyOwner(), "OwnerUUID");
 	}
 
 	@Override
 	public void readAdditionalSaveData(@NotNull CompoundTag tag) {
 		super.readAdditionalSaveData(tag);
-		isTamed = tag.getBoolean("IsTamed");
-		isSitting = tag.getBoolean("IsSitting");
-		skin = tag.getInteger("Skin");
+		setTamed(tag.getBoolean("IsTamed"));
+		setSitting(tag.getBoolean("IsSitting"));
+		setSkin(tag.getInteger("Skin"));
 
-		if (isTamed) ownerName = tag.getString("Owner");
+		UUID ownerUUID = UUIDHelper.readFromTag(tag, "OwnerUUID");
+		if (ownerUUID != null) {
+			setKittyOwner(ownerUUID);
+		} else {
+			String legacyName = tag.getString("Owner");
+			if (!legacyName.isEmpty()) {
+				UUIDHelper.runConversionAction(legacyName, this::setKittyOwner, null);
+			}
+		}
 	}
 }

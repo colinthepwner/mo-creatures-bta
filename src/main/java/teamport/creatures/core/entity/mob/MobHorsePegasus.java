@@ -10,8 +10,12 @@ public class MobHorsePegasus extends MobHorse {
 	public float wingFlap;
 	public float oWingFlap;
 
+	public float wingFlapSpeed;
+
 	public float wingSpread;
 	public float oWingSpread;
+
+	private static final float TAU = (float) (Math.PI * 2.0);
 
 	public MobHorsePegasus(World world) {
 		super(world);
@@ -127,16 +131,18 @@ public class MobHorsePegasus extends MobHorse {
 
 		if (!onGround && (yd < 0.0 || yd > 0.0)) {
 			yd *= 0.75;
-			wingSpread = Math.min(1.0F, wingSpread + 0.2F);
-		} else {
-			wingSpread = Math.max(0.0F, wingSpread - 0.2F);
 		}
 
-		wingFlap += 0.05F;
-		if (wingFlap >= 2.0F) {
+		wingSpread = Math.max(0.0F, Math.min(1.0F, wingSpread + (onGround ? -0.3F : 1.2F)));
 
-			wingFlap -= 2.0F;
-			oWingFlap -= 2.0F;
+		if (!onGround && wingFlapSpeed < 1.0F) wingFlapSpeed = 0.3F;
+		wingFlapSpeed *= 0.9F;
+		wingFlap += wingFlapSpeed * 2.0F;
+
+		if (wingFlap >= TAU) {
+
+			wingFlap -= TAU;
+			oWingFlap -= TAU;
 		}
 
 		super.onLivingUpdate();
