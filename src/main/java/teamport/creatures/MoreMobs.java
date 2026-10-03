@@ -9,6 +9,7 @@ import teamport.creatures.core.MMSpawns;
 import teamport.creatures.core.block.MMBlocks;
 import teamport.creatures.core.entity.MMEntities;
 import teamport.creatures.core.item.MMItems;
+import teamport.creatures.core.MMSoundIds;
 import turniplabs.halplibe.HalpLibe;
 import turniplabs.halplibe.event.defs.CommonEvents;
 import turniplabs.halplibe.util.dependency.Key;
@@ -41,6 +42,9 @@ public class MoreMobs implements ModInitializer {
 	public void afterGameStart() {
 		try {
 			MMSpawns.sweep();
+			if (net.fabricmc.loader.api.FabricLoader.getInstance().getEnvironmentType() == net.fabricmc.api.EnvType.SERVER) {
+				MMSoundIds.registerOnServer();
+			}
 		} catch (Throwable t) {
 			LOGGER.error("Spawn sweep failed; this mod's mobs may be missing from some biomes. "
 				+ "Deliberately swallowed: throwing here would cancel afterGameStart for every mod "
